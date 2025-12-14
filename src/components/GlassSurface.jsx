@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useEffect, useRef, useId, useState } from 'react';
 import './GlassSurface.css';
 
@@ -321,3 +323,6 @@ const GlassSurface = ({
 };
 
 export default GlassSurface;
+
+
+

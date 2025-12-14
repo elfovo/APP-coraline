@@ -51,7 +51,7 @@ export default function OutlineInput({
   leftIcon,
   rightIcon
 }: OutlineInputProps) {
-  const baseClasses = 'rounded-full font-medium shadow-lg transition-all duration-300 bg-transparent focus:outline-none focus:ring-2 focus:ring-opacity-50';
+  const baseClasses = 'rounded-full font-medium shadow-lg transition-all duration-300 bg-black/20 focus:outline-none focus:ring-2 focus:ring-opacity-50';
   
   const sizeClasses = {
     sm: 'px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm',

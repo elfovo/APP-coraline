@@ -8,29 +8,11 @@ const BubbleMenu = lazy(() => import('@/components/navigation/BubbleMenu.jsx'));
 const CardNav = lazy(() => import('@/components/navigation/CardNav.jsx'));
 const StaggeredMenu = lazy(() => import('@/components/navigation/StaggeredMenu.jsx'));
 const Dock = lazy(() => import('@/components/navigation/Dock.jsx'));
-const GlassIcons = lazy(() => import('@/components/navigation/GlassIcons.jsx'));
 const AnimatedList = lazy(() => import('@/components/navigation/AnimatedList.jsx'));
 const GooeyNav = lazy(() => import('@/components/navigation/GooeyNav.jsx'));
-const GlassNavBar = lazy(() => import('@/components/navigation/GlassNavBar'));
 
 export default function NavigationSection() {
   const navigationDemos = [
-    {
-      id: 'glass-nav',
-      name: 'GlassNavBar',
-      description: 'Barre de navigation avec effet de verre et animations fluides',
-      component: (
-        <div className="relative w-full h-32 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 rounded-lg overflow-hidden">
-          <Suspense fallback={<div className="text-white">Chargement...</div>}>
-            <GlassNavBar 
-              activeItem="exchanges"
-              onItemClick={(item) => console.log(`Navigation vers: ${item}`)}
-              className="absolute top-4 left-1/2 transform -translate-x-1/2"
-            />
-          </Suspense>
-        </div>
-      )
-    },
     {
       id: 'bubble',
       name: 'BubbleMenu',
@@ -244,71 +226,6 @@ export default function NavigationSection() {
       )
     },
     {
-      id: 'glass',
-      name: 'GlassIcons',
-      description: 'Icônes avec effet de verre et gradients colorés',
-      component: (
-        <Suspense fallback={<div className="text-white">Chargement...</div>}>
-          <GlassIcons
-            items={[
-              { 
-                label: 'Demo 1', 
-                icon: (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9,22 9,12 15,12 15,22"/>
-                  </svg>
-                ), 
-                color: 'blue'
-              },
-              { 
-                label: 'Demo 2', 
-                icon: (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
-                  </svg>
-                ), 
-                color: 'purple'
-              },
-              { 
-                label: 'Demo 3', 
-                icon: (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3"/>
-                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
-                  </svg>
-                ), 
-                color: 'red'
-              },
-              { 
-                label: 'Demo 4', 
-                icon: (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <rect x="7" y="7" width="3" height="9"/>
-                    <rect x="14" y="7" width="3" height="5"/>
-                  </svg>
-                ), 
-                color: 'green'
-              },
-              { 
-                label: 'Demo 5', 
-                icon: (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    <path d="M13 8H7"/>
-                    <path d="M17 12H7"/>
-                  </svg>
-                ), 
-                color: 'orange'
-              }
-            ]}
-            className="shadow-lg"
-          />
-        </Suspense>
-      )
-    },
-    {
       id: 'animated-list',
       name: 'AnimatedList',
       description: 'Liste animée avec navigation au clavier et effets de scroll',
@@ -352,7 +269,7 @@ export default function NavigationSection() {
       title="Navigation"
       subtitle="Collection de composants de navigation et menus interactifs"
       demos={navigationDemos}
-      initialActiveDemo="glass-nav"
+      initialActiveDemo="bubble"
     />
   );
 }

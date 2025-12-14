@@ -1,5 +1,4 @@
 export { default as SimpleButton } from './SimpleButton';
-export { default as GlassButton } from './GlassButton';
 export { default as GradientButton } from './GradientButton';
 export { default as OutlineButton } from './OutlineButton';
 export { default as CancelButton } from './CancelButton';

@@ -1,14 +1,21 @@
+'use client';
+
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { OutlineInput } from '@/components/inputs';
-import { SimpleButton } from '@/components/buttons';
+import { SimpleButton, SocialLoginButtons } from '@/components/buttons';
 
 interface LoginFormProps {
   onSubmit?: (data: { email: string; password: string }) => void;
+  onGoogleClick?: () => void;
+  onAppleClick?: () => void;
   className?: string;
 }
 
 export default function LoginForm({
   onSubmit,
+  onGoogleClick,
+  onAppleClick,
   className = ''
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
@@ -52,7 +59,7 @@ export default function LoginForm({
   };
 
   return (
-    <div className={`bg-transparent border-2 border-white rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
+    <div className={`bg-transparent rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Connexion</h2>
         <p className="text-sm sm:text-base text-white opacity-70">Connectez-vous à votre compte</p>
@@ -168,9 +175,9 @@ export default function LoginForm({
         </div>
         
         <div className="flex items-center justify-end">
-          <a href="#" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all">
+          <Link href="/reset-password" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all">
             Mot de passe oublié ?
-          </a>
+          </Link>
         </div>
         
         <SimpleButton
@@ -188,11 +195,27 @@ export default function LoginForm({
           )}
         </SimpleButton>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/20"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-transparent text-white/70">ou</span>
+        </div>
+      </div>
+
+      <SocialLoginButtons
+        onGoogleClick={onGoogleClick}
+        onAppleClick={onAppleClick}
+        isLoading={isLoading}
+        className="mt-6"
+      />
       
       <div className="text-center mt-4 sm:mt-6">
-        <a href="#" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
+        <Link href="/register" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
           Pas de compte ? S'inscrire
-        </a>
+        </Link>
       </div>
     </div>
   );

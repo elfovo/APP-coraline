@@ -1,6 +1,5 @@
 'use client';
 
-import LiquidEther from '@/components/backgrounds/LiquidEther.jsx';
 import Orb from '@/components/backgrounds/Orb.jsx';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
@@ -36,32 +35,6 @@ export default function HomeSection() {
     <section id="home" className="min-h-screen flex items-center justify-center relative bg-background">
       {/* Fond animé selon le thème */}
       <div className="absolute inset-0 z-0">
-        {theme === 'dark' ? (
-          <LiquidEther
-            mouseForce={20}
-            cursorSize={100}
-            isViscous={false}
-            viscous={30}
-            iterationsViscous={32}
-            iterationsPoisson={32}
-            dt={0.014}
-            BFECC={true}
-            resolution={0.5}
-            isBounce={false}
-            colors={['#5227FF', '#FF9FFC', '#B19EEF']}
-            autoDemo={true}
-            autoSpeed={0.5}
-            autoIntensity={2.2}
-            takeoverDuration={0.25}
-            autoResumeDelay={1000}
-            autoRampDuration={0.6}
-            style={{
-              width: '100%',
-              height: '100%',
-              opacity: 0.7
-            }}
-          />
-        ) : (
           <div style={{ width: '100%', height: '100%', opacity: 0.6 }}>
             <Orb
               hue={200}
@@ -70,7 +43,6 @@ export default function HomeSection() {
               forceHoverState={false}
             />
           </div>
-        )}
         
         {/* Gradient fade-out en bas - transition très douce */}
         <div 

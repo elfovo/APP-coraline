@@ -115,10 +115,25 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
   body {
     @apply bg-background text-foreground;
     background-color: #000000 !important;
     color: var(--foreground);
+  }
+  
+  /* Ombre noire pour tous les textes sauf boutons et champs */
+  h1, h2, h3, h4, h5, h6, p, span, a, label, div {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Exclure les boutons et les inputs */
+  button, input, input::placeholder {
+    text-shadow: none;
   }
   
   /* Scroll fluide pour la navigation */

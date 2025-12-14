@@ -1,7 +1,7 @@
 'use client';
 
 import { 
-  SimpleButton, GlassButton, GradientButton, OutlineButton, CancelButton, BackButton, BackOutlineButton, IconButton,
+  SimpleButton, GradientButton, OutlineButton, CancelButton, BackButton, BackOutlineButton, IconButton,
   NextButton, MenuButton, ToggleButton, SwitchButton,
   SquareButton, SquareButtonFilled 
 } from '@/components/buttons';
@@ -18,18 +18,6 @@ export default function ButtonsSection() {
           <SimpleButton size="lg">
             Bouton Simple
           </SimpleButton>
-        </div>
-      )
-    },
-    {
-      id: 'glass',
-      name: 'GlassButton',
-      description: 'Bouton avec effet de verre GlassSurface',
-      component: (
-        <div className="flex justify-center items-center">
-          <GlassButton size="lg">
-            Bouton Glass
-          </GlassButton>
         </div>
       )
     },

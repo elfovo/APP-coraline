@@ -1,17 +1,24 @@
+'use client';
+
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { OutlineInput } from '@/components/inputs';
-import { SimpleButton } from '@/components/buttons';
+import { SimpleButton, SocialLoginButtons } from '@/components/buttons';
 
 interface SignupFormProps {
   onSubmit?: (data: { 
     email: string; 
     password: string; 
   }) => void;
+  onGoogleClick?: () => void;
+  onAppleClick?: () => void;
   className?: string;
 }
 
 export default function SignupForm({
   onSubmit,
+  onGoogleClick,
+  onAppleClick,
   className = ''
 }: SignupFormProps) {
   const [email, setEmail] = useState('');
@@ -64,7 +71,7 @@ export default function SignupForm({
   };
 
   return (
-    <div className={`bg-transparent border-2 border-white rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
+    <div className={`bg-transparent rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Créer un compte</h2>
         <p className="text-sm sm:text-base text-white opacity-70">Rejoignez-nous dès aujourd'hui</p>
@@ -196,11 +203,27 @@ export default function SignupForm({
           )}
         </SimpleButton>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/20"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-transparent text-white/70">ou</span>
+        </div>
+      </div>
+
+      <SocialLoginButtons
+        onGoogleClick={onGoogleClick}
+        onAppleClick={onAppleClick}
+        isLoading={isLoading}
+        className="mt-6"
+      />
       
       <div className="text-center mt-4 sm:mt-6">
-        <a href="#" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
+        <Link href="/login" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
           Déjà un compte ? Se connecter
-        </a>
+        </Link>
       </div>
     </div>
   );

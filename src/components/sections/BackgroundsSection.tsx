@@ -1,28 +1,10 @@
 'use client';
 
-import { Aurora, DotGrid, Galaxy, LiquidEther, Orb, Squares, Threads } from '@/components/backgrounds';
+import { Aurora, DotGrid, Galaxy, Orb, Squares, Threads } from '@/components/backgrounds';
 import SectionWrapper from '@/components/SectionWrapper';
-import GlassSurfaceDemo from '@/components/GlassSurfaceDemo';
 
 export default function BackgroundsSection() {
   const backgroundDemos = [
-    {
-      id: 'liquid',
-      name: 'LiquidEther',
-      description: 'Background liquide interactif avec WebGL',
-      component: (
-        <LiquidEther
-          mouseForce={15}
-          cursorSize={80}
-          colors={['#ffffff', '#f8f9fa', '#e9ecef']}
-          autoDemo={true}
-          autoSpeed={0.3}
-          autoIntensity={1.8}
-          resolution={0.4}
-          style={{ width: '100%', height: '100%' }}
-        />
-      )
-    },
     {
       id: 'threads',
       name: 'Threads',
@@ -112,12 +94,6 @@ export default function BackgroundsSection() {
         />
       )
     },
-    {
-      id: 'glass',
-      name: 'GlassSurface',
-      description: 'Surface de verre avec effets de distorsion et blur',
-      component: <GlassSurfaceDemo />
-    }
   ];
 
   return (
@@ -126,7 +102,7 @@ export default function BackgroundsSection() {
       title="Arrière-plans"
       subtitle="Collection d'arrière-plans animés et interactifs"
       demos={backgroundDemos}
-      initialActiveDemo="liquid"
+      initialActiveDemo="threads"
     />
   );
 }

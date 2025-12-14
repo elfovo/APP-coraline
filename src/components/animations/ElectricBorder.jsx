@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
 
 import './ElectricBorder.css';

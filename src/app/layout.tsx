@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import Layout from "@/components/layout/Layout";
-import { LanguageProvider } from "@/contexts/LanguageContext";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { MetaBalls } from "@/components/animations";
+import { SimpleNav } from "@/components/navigation";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "MonDev Agency - Agence de Développement",
-  description: "Site officiel de MonDev Agency, votre agence de développement web moderne et innovante.",
+  title: "CommoCare",
+  description: "Suivi quotidien du rétablissement post-commotion",
 };
 
 export default function RootLayout({
@@ -27,16 +21,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider>
-          <LanguageProvider>
-            <Layout>
+      <body className={`${inter.className} min-h-screen bg-black text-white`}>
+        <div className="relative min-h-screen">
+          <div className="fixed inset-0 -z-10">
+            {/* <MetaBalls /> */}
+            <div className="absolute inset-0 bg-black" />
+          </div>
+          <AuthProvider>
+            <div className="relative z-10 min-h-screen">
+              <SimpleNav />
               {children}
-            </Layout>
-          </LanguageProvider>
-        </ThemeProvider>
+            </div>
+          </AuthProvider>
+        </div>
       </body>
     </html>
   );

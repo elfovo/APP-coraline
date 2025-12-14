@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import SectionWrapper from '@/components/SectionWrapper';
 import { OutlineInput, DateSelector } from '@/components/inputs';
-import { LoginForm, GlassLoginForm, SignupForm, GlassSignupForm, ResetPasswordForm, GlassResetPasswordForm } from '@/components/layouts';
+import { LoginForm, SignupForm, ResetPasswordForm } from '@/components/layouts';
 
 export default function LayoutsSection() {
   const [inputValue, setInputValue] = useState('');
@@ -91,18 +91,6 @@ export default function LayoutsSection() {
       )
     },
     {
-      id: 'glass-login',
-      name: 'GlassLoginForm',
-      description: 'Formulaire de connexion avec effet GlassSurface',
-      component: (
-        <div className="w-full h-full flex items-center justify-center p-8">
-          <div className="w-full max-w-md">
-            <GlassLoginForm />
-          </div>
-        </div>
-      )
-    },
-    {
       id: 'signup',
       name: 'SignupForm',
       description: 'Formulaire d\'inscription moderne',
@@ -110,18 +98,6 @@ export default function LayoutsSection() {
         <div className="w-full h-full flex items-center justify-center p-8">
           <div className="w-full max-w-md">
             <SignupForm />
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 'glass-signup',
-      name: 'GlassSignupForm',
-      description: 'Formulaire d\'inscription avec effet GlassSurface',
-      component: (
-        <div className="w-full h-full flex items-center justify-center p-8">
-          <div className="w-full max-w-md">
-            <GlassSignupForm />
           </div>
         </div>
       )
@@ -138,18 +114,6 @@ export default function LayoutsSection() {
         </div>
       )
     },
-    {
-      id: 'glass-reset',
-      name: 'GlassResetPasswordForm',
-      description: 'Formulaire de réinitialisation avec effet GlassSurface',
-      component: (
-        <div className="w-full h-full flex items-center justify-center p-8">
-          <div className="w-full max-w-md">
-            <GlassResetPasswordForm />
-          </div>
-        </div>
-      )
-    }
   ];
 
   return (
