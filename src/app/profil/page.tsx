@@ -207,7 +207,7 @@ export default function ProfilPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <section className="bg-white/10 border border-white/10 rounded-3xl p-6 xl:col-span-2 space-y-6 backdrop-blur-sm">
-            <div className="space-y-1">
+            <div className="space-y-1 text-center md:text-left">
               <p className="text-sm uppercase tracking-[0.3em] text-white/60">
                 Identité & accès
               </p>
@@ -216,7 +216,7 @@ export default function ProfilPage() {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
+              <div className="text-center md:text-left">
                 <label className="text-white/80 text-sm mb-2 block">
                   Nom à afficher
                 </label>
@@ -232,7 +232,7 @@ export default function ProfilPage() {
                   size="lg"
                 />
               </div>
-              <div>
+              <div className="text-center md:text-left">
                 <label className="text-white/80 text-sm mb-2 block">Email</label>
                 <OutlineInput
                   value={user.email ?? ''}
@@ -241,7 +241,7 @@ export default function ProfilPage() {
                   size="lg"
                 />
               </div>
-              <div>
+              <div className="text-center md:text-left">
                 <label className="text-white/80 text-sm mb-2 block">
                   Identifiant patient
                 </label>
@@ -252,7 +252,7 @@ export default function ProfilPage() {
                   size="lg"
                 />
               </div>
-              <div>
+              <div className="text-center md:text-left">
                 <label className="text-white/80 text-sm mb-2 block">
                   Statut d’abonnement
                 </label>
@@ -265,14 +265,14 @@ export default function ProfilPage() {
               </div>
             </div>
             {profileError && (
-              <p className="text-sm text-red-400" role="alert">
+              <p className="text-sm text-red-400 text-center md:text-left" role="alert">
                 {profileError}
               </p>
             )}
             {profileMessage && (
-              <p className="text-sm text-emerald-300">{profileMessage}</p>
+              <p className="text-sm text-emerald-300 text-center md:text-left">{profileMessage}</p>
             )}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 justify-center md:justify-start">
               <SimpleButton
                 size="lg"
                 onClick={handleProfileSave}
