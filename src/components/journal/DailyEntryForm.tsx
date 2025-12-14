@@ -280,7 +280,7 @@ export default function DailyEntryForm({
         description="Indique l’intensité ressentie pour chaque symptôme (0 = non ressenti)."
         highlight={initialSection === 'symptomes'}
       >
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {SYMPTOM_OPTIONS.map((option) => (
             <div
               key={option.id}
@@ -304,8 +304,8 @@ export default function DailyEntryForm({
                 trackColor="rgba(236,72,153,0.25)"
                 rangeColor="linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(168,85,247,1) 100%)"
                 labelFormatter={(val: number) => `${Math.round(val)}/6`}
-                leftIcon={<span className="text-white/60 text-xs">0</span>}
-                rightIcon={<span className="text-white/60 text-xs">6</span>}
+                leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
+                rightIcon={<span className="text-white/60 text-xs">6</span> as React.ReactNode}
               />
             </div>
           ))}
@@ -321,7 +321,7 @@ export default function DailyEntryForm({
         description="Valide ce que tu as pris / réalisé et ajuste l’intensité (observance)."
         highlight={initialSection === 'medicaments'}
       >
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {MEDICATION_OPTIONS.map((option) => (
             <div
               key={option.id}
@@ -345,8 +345,8 @@ export default function DailyEntryForm({
                 trackColor="rgba(59,130,246,0.25)"
                 rangeColor="linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(14,165,233,1) 100%)"
                 labelFormatter={(val: number) => `${Math.round(val)}/10`}
-                leftIcon={<span className="text-white/60 text-xs">0</span>}
-                rightIcon={<span className="text-white/60 text-xs">10</span>}
+                leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
+                rightIcon={<span className="text-white/60 text-xs">10</span> as React.ReactNode}
               />
             </div>
           ))}

@@ -1,9 +1,23 @@
 import { animate, motion, useMotionValue, useMotionValueEvent, useTransform } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import styles from './ElasticSlider.module.css';
 
 const MAX_OVERFLOW = 50;
+
+interface ElasticSliderProps {
+  value?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange?: (value: number) => void;
+  className?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  trackColor?: string;
+  rangeColor?: string;
+  labelFormatter?: (val: number) => string;
+}
 
 export default function ElasticSlider({
   value = 0,
@@ -12,12 +26,12 @@ export default function ElasticSlider({
   step = 1,
   onChange,
   className = '',
-  leftIcon = null, 
-  rightIcon = null, 
+  leftIcon, 
+  rightIcon, 
   trackColor = 'rgba(255,255,255,0.15)',
   rangeColor = 'white',
   labelFormatter = (val) => `${Math.round(val)}`
-}) {
+}: ElasticSliderProps) {
   return (
     <div className={`${styles['slider-container']} ${className}`}>
       <Slider
@@ -36,7 +50,20 @@ export default function ElasticSlider({
   );
 }
 
-function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackColor, rangeColor, labelFormatter }) {
+interface SliderProps {
+  value: number;
+  min: number;
+  max: number;
+  step: number;
+  onChange?: (value: number) => void;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  trackColor?: string;
+  rangeColor?: string;
+  labelFormatter: (val: number) => string;
+}
+
+function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackColor, rangeColor, labelFormatter }: SliderProps) {
   const [internalValue, setInternalValue] = useState(value);
   const sliderRef = useRef(null);
   const [region, setRegion] = useState('middle');
@@ -186,7 +213,7 @@ function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackCol
   );
 }
 
-function decay(value, max) {
+function decay(value: number, max: number): number {
   if (max === 0) {
     return 0;
   }

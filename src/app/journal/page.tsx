@@ -191,7 +191,7 @@ function JournalContent() {
           setInitialEntry(entry);
         }
       }
-      setSubmitMessage('90 journées de démonstration ajoutées.');
+      setSubmitMessage('2 semaines de démonstration ajoutées.');
     } catch (error) {
       console.error(error);
       setSubmitError('Impossible de générer les données démo.');
@@ -258,7 +258,7 @@ function JournalContent() {
           onClick={handleSeedEntries}
           disabled={seedLoading}
         >
-          {seedLoading ? 'Génération…' : 'Ajouter 90 jours démo'}
+          {seedLoading ? 'Génération…' : 'Créer des données de démo'}
         </SimpleButton>
       </div>
       <div className="container mx-auto px-4 py-8 space-y-6">
