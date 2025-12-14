@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SimpleButton } from '@/components/buttons';
 import OutlineInput from '@/components/inputs/OutlineInput';
+import ElasticSlider from '@/components/ElasticSlider';
 import type { DailyEntry, SymptomEntry, MedicationEntry } from '@/types/journal';
 
 export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'perturbateurs';
@@ -285,22 +286,24 @@ export default function DailyEntryForm({
             >
               <div className="flex items-center justify-between">
                 <p className="text-white font-medium">{option.label}</p>
-                <span className="text-white/70 text-sm">
-                  {symptoms[option.id]}/6
-                </span>
               </div>
-              <input
-                type="range"
+              <ElasticSlider
                 min={0}
                 max={6}
+                step={1}
                 value={symptoms[option.id]}
-                onChange={(event) =>
+                onChange={(newValue: number) =>
                   setSymptoms((prev) => ({
                     ...prev,
-                    [option.id]: Number(event.target.value),
+                    [option.id]: Math.round(newValue),
                   }))
                 }
-                className="w-full mt-3 accent-pink-500"
+                className="mt-4"
+                trackColor="rgba(236,72,153,0.25)"
+                rangeColor="linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(168,85,247,1) 100%)"
+                labelFormatter={(val: number) => `${Math.round(val)}/6`}
+                leftIcon={<span className="text-white/60 text-xs">0</span>}
+                rightIcon={<span className="text-white/60 text-xs">6</span>}
               />
             </div>
           ))}
@@ -324,22 +327,24 @@ export default function DailyEntryForm({
             >
               <div className="flex items-center justify-between">
                 <p className="text-white font-medium">{option.label}</p>
-                <span className="text-white/70 text-sm">
-                  {medications[option.id]}/10
-                </span>
               </div>
-              <input
-                type="range"
+              <ElasticSlider
                 min={0}
                 max={10}
+                step={1}
                 value={medications[option.id]}
-                onChange={(event) =>
+                onChange={(newValue: number) =>
                   setMedications((prev) => ({
                     ...prev,
-                    [option.id]: Number(event.target.value),
+                    [option.id]: Math.round(newValue),
                   }))
                 }
-                className="w-full mt-3 accent-blue-500"
+                className="mt-4"
+                trackColor="rgba(59,130,246,0.25)"
+                rangeColor="linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(14,165,233,1) 100%)"
+                labelFormatter={(val: number) => `${Math.round(val)}/10`}
+                leftIcon={<span className="text-white/60 text-xs">0</span>}
+                rightIcon={<span className="text-white/60 text-xs">10</span>}
               />
             </div>
           ))}

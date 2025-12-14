@@ -1,25 +1,23 @@
 import React from 'react';
 
-interface SimpleButtonProps {
+interface TransparentButtonProps {
   children: React.ReactNode;
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick?: () => void;
   disabled?: boolean;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'default' | 'outline' | 'ghost';
   type?: 'button' | 'submit' | 'reset';
 }
 
-export default function SimpleButton({
+export default function TransparentButton({
   children,
   onClick,
   disabled = false,
   className = '',
   size = 'md',
-  variant = 'default',
   type = 'button'
-}: SimpleButtonProps) {
-  const baseClasses = 'bg-white text-gray-800 rounded-full font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-gray-100';
+}: TransparentButtonProps) {
+  const baseClasses = 'bg-transparent rounded-full font-medium transition-all duration-300 hover:scale-105 border';
   
   const sizeClasses = {
     sm: 'px-2 py-2 text-xs sm:px-3 sm:py-2 sm:text-sm',
@@ -27,20 +25,13 @@ export default function SimpleButton({
     lg: 'px-4 py-3 text-sm sm:px-6 sm:py-3 sm:text-base md:px-8 md:text-lg'
   };
   
-  const variantClasses = {
-    default: 'bg-white text-gray-800 border-gray-100',
-    outline: 'bg-transparent text-gray-800 border-gray-300 hover:bg-gray-50',
-    ghost: 'bg-transparent text-gray-800 border-transparent hover:bg-gray-100'
-  };
-  
   const disabledClasses = disabled 
-    ? 'opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-lg' 
+    ? 'opacity-50 cursor-not-allowed hover:scale-100' 
     : '';
 
   const combinedClasses = `
     ${baseClasses}
     ${sizeClasses[size]}
-    ${variantClasses[variant]}
     ${disabledClasses}
     ${className}
   `.trim();
@@ -56,5 +47,4 @@ export default function SimpleButton({
     </button>
   );
 }
-
 

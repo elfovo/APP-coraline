@@ -18,6 +18,9 @@ interface OutlineInputProps {
   maxLength?: number;
   minLength?: number;
   pattern?: string;
+  min?: number;
+  max?: number;
+  step?: number;
   ariaLabel?: string;
   ariaDescribedBy?: string;
   error?: string;
@@ -44,6 +47,9 @@ export default function OutlineInput({
   maxLength,
   minLength,
   pattern,
+  min,
+  max,
+  step,
   ariaLabel,
   ariaDescribedBy,
   error,
@@ -106,6 +112,9 @@ export default function OutlineInput({
         maxLength={maxLength}
         minLength={minLength}
         pattern={pattern}
+        min={min}
+        max={max}
+        step={step}
         aria-label={ariaLabel}
         aria-describedby={ariaDescribedBy}
         aria-invalid={error ? 'true' : 'false'}

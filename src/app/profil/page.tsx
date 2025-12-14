@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { SimpleButton } from '@/components/buttons';
+import { SimpleButton, TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
 
 type NotificationPrefs = {
@@ -564,17 +564,17 @@ export default function ProfilPage() {
                 accompagnants. Contacte le support pour confirmer l’opération.
               </p>
             </div>
-            <SimpleButton
+            <TransparentButton
               size="lg"
-              variant="outline"
               className="border-red-400 text-red-200 hover:bg-red-500/10"
               onClick={() => window.open('mailto:support@commocare.app')}
             >
               Demander la suppression
-            </SimpleButton>
+            </TransparentButton>
           </div>
         </section>
       </div>
     </div>
   );
+
 }
