@@ -96,7 +96,7 @@ export default function SimpleNav() {
                 />
                 <span
                   className={`
-                    inline-flex text-xs mt-1 md:mt-0 md:text-sm font-medium
+                    hidden md:inline-flex text-xs md:mt-0 md:text-sm font-medium
                     transition-all duration-200
                     group-hover:translate-x-1 group-hover:scale-110
                   `}

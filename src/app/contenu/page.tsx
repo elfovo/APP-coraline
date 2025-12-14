@@ -146,14 +146,14 @@ export default function ContenuPage() {
               qu’un espace dédié aux accompagnants.
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <SimpleButton size="lg" onClick={() => router.push('/journal')}>
+          <div className="flex flex-col gap-3 w-full max-w-md">
+            <SimpleButton size="lg" className="w-full" onClick={() => router.push('/journal')}>
               Retour au journal
             </SimpleButton>
             <SimpleButton
               size="lg"
               variant="outline"
-              className="bg-transparent text-gray-900 border-white/30"
+              className="w-full bg-transparent text-gray-900 border-white/30"
             >
               Télécharger tout (PDF)
             </SimpleButton>
