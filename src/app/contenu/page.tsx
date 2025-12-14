@@ -4,7 +4,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import ResourceCard from '@/components/content/ResourceCard';
-import { SimpleButton } from '@/components/buttons';
 
 const patientResources = [
   {
@@ -145,18 +144,6 @@ export default function ContenuPage() {
               impliquer ton entourage : routines, audios, checklists, ainsi
               qu’un espace dédié aux accompagnants.
             </p>
-          </div>
-          <div className="flex flex-col gap-3 w-full max-w-md">
-            <SimpleButton size="lg" className="w-full" onClick={() => router.push('/journal')}>
-              Retour au journal
-            </SimpleButton>
-            <SimpleButton
-              size="lg"
-              variant="outline"
-              className="w-full bg-transparent text-gray-900 border-white/30"
-            >
-              Télécharger tout (PDF)
-            </SimpleButton>
           </div>
         </header>
 

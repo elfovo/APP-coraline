@@ -231,7 +231,7 @@ export default function DailyEntryForm({
       return [...baseActivities, ...custom];
     };
 
-    return {
+    const baseEntry: DailyEntry = {
       dateISO,
       dayLabel: formatter.format(new Date(`${dateISO}T00:00:00`)),
       status,
@@ -239,8 +239,10 @@ export default function DailyEntryForm({
       medications: buildMedications(),
       activities: buildActivities(),
       perturbateurs: Array.from(perturbateurs),
-      notes: notes.trim() || undefined,
     };
+
+    const cleanedNotes = notes.trim();
+    return cleanedNotes ? { ...baseEntry, notes: cleanedNotes } : baseEntry;
   };
 
   const handleSubmit = async (

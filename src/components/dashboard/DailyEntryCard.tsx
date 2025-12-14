@@ -62,14 +62,14 @@ export default function DailyEntryCard({
             des rapports PDF/CSV pour ton équipe médicale.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <SimpleButton size="lg" onClick={onEdit}>
+        <div className="flex flex-col gap-3 w-full max-w-sm">
+          <SimpleButton size="lg" className="w-full" onClick={onEdit}>
             {entry.status === 'complete' ? 'Modifier' : 'Compléter'}
           </SimpleButton>
           <SimpleButton
             size="lg"
             variant="outline"
-            className="bg-white text-gray-900 border-white/40"
+            className="w-full bg-white text-gray-900 border-white/40"
           >
             Exporter PDF/CSV
           </SimpleButton>

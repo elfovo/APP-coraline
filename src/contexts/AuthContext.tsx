@@ -12,9 +12,11 @@ import {
   UserCredential,
   signInWithPopup,
   GoogleAuthProvider,
-  OAuthProvider
+  OAuthProvider,
+  deleteUser
 } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
+import { deleteUserData } from '@/lib/firestoreEntries';
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +28,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,7 +94,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signInWithApple = async () => {
     const auth = getAuthInstance();
     const provider = new OAuthProvider('apple.com');
-    return await signInWithPopup(auth, provider);
+    // Ajouter les scopes nécessaires pour Apple Sign-In
+    provider.addScope('email');
+    provider.addScope('name');
+    // Utiliser signInWithPopup, avec fallback sur redirect si nécessaire
+    try {
+      return await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      // Si popup échoue, essayer avec redirect
+      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+        throw error; // Re-lancer l'erreur pour que l'UI puisse la gérer
+      }
+      // Pour d'autres erreurs, re-lancer aussi
+      throw error;
+    }
+  };
+
+  const deleteAccount = async () => {
+    const auth = getAuthInstance();
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      throw new Error('Aucun utilisateur connecté');
+    }
+
+    const userId = currentUser.uid;
+
+    // Supprimer toutes les données Firestore
+    await deleteUserData(userId);
+
+    // Supprimer le compte Firebase Auth
+    await deleteUser(currentUser);
   };
 
   const value = {
@@ -103,7 +136,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithApple,
     logout,
     resetPassword,
-    updateUserProfile
+    updateUserProfile,
+    deleteAccount
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

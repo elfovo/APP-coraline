@@ -124,24 +124,6 @@ export default function StatistiquePage() {
                 prêts à envoyer à ton thérapeute.
               </p>
             </div>
-            <div className="flex flex-col gap-3 w-full max-w-xs">
-              <SimpleButton
-                size="lg"
-                onClick={() => setPreviewOpen(true)}
-                disabled={!currentWeekEntries.length}
-                className="w-full"
-              >
-                Exporter PDF
-              </SimpleButton>
-              <SimpleButton
-                size="lg"
-                variant="outline"
-                disabled
-                className="w-full"
-              >
-                Exporter CSV
-              </SimpleButton>
-            </div>
           </header>
 
           <WeeklySummary totals={currentWeekTotals} weekLabel={currentWeekLabel} />

@@ -28,7 +28,7 @@ export default function CalendarStrip({
 }: CalendarStripProps) {
   return (
     <div className="w-full pb-4 overflow-x-auto">
-      <div className="flex gap-3 min-w-max">
+      <div className="flex gap-4 min-w-max snap-x snap-mandatory">
         {days.map((day) => {
           const isSelected = day.dateISO === selectedDate;
 
@@ -37,24 +37,46 @@ export default function CalendarStrip({
               key={day.dateISO}
               onClick={() => onSelect(day.dateISO)}
               className={[
-                'flex flex-col items-center justify-between rounded-2xl px-4 py-3 border transition-all duration-200 backdrop-blur-sm min-w-[110px]',
+                'group relative flex min-w-[160px] flex-col rounded-[26px] px-5 py-4 text-left transition-all duration-300 snap-center',
+                'bg-gradient-to-br from-emerald-950/80 via-emerald-900/40 to-black/60 border border-emerald-500/30 shadow-[0_15px_45px_rgba(0,0,0,0.45)]',
                 statusStyles[day.status],
-                isSelected ? 'ring-2 ring-white/80 shadow-lg scale-[1.02]' : 'hover:ring-1 hover:ring-white/40',
+                isSelected
+                  ? 'ring-2 ring-emerald-200/80 scale-[1.02]'
+                  : 'hover:ring-1 hover:ring-emerald-300/40',
               ].join(' ')}
+              aria-label={`Choisir le ${day.label}`}
             >
-              <span className="text-sm uppercase tracking-wide">
+              <div
+                className={`pointer-events-none absolute inset-0 rounded-[26px] border-[3px] border-transparent transition-colors duration-300 ${
+                  isSelected ? 'border-emerald-100/70' : ''
+                }`}
+              />
+              <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.35em] text-white/65">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    day.status === 'complete'
+                      ? 'bg-emerald-300'
+                      : day.status === 'draft'
+                      ? 'bg-amber-300'
+                      : 'bg-white/40'
+                  }`}
+                />
                 {day.label}
-              </span>
-              <span className="text-lg font-semibold mt-2 text-white">
+              </div>
+              <div className="mt-4 text-3xl font-semibold text-white drop-shadow-sm">
                 {day.summary}
-              </span>
-              <span className="text-xs mt-1 text-white/70">
+              </div>
+              <div className="mt-2 text-sm text-white/70">
                 {day.status === 'complete'
                   ? 'Complet'
                   : day.status === 'draft'
                   ? 'Brouillon'
                   : 'À remplir'}
-              </span>
+              </div>
+              <div className="mt-4 h-px w-full bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+              <div className="mt-3 text-[10px] uppercase tracking-[0.4em] text-white/60">
+                Journal
+              </div>
             </button>
           );
         })}

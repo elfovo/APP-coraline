@@ -66,24 +66,29 @@ export default function LoginPage() {
     }
   };
 
-  const handleAppleSignIn = async () => {
-    try {
-      setError('');
-      setIsLoading(true);
-      await signInWithApple();
-      router.push('/');
-    } catch (err: any) {
-      let errorMessage = 'Une erreur est survenue lors de la connexion avec Apple';
-      if (err.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Connexion annulée';
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Temporairement désactivé
+  // const handleAppleSignIn = async () => {
+  //   try {
+  //     setError('');
+  //     setIsLoading(true);
+  //     await signInWithApple();
+  //     router.push('/');
+  //   } catch (err: any) {
+  //     let errorMessage = 'Une erreur est survenue lors de la connexion avec Apple';
+  //     if (err.code === 'auth/popup-closed-by-user') {
+  //       errorMessage = 'Connexion annulée';
+  //     } else if (err.code === 'auth/operation-not-allowed') {
+  //       errorMessage = 'La connexion avec Apple n\'est pas activée. Veuillez contacter le support.';
+  //     } else if (err.message) {
+  //       errorMessage = err.message;
+  //     }
+  //     setError(errorMessage);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const handleAppleSignIn = () => {}; // Temporairement désactivé
 
   if (user) {
     return null; // Redirection en cours

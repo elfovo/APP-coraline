@@ -1,6 +1,5 @@
 import { animate, motion, useMotionValue, useMotionValueEvent, useTransform } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
-import { RiSliderLine } from 'react-icons/ri';
 
 import styles from './ElasticSlider.module.css';
 
@@ -13,8 +12,8 @@ export default function ElasticSlider({
   step = 1,
   onChange,
   className = '',
-  leftIcon = <RiSliderLine className={styles.icon} />, 
-  rightIcon = <RiSliderLine className={styles.icon} />, 
+  leftIcon = null, 
+  rightIcon = null, 
   trackColor = 'rgba(255,255,255,0.15)',
   rangeColor = 'white',
   labelFormatter = (val) => `${Math.round(val)}`

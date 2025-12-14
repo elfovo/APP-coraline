@@ -170,3 +170,52 @@ export async function saveCaregiverObservation(
     createdAt: serverTimestamp(),
   });
 }
+
+/**
+ * Supprime toutes les données utilisateur dans Firestore
+ */
+export async function deleteUserData(userId: string) {
+  const db = getDbInstance();
+  
+  // Supprimer toutes les entrées du journal
+  const entriesRef = entriesCollection(userId);
+  const entriesSnapshot = await getDocs(entriesRef);
+  const deleteEntriesPromises = entriesSnapshot.docs.map((docSnap) =>
+    deleteDoc(docSnap.ref)
+  );
+  await Promise.all(deleteEntriesPromises);
+
+  // Supprimer les codes accompagnants
+  const caregiverCodeRef = caregiverCodeDocument(userId);
+  const caregiverCodeSnap = await getDoc(caregiverCodeRef);
+  if (caregiverCodeSnap.exists()) {
+    const codeData = caregiverCodeSnap.data();
+    const code = codeData?.code as string | undefined;
+    
+    // Supprimer le document utilisateur
+    await deleteDoc(caregiverCodeRef);
+    
+    // Supprimer le lookup si le code existe
+    if (code) {
+      const lookupRef = caregiverCodeLookupDoc(code);
+      await deleteDoc(lookupRef).catch(() => {
+        // Ignorer si déjà supprimé
+      });
+    }
+  }
+
+  // Supprimer toutes les observations des accompagnants
+  const observationsRef = caregiverObservationsCollection(userId);
+  const observationsSnapshot = await getDocs(observationsRef);
+  const deleteObservationsPromises = observationsSnapshot.docs.map((docSnap) =>
+    deleteDoc(docSnap.ref)
+  );
+  await Promise.all(deleteObservationsPromises);
+
+  // Supprimer le document utilisateur principal (si existe)
+  const userDocRef = doc(db, 'users', userId);
+  await deleteDoc(userDocRef).catch(() => {
+    // Ignorer si le document n'existe pas
+  });
+}
+

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { SimpleButton } from '@/components/buttons';
 import WeeklySummary from '@/components/dashboard/WeeklySummary';
-import CalendarStrip from '@/components/dashboard/CalendarStrip';
+import MonthlyCalendar from '@/components/dashboard/MonthlyCalendar';
 import DailyEntryCard from '@/components/dashboard/DailyEntryCard';
 import type { DailyEntry, WeeklyTotals } from '@/types/journal';
 import { listenRecentEntries, computeWeeklyTotals } from '@/lib/firestoreEntries';
@@ -74,7 +74,7 @@ export default function HomePage() {
           dateISO: today,
           label: 'Aujourd’hui',
           status: 'missing' as const,
-          summary: '0 pts',
+          summary: '0',
         },
       ];
     }
@@ -83,12 +83,22 @@ export default function HomePage() {
       dateISO: entry.dateISO,
       label: entry.dayLabel || entry.dateISO,
       status: entry.status,
-      summary: `${entry.symptoms.reduce(
+      summary: String(entry.symptoms.reduce(
         (acc, item) => acc + item.intensity,
         0,
-      )} pts`,
+      )),
     }));
   }, [entries]);
+
+  const calendarDayMap = useMemo(() => {
+    return calendarDays.reduce<Record<string, { status: DailyEntry['status']; summary: string }>>(
+      (acc, day) => {
+        acc[day.dateISO] = { status: day.status, summary: day.summary };
+        return acc;
+      },
+      {},
+    );
+  }, [calendarDays]);
 
   const selectedEntry =
     entries.find((entry) => entry.dateISO === selectedDate) ?? emptyEntry;
@@ -166,17 +176,12 @@ export default function HomePage() {
                 Modifie n’importe quel jour passé pour affiner ton suivi.
               </span>
             </div>
-            {entriesLoading ? (
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 text-white/60 text-sm">
-                Synchronisation du journal en cours...
-              </div>
-            ) : (
-              <CalendarStrip
-                days={calendarDays}
-                selectedDate={selectedDate}
-                onSelect={setSelectedDate}
-              />
-            )}
+            <MonthlyCalendar
+              selectedDate={selectedDate}
+              onSelect={setSelectedDate}
+              entriesMap={calendarDayMap}
+              isLoading={entriesLoading}
+            />
             {entriesError && (
               <p className="text-red-400 text-sm">{entriesError}</p>
             )}
