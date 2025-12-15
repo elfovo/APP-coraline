@@ -258,7 +258,8 @@ export default function DailyEntryForm({
   const [newPerturbateurName, setNewPerturbateurName] = useState('');
   const [notes, setNotes] = useState('');
   const [medicationInfoId, setMedicationInfoId] = useState<string | null>(null);
-  const [editingSliders, setEditingSliders] = useState(false);
+  const [editingSymptomes, setEditingSymptomes] = useState(false);
+  const [editingMedicaments, setEditingMedicaments] = useState(false);
   const [hiddenSliders, setHiddenSliders] = useState<{
     symptomes: Set<string>;
     medicaments: Set<string>;
@@ -274,7 +275,8 @@ export default function DailyEntryForm({
       ),
     ),
   }));
-  const [editingActivities, setEditingActivities] = useState(false);
+  const [editingActivites, setEditingActivites] = useState(false);
+  const [editingActivitesDouces, setEditingActivitesDouces] = useState(false);
   const [hiddenActivities, setHiddenActivities] = useState<{
     activites: Set<string>;
     activitesDouces: Set<string>;
@@ -696,14 +698,14 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingSliders((prev) => !prev)}
+            onClick={() => setEditingSymptomes((prev) => !prev)}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
-              editingSliders
+              editingSymptomes
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingSliders ? 'Terminer le mode édition' : 'Mode édition des curseurs'}
+            title={editingSymptomes ? 'Terminer le mode édition' : 'Mode édition des symptômes'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -725,7 +727,7 @@ export default function DailyEntryForm({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {SYMPTOM_OPTIONS.map((option) => {
             const isHidden = hiddenSliders.symptomes.has(option.id);
-            if (!editingSliders && isHidden) {
+            if (!editingSymptomes && isHidden) {
               return null;
             }
             return (
@@ -733,29 +735,59 @@ export default function DailyEntryForm({
                 key={option.id}
                 className={[
                   'bg-black/30 border border-white/5 rounded-2xl p-4 transition-opacity duration-200',
-                  editingSliders && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                  editingSymptomes && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-white font-medium">{option.label}</p>
                   <div className="flex items-center gap-2">
-                    {!editingSliders && (
+                    {!editingSymptomes && (
                       <span className="text-white/70 text-sm font-medium">
                         {Math.round(symptoms[option.id] ?? 0)}/6
                       </span>
                     )}
-                    {editingSliders && (
+                    {editingSymptomes && (
                       <button
                         type="button"
                         onClick={() => toggleSliderVisibility('symptomes', option.id)}
                         className={[
-                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200 flex items-center justify-center',
                           isHidden
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
+                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
                       >
-                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                        {isHidden ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
                       </button>
                     )}
                   </div>
@@ -771,7 +803,7 @@ export default function DailyEntryForm({
                       [option.id]: Math.round(newValue),
                     }))
                   }
-                  className={`mt-4 ${editingSliders ? 'pointer-events-none opacity-60' : ''}`}
+                  className={`mt-4 ${editingSymptomes ? 'pointer-events-none opacity-60' : ''}`}
                   trackColor="rgba(236,72,153,0.25)"
                   rangeColor="linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(168,85,247,1) 100%)"
                   labelFormatter={() => ''}
@@ -795,14 +827,14 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingSliders((prev) => !prev)}
+            onClick={() => setEditingMedicaments((prev) => !prev)}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
-              editingSliders
+              editingMedicaments
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingSliders ? 'Terminer le mode édition' : 'Mode édition des curseurs'}
+            title={editingMedicaments ? 'Terminer le mode édition' : 'Mode édition des médicaments'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -824,7 +856,7 @@ export default function DailyEntryForm({
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {MEDICATION_OPTIONS.map((option) => {
             const isHidden = hiddenSliders.medicaments.has(option.id);
-            if (!editingSliders && isHidden) {
+            if (!editingMedicaments && isHidden) {
               return null;
             }
             return (
@@ -832,13 +864,13 @@ export default function DailyEntryForm({
                 key={option.id}
                 className={[
                   'bg-black/30 border border-white/5 rounded-2xl p-4 transition-opacity duration-200',
-                  editingSliders && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                  editingMedicaments && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-white font-medium">{option.label}</p>
                   <div className="flex items-center gap-2">
-                    {!editingSliders && (
+                    {!editingMedicaments && (
                       <>
                         <span className="text-white/70 text-sm font-medium">
                           {Math.round(medications[option.id] ?? 0)}/10
@@ -853,18 +885,48 @@ export default function DailyEntryForm({
                         </button>
                       </>
                     )}
-                    {editingSliders && (
+                    {editingMedicaments && (
                       <button
                         type="button"
                         onClick={() => toggleSliderVisibility('medicaments', option.id)}
                         className={[
-                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200 flex items-center justify-center',
                           isHidden
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
+                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
                       >
-                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                        {isHidden ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
                       </button>
                     )}
                   </div>
@@ -880,7 +942,7 @@ export default function DailyEntryForm({
                       [option.id]: Math.round(newValue),
                     }))
                   }
-                  className={`mt-4 ${editingSliders ? 'pointer-events-none opacity-60' : ''}`}
+                  className={`mt-4 ${editingMedicaments ? 'pointer-events-none opacity-60' : ''}`}
                   trackColor="rgba(59,130,246,0.25)"
                   rangeColor="linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(14,165,233,1) 100%)"
                   labelFormatter={() => ''}
@@ -901,14 +963,14 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingActivities((prev) => !prev)}
+            onClick={() => setEditingActivites((prev) => !prev)}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
-              editingActivities
+              editingActivites
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingActivities ? 'Terminer le mode édition' : 'Mode édition des activités'}
+            title={editingActivites ? 'Terminer le mode édition' : 'Mode édition des activités'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -930,7 +992,7 @@ export default function DailyEntryForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {ACTIVITY_OPTIONS.map((option) => {
             const isHidden = hiddenActivities.activites.has(option.id);
-            if (!editingActivities && isHidden) {
+            if (!editingActivites && isHidden) {
               return null;
             }
             return (
@@ -938,29 +1000,59 @@ export default function DailyEntryForm({
                 key={option.id}
                 className={[
                   'bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3 transition-opacity duration-200',
-                  editingActivities && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                  editingActivites && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between">
                   <p className="text-white font-medium">{option.label}</p>
                   <div className="flex items-center gap-2">
-                    {!editingActivities && (
+                    {!editingActivites && (
                       <span className="text-white/70 text-sm">
                         {activityMinutes[option.id]} min
                       </span>
                     )}
-                    {editingActivities && (
+                    {editingActivites && (
                       <button
                         type="button"
                         onClick={() => toggleActivityVisibility('activites', option.id)}
                         className={[
-                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200 flex items-center justify-center',
                           isHidden
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
+                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
                       >
-                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                        {isHidden ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
                       </button>
                     )}
                   </div>
@@ -978,8 +1070,8 @@ export default function DailyEntryForm({
                   }
                   variant="white"
                   size="md"
-                  disabled={editingActivities}
-                  className={editingActivities ? 'opacity-60 pointer-events-none' : ''}
+                  disabled={editingActivites}
+                  className={editingActivites ? 'opacity-60 pointer-events-none' : ''}
                 />
               </div>
             );
@@ -999,10 +1091,26 @@ export default function DailyEntryForm({
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomActivity(activity.id)}
-                    className="text-white/60 hover:text-white transition-colors text-lg leading-none"
+                    className="text-white/60 hover:text-white transition-colors"
                     title="Supprimer"
                   >
-                    ×
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -1025,7 +1133,7 @@ export default function DailyEntryForm({
             </div>
           ))}
 
-          {editingActivities && (
+          {editingActivites && (
             <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
               <p className="text-white font-medium">Ajouter une activité perso</p>
             <div className="flex flex-col md:flex-row gap-3">
@@ -1067,14 +1175,14 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingActivities((prev) => !prev)}
+            onClick={() => setEditingActivitesDouces((prev) => !prev)}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
-              editingActivities
+              editingActivitesDouces
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingActivities ? 'Terminer le mode édition' : 'Mode édition des activités'}
+            title={editingActivitesDouces ? 'Terminer le mode édition' : 'Mode édition des activités douces'}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1096,7 +1204,7 @@ export default function DailyEntryForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {GENTLE_ACTIVITY_OPTIONS.map((option) => {
             const isHidden = hiddenActivities.activitesDouces.has(option.id);
-            if (!editingActivities && isHidden) {
+            if (!editingActivitesDouces && isHidden) {
               return null;
             }
             return (
@@ -1104,29 +1212,59 @@ export default function DailyEntryForm({
                 key={option.id}
                 className={[
                   'bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3 transition-opacity duration-200',
-                  editingActivities && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                  editingActivitesDouces && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
                 ].join(' ')}
               >
                 <div className="flex items-center justify-between">
                   <p className="text-white font-medium">{option.label}</p>
                   <div className="flex items-center gap-2">
-                    {!editingActivities && (
+                    {!editingActivitesDouces && (
                       <span className="text-white/70 text-sm">
                         {gentleActivityMinutes[option.id]} min
                       </span>
                     )}
-                    {editingActivities && (
+                    {editingActivitesDouces && (
                       <button
                         type="button"
                         onClick={() => toggleActivityVisibility('activitesDouces', option.id)}
                         className={[
-                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200 flex items-center justify-center',
                           isHidden
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
+                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
                       >
-                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                        {isHidden ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        )}
                       </button>
                     )}
                   </div>
@@ -1144,8 +1282,8 @@ export default function DailyEntryForm({
                   }
                   variant="white"
                   size="md"
-                  disabled={editingActivities}
-                  className={editingActivities ? 'opacity-60 pointer-events-none' : ''}
+                  disabled={editingActivitesDouces}
+                  className={editingActivitesDouces ? 'opacity-60 pointer-events-none' : ''}
                 />
               </div>
             );
@@ -1165,10 +1303,26 @@ export default function DailyEntryForm({
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomGentleActivity(activity.id)}
-                    className="text-white/60 hover:text-white transition-colors text-lg leading-none"
+                    className="text-white/60 hover:text-white transition-colors"
                     title="Supprimer"
                   >
-                    ×
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -1191,7 +1345,7 @@ export default function DailyEntryForm({
             </div>
           ))}
 
-          {editingActivities && (
+          {editingActivitesDouces && (
             <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
               <p className="text-white font-medium">Ajouter une activité douce / thérapie perso</p>
             <div className="flex flex-col md:flex-row gap-3">
@@ -1289,13 +1443,43 @@ export default function DailyEntryForm({
                     type="button"
                     onClick={() => togglePerturbateurVisibility(item)}
                     className={[
-                      'absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs border transition-colors duration-200 bg-black/80 backdrop-blur-sm',
+                      'absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs border transition-colors duration-200 bg-black/80 backdrop-blur-sm flex items-center justify-center',
                       isHidden
                         ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                         : 'border-white/30 text-white/80 hover:bg-white/10',
                     ].join(' ')}
+                    title={isHidden ? 'Ré-afficher' : 'Masquer'}
                   >
-                    {isHidden ? 'Ré-afficher' : 'Masquer'}
+                    {isHidden ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    )}
                   </button>
                 )}
               </div>
@@ -1323,10 +1507,26 @@ export default function DailyEntryForm({
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomPerturbateur(item)}
-                    className="absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs border transition-colors duration-200 bg-black/80 backdrop-blur-sm border-red-300/60 text-red-200 hover:bg-red-300/10"
+                    className="absolute -top-2 -right-2 p-1 rounded-full border transition-colors duration-200 bg-black/80 backdrop-blur-sm border-red-300/60 text-red-200 hover:bg-red-300/10 flex items-center justify-center"
                     title="Supprimer"
                   >
-                    ×
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                      <line x1="10" y1="11" x2="10" y2="17" />
+                      <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
                   </button>
                 )}
               </div>
