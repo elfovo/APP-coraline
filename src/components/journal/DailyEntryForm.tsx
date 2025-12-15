@@ -6,6 +6,12 @@ import { SimpleButton } from '@/components/buttons';
 import OutlineInput from '@/components/inputs/OutlineInput';
 import ElasticSlider from '@/components/ElasticSlider';
 import type { DailyEntry, SymptomEntry, MedicationEntry } from '@/types/journal';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  saveJournalPreferences,
+  loadJournalPreferences,
+  type JournalPreferences,
+} from '@/lib/firestoreEntries';
 
 export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'activitesDouces' | 'perturbateurs';
 type SliderGroup = 'symptomes' | 'medicaments';
@@ -14,6 +20,9 @@ type ActivityGroup = 'activites' | 'activitesDouces';
 const SLIDER_VISIBILITY_STORAGE = 'journal-slider-visibility';
 const ACTIVITY_VISIBILITY_STORAGE = 'journal-activity-visibility';
 const PERTURBATEUR_VISIBILITY_STORAGE = 'journal-perturbateur-visibility';
+const CUSTOM_ACTIVITIES_STORAGE = 'journal-custom-activities';
+const CUSTOM_GENTLE_ACTIVITIES_STORAGE = 'journal-custom-gentle-activities';
+const CUSTOM_PERTURBATEURS_STORAGE = 'journal-custom-perturbateurs';
 
 interface DailyEntryFormProps {
   dateISO: string;
@@ -25,6 +34,8 @@ interface DailyEntryFormProps {
   onSaveDraft?: (entry: DailyEntry) => void | Promise<void>;
   onError?: (message: string) => void;
   onSuccess?: (message: string) => void;
+  onGoPreviousDay?: () => void;
+  onGoNextDay?: () => void;
 }
 
 const SYMPTOM_OPTIONS = [
@@ -230,7 +241,10 @@ export default function DailyEntryForm({
   onSaveDraft,
   onError,
   onSuccess,
+  onGoPreviousDay,
+  onGoNextDay,
 }: DailyEntryFormProps) {
+  const { user } = useAuth();
   const [symptoms, setSymptoms] = useState<Record<string, number>>(() =>
     buildBaseState(SYMPTOM_OPTIONS),
   );
@@ -298,6 +312,7 @@ export default function DailyEntryForm({
       PERTURBATEUR_OPTIONS.filter((item) => !DEFAULT_VISIBLE_PERTURBATEURS.has(item)),
     ),
   );
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
 
   useEffect(() => {
     if (!initialEntry) {
@@ -373,74 +388,302 @@ export default function DailyEntryForm({
     setNotes(initialEntry.notes ?? '');
   }, [initialEntry]);
 
+  // Charger les préférences depuis Firestore (avec fallback localStorage)
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<Record<SliderGroup, string[]>>;
-        setHiddenSliders({
-          symptomes: new Set(parsed.symptomes ?? []),
-          medicaments: new Set(parsed.medicaments ?? []),
-        });
+    const loadPreferences = async () => {
+      if (!user) {
+        // Si pas d'utilisateur, charger depuis localStorage uniquement
+        if (typeof window !== 'undefined') {
+          try {
+            const rawSliders = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
+            if (rawSliders) {
+              const parsed = JSON.parse(rawSliders) as Partial<Record<SliderGroup, string[]>>;
+              setHiddenSliders({
+                symptomes: new Set(parsed.symptomes ?? []),
+                medicaments: new Set(parsed.medicaments ?? []),
+              });
+            }
+            
+            const rawActivities = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
+            if (rawActivities) {
+              const parsed = JSON.parse(rawActivities) as Partial<Record<ActivityGroup, string[]>>;
+              setHiddenActivities({
+                activites: new Set(parsed.activites ?? []),
+                activitesDouces: new Set(parsed.activitesDouces ?? []),
+              });
+            }
+            
+            const rawPerturbateurs = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
+            if (rawPerturbateurs) {
+              const parsed = JSON.parse(rawPerturbateurs) as string[];
+              setHiddenPerturbateurs(new Set(parsed));
+            }
+            
+            // Charger les éléments personnalisés depuis localStorage
+            const rawCustomActivities = window.localStorage.getItem(CUSTOM_ACTIVITIES_STORAGE);
+            if (rawCustomActivities) {
+              const parsed = JSON.parse(rawCustomActivities) as Array<{ id: string; label: string; duration: number }>;
+              setCustomActivities(parsed);
+            }
+            
+            const rawCustomGentleActivities = window.localStorage.getItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE);
+            if (rawCustomGentleActivities) {
+              const parsed = JSON.parse(rawCustomGentleActivities) as Array<{ id: string; label: string; duration: number }>;
+              setCustomGentleActivities(parsed);
+            }
+            
+            const rawCustomPerturbateurs = window.localStorage.getItem(CUSTOM_PERTURBATEURS_STORAGE);
+            if (rawCustomPerturbateurs) {
+              const parsed = JSON.parse(rawCustomPerturbateurs) as string[];
+              setCustomPerturbateurs(parsed);
+            }
+          } catch (error) {
+            console.warn('Impossible de charger les préférences locales', error);
+          }
+        }
+        setPreferencesLoaded(true);
+        return;
       }
-    } catch (error) {
-      console.warn('Impossible de charger les préférences de sliders', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const payload = {
-      symptomes: Array.from(hiddenSliders.symptomes),
-      medicaments: Array.from(hiddenSliders.medicaments),
+      
+      // Utilisateur connecté : charger depuis Firestore
+      try {
+        // Essayer de charger depuis Firestore
+        const firestorePrefs = await loadJournalPreferences(user.uid);
+        
+        if (firestorePrefs) {
+          // Utiliser les préférences Firestore
+          setHiddenSliders({
+            symptomes: new Set(firestorePrefs.hiddenSliders.symptomes),
+            medicaments: new Set(firestorePrefs.hiddenSliders.medicaments),
+          });
+          setHiddenActivities({
+            activites: new Set(firestorePrefs.hiddenActivities.activites),
+            activitesDouces: new Set(firestorePrefs.hiddenActivities.activitesDouces),
+          });
+          setHiddenPerturbateurs(new Set(firestorePrefs.hiddenPerturbateurs));
+          
+          // Charger les éléments personnalisés
+          if (firestorePrefs.customActivities) {
+            setCustomActivities(firestorePrefs.customActivities);
+          }
+          if (firestorePrefs.customGentleActivities) {
+            setCustomGentleActivities(firestorePrefs.customGentleActivities);
+          }
+          if (firestorePrefs.customPerturbateurs) {
+            setCustomPerturbateurs(firestorePrefs.customPerturbateurs);
+          }
+          
+          // Mettre à jour localStorage comme cache
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem(SLIDER_VISIBILITY_STORAGE, JSON.stringify({
+              symptomes: firestorePrefs.hiddenSliders.symptomes,
+              medicaments: firestorePrefs.hiddenSliders.medicaments,
+            }));
+            window.localStorage.setItem(ACTIVITY_VISIBILITY_STORAGE, JSON.stringify({
+              activites: firestorePrefs.hiddenActivities.activites,
+              activitesDouces: firestorePrefs.hiddenActivities.activitesDouces,
+            }));
+            window.localStorage.setItem(PERTURBATEUR_VISIBILITY_STORAGE, JSON.stringify(firestorePrefs.hiddenPerturbateurs));
+            if (firestorePrefs.customActivities) {
+              window.localStorage.setItem(CUSTOM_ACTIVITIES_STORAGE, JSON.stringify(firestorePrefs.customActivities));
+            }
+            if (firestorePrefs.customGentleActivities) {
+              window.localStorage.setItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE, JSON.stringify(firestorePrefs.customGentleActivities));
+            }
+            if (firestorePrefs.customPerturbateurs) {
+              window.localStorage.setItem(CUSTOM_PERTURBATEURS_STORAGE, JSON.stringify(firestorePrefs.customPerturbateurs));
+            }
+          }
+        } else {
+          // Fallback : charger depuis localStorage
+          if (typeof window !== 'undefined') {
+            try {
+              const rawSliders = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
+              if (rawSliders) {
+                const parsed = JSON.parse(rawSliders) as Partial<Record<SliderGroup, string[]>>;
+                setHiddenSliders({
+                  symptomes: new Set(parsed.symptomes ?? []),
+                  medicaments: new Set(parsed.medicaments ?? []),
+                });
+              }
+              
+              const rawActivities = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
+              if (rawActivities) {
+                const parsed = JSON.parse(rawActivities) as Partial<Record<ActivityGroup, string[]>>;
+                setHiddenActivities({
+                  activites: new Set(parsed.activites ?? []),
+                  activitesDouces: new Set(parsed.activitesDouces ?? []),
+                });
+              }
+              
+              const rawPerturbateurs = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
+              if (rawPerturbateurs) {
+                const parsed = JSON.parse(rawPerturbateurs) as string[];
+                setHiddenPerturbateurs(new Set(parsed));
+              }
+              
+              // Charger les éléments personnalisés depuis localStorage
+              const rawCustomActivities = window.localStorage.getItem(CUSTOM_ACTIVITIES_STORAGE);
+              if (rawCustomActivities) {
+                const parsed = JSON.parse(rawCustomActivities) as Array<{ id: string; label: string; duration: number }>;
+                setCustomActivities(parsed);
+              }
+              
+              const rawCustomGentleActivities = window.localStorage.getItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE);
+              if (rawCustomGentleActivities) {
+                const parsed = JSON.parse(rawCustomGentleActivities) as Array<{ id: string; label: string; duration: number }>;
+                setCustomGentleActivities(parsed);
+              }
+              
+              const rawCustomPerturbateurs = window.localStorage.getItem(CUSTOM_PERTURBATEURS_STORAGE);
+              if (rawCustomPerturbateurs) {
+                const parsed = JSON.parse(rawCustomPerturbateurs) as string[];
+                setCustomPerturbateurs(parsed);
+              }
+            } catch (error) {
+              console.warn('Impossible de charger les préférences locales', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Impossible de charger les préférences depuis Firestore', error);
+        // Fallback localStorage
+        if (typeof window !== 'undefined') {
+          try {
+            const rawSliders = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
+            if (rawSliders) {
+              const parsed = JSON.parse(rawSliders) as Partial<Record<SliderGroup, string[]>>;
+              setHiddenSliders({
+                symptomes: new Set(parsed.symptomes ?? []),
+                medicaments: new Set(parsed.medicaments ?? []),
+              });
+            }
+            
+            const rawActivities = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
+            if (rawActivities) {
+              const parsed = JSON.parse(rawActivities) as Partial<Record<ActivityGroup, string[]>>;
+              setHiddenActivities({
+                activites: new Set(parsed.activites ?? []),
+                activitesDouces: new Set(parsed.activitesDouces ?? []),
+              });
+            }
+            
+            const rawPerturbateurs = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
+            if (rawPerturbateurs) {
+              const parsed = JSON.parse(rawPerturbateurs) as string[];
+              setHiddenPerturbateurs(new Set(parsed));
+            }
+            
+            // Charger les éléments personnalisés depuis localStorage
+            const rawCustomActivities = window.localStorage.getItem(CUSTOM_ACTIVITIES_STORAGE);
+            if (rawCustomActivities) {
+              const parsed = JSON.parse(rawCustomActivities) as Array<{ id: string; label: string; duration: number }>;
+              setCustomActivities(parsed);
+            }
+            
+            const rawCustomGentleActivities = window.localStorage.getItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE);
+            if (rawCustomGentleActivities) {
+              const parsed = JSON.parse(rawCustomGentleActivities) as Array<{ id: string; label: string; duration: number }>;
+              setCustomGentleActivities(parsed);
+            }
+            
+            const rawCustomPerturbateurs = window.localStorage.getItem(CUSTOM_PERTURBATEURS_STORAGE);
+            if (rawCustomPerturbateurs) {
+              const parsed = JSON.parse(rawCustomPerturbateurs) as string[];
+              setCustomPerturbateurs(parsed);
+            }
+          } catch (e) {
+            console.warn('Impossible de charger les préférences locales', e);
+          }
+        }
+      }
+      
+      setPreferencesLoaded(true);
     };
-    window.localStorage.setItem(SLIDER_VISIBILITY_STORAGE, JSON.stringify(payload));
-  }, [hiddenSliders]);
+    
+    loadPreferences();
+  }, [user]);
 
+  // Sauvegarder les préférences dans Firestore et localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
-      if (raw) {
-        const parsed = JSON.parse(raw) as Partial<Record<ActivityGroup, string[]>>;
-        setHiddenActivities({
-          activites: new Set(parsed.activites ?? []),
-          activitesDouces: new Set(parsed.activitesDouces ?? []),
-        });
+    if (typeof window === 'undefined' || !preferencesLoaded) return;
+    
+    const savePreferences = async () => {
+      const preferences: JournalPreferences = {
+        hiddenSliders: {
+          symptomes: Array.from(hiddenSliders.symptomes),
+          medicaments: Array.from(hiddenSliders.medicaments),
+        },
+        hiddenActivities: {
+          activites: Array.from(hiddenActivities.activites),
+          activitesDouces: Array.from(hiddenActivities.activitesDouces),
+        },
+        hiddenPerturbateurs: Array.from(hiddenPerturbateurs),
+        customActivities,
+        customGentleActivities,
+        customPerturbateurs,
+      };
+      
+      // Toujours sauvegarder dans localStorage comme cache
+      window.localStorage.setItem(SLIDER_VISIBILITY_STORAGE, JSON.stringify(preferences.hiddenSliders));
+      window.localStorage.setItem(ACTIVITY_VISIBILITY_STORAGE, JSON.stringify(preferences.hiddenActivities));
+      window.localStorage.setItem(PERTURBATEUR_VISIBILITY_STORAGE, JSON.stringify(preferences.hiddenPerturbateurs));
+      window.localStorage.setItem(CUSTOM_ACTIVITIES_STORAGE, JSON.stringify(customActivities));
+      window.localStorage.setItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE, JSON.stringify(customGentleActivities));
+      window.localStorage.setItem(CUSTOM_PERTURBATEURS_STORAGE, JSON.stringify(customPerturbateurs));
+      
+      // Sauvegarder dans Firestore si utilisateur connecté
+      if (user) {
+        try {
+          await saveJournalPreferences(user.uid, preferences);
+        } catch (error) {
+          console.warn('Impossible de sauvegarder les préférences dans Firestore', error);
+        }
       }
-    } catch (error) {
-      console.warn('Impossible de charger les préférences d\'activités', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const payload = {
-      activites: Array.from(hiddenActivities.activites),
-      activitesDouces: Array.from(hiddenActivities.activitesDouces),
     };
-    window.localStorage.setItem(ACTIVITY_VISIBILITY_STORAGE, JSON.stringify(payload));
-  }, [hiddenActivities]);
+    
+    savePreferences();
+  }, [user, preferencesLoaded, hiddenSliders, hiddenActivities, hiddenPerturbateurs, customActivities, customGentleActivities, customPerturbateurs]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const raw = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
-      if (raw) {
-        const parsed = JSON.parse(raw) as string[];
-        setHiddenPerturbateurs(new Set(parsed));
-      }
-    } catch (error) {
-      console.warn('Impossible de charger les préférences de perturbateurs', error);
+  const handleToggleEditingSymptomes = () => {
+    const wasEditing = editingSymptomes;
+    setEditingSymptomes((prev) => !prev);
+    if (wasEditing) {
+      onSuccess?.('Préférences des symptômes mises à jour');
     }
-  }, []);
+  };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const payload = Array.from(hiddenPerturbateurs);
-    window.localStorage.setItem(PERTURBATEUR_VISIBILITY_STORAGE, JSON.stringify(payload));
-  }, [hiddenPerturbateurs]);
+  const handleToggleEditingMedicaments = () => {
+    const wasEditing = editingMedicaments;
+    setEditingMedicaments((prev) => !prev);
+    if (wasEditing) {
+      onSuccess?.('Préférences des médicaments mises à jour');
+    }
+  };
+
+  const handleToggleEditingActivites = () => {
+    const wasEditing = editingActivites;
+    setEditingActivites((prev) => !prev);
+    if (wasEditing) {
+      onSuccess?.('Préférences des activités mises à jour');
+    }
+  };
+
+  const handleToggleEditingActivitesDouces = () => {
+    const wasEditing = editingActivitesDouces;
+    setEditingActivitesDouces((prev) => !prev);
+    if (wasEditing) {
+      onSuccess?.('Préférences des activités douces mises à jour');
+    }
+  };
+
+  const handleToggleEditingPerturbateurs = () => {
+    const wasEditing = editingPerturbateurs;
+    setEditingPerturbateurs((prev) => !prev);
+    if (wasEditing) {
+      onSuccess?.('Préférences des éléments perturbateurs mises à jour');
+    }
+  };
 
   const symptomTotal = useMemo(
     () => Object.values(symptoms).reduce((acc, value) => acc + value, 0),
@@ -489,6 +732,7 @@ export default function DailyEntryForm({
 
   const handleRemoveCustomActivity = (id: string) => {
     setCustomActivities((prev) => prev.filter((activity) => activity.id !== id));
+    onSuccess?.('Activité supprimée');
   };
 
   const handleAddCustomGentleActivity = () => {
@@ -515,6 +759,7 @@ export default function DailyEntryForm({
 
   const handleRemoveCustomGentleActivity = (id: string) => {
     setCustomGentleActivities((prev) => prev.filter((activity) => activity.id !== id));
+    onSuccess?.('Activité douce supprimée');
   };
 
   const handleAddCustomPerturbateur = () => {
@@ -543,6 +788,7 @@ export default function DailyEntryForm({
       next.delete(name);
       return next;
     });
+    onSuccess?.('Élément perturbateur supprimé');
   };
 
   const toggleSliderVisibility = (group: SliderGroup, id: string) => {
@@ -678,15 +924,69 @@ export default function DailyEntryForm({
       className="space-y-8"
       onSubmit={(event) => handleSubmit(event, 'complete')}
     >
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col gap-4">
-        <p className="text-sm uppercase tracking-[0.3em] text-white/60">
-          Journal du jour
-        </p>
-        <h1 className="text-3xl font-semibold text-white">{dateLabel}</h1>
-        <p className="text-white/70">
-          Sélectionne les éléments qui te concernent aujourd’hui. Les curseurs
-          non modifiés restent à 0 (aucun symptôme / aucune prise).
-        </p>
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm uppercase tracking-[0.3em] text-white/60">
+              Journal du
+            </p>
+            {(onGoPreviousDay || onGoNextDay) && (
+              <div className="flex flex-wrap gap-2">
+                {onGoPreviousDay && (
+                  <SimpleButton
+                    type="button"
+                    size="sm"
+                    className="bg-white/10 text-white border border-white/30 px-3 py-2 rounded-xl hover:bg-white/20"
+                    onClick={onGoPreviousDay}
+                    aria-label="Jour précédent"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </SimpleButton>
+                )}
+                {onGoNextDay && (
+                  <SimpleButton
+                    type="button"
+                    size="sm"
+                    className="bg-white/10 text-white border border-white/30 px-3 py-2 rounded-xl hover:bg-white/20"
+                    onClick={onGoNextDay}
+                    aria-label="Jour suivant"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </SimpleButton>
+                )}
+              </div>
+            )}
+          </div>
+          <h1 className="text-3xl font-semibold text-white">{dateLabel}</h1>
+          <p className="text-white/70">
+            Sélectionne les éléments qui te concernent aujourd’hui. Les curseurs
+            non modifiés restent à 0 (aucun symptôme / aucune prise).
+          </p>
+        </div>
       </div>
 
 
@@ -698,7 +998,7 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingSymptomes((prev) => !prev)}
+            onClick={handleToggleEditingSymptomes}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
               editingSymptomes
@@ -827,7 +1127,7 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingMedicaments((prev) => !prev)}
+            onClick={handleToggleEditingMedicaments}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
               editingMedicaments
@@ -963,7 +1263,7 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingActivites((prev) => !prev)}
+            onClick={handleToggleEditingActivites}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
               editingActivites
@@ -1175,7 +1475,7 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingActivitesDouces((prev) => !prev)}
+            onClick={handleToggleEditingActivitesDouces}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
               editingActivitesDouces
@@ -1387,7 +1687,7 @@ export default function DailyEntryForm({
         actionButton={
           <button
             type="button"
-            onClick={() => setEditingPerturbateurs((prev) => !prev)}
+            onClick={handleToggleEditingPerturbateurs}
             className={[
               'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
               editingPerturbateurs

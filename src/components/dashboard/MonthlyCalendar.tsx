@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface DayInfo {
   status: 'complete' | 'draft' | 'missing';
@@ -32,19 +32,46 @@ const monthFormatter = new Intl.DateTimeFormat('fr-FR', {
   year: 'numeric',
 });
 
+const padNumber = (value: number) => value.toString().padStart(2, '0');
+
+const toISODate = (date: Date) =>
+  `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`;
+
+const normalizeDate = (date: Date) => {
+  const normalized = new Date(date);
+  normalized.setHours(12, 0, 0, 0);
+  return normalized;
+};
+
+const createDateFromISO = (iso: string) => {
+  const [year, month, day] = iso.split('-').map(Number);
+  return normalizeDate(new Date(year, month - 1, day));
+};
+
 export default function MonthlyCalendar({
   selectedDate,
   onSelect,
   entriesMap,
   isLoading = false,
 }: MonthlyCalendarProps) {
-  const todayISO = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayISO = useMemo(() => toISODate(normalizeDate(new Date())), []);
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
-      return new Date(`${selectedDate}T00:00:00`);
+      return createDateFromISO(selectedDate);
     }
-    return new Date();
+    return normalizeDate(new Date());
   });
+
+  useEffect(() => {
+    if (!selectedDate) return;
+    setViewDate((prev) => {
+      const next = createDateFromISO(selectedDate);
+      if (prev.getFullYear() === next.getFullYear() && prev.getMonth() === next.getMonth()) {
+        return prev;
+      }
+      return next;
+    });
+  }, [selectedDate]);
 
   const calendarCells = useMemo(() => {
     const cells = [] as Array<{
@@ -56,7 +83,7 @@ export default function MonthlyCalendar({
       isToday: boolean;
     }>;
 
-    const firstOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+    const firstOfMonth = normalizeDate(new Date(viewDate.getFullYear(), viewDate.getMonth(), 1));
     const offset = (firstOfMonth.getDay() + 6) % 7; // start Monday
     const gridStart = new Date(firstOfMonth);
     gridStart.setDate(firstOfMonth.getDate() - offset);
@@ -68,14 +95,15 @@ export default function MonthlyCalendar({
     for (let i = 0; i < gridLength; i++) {
       const current = new Date(gridStart);
       current.setDate(gridStart.getDate() + i);
-      const iso = current.toISOString().split('T')[0];
+      const normalizedCurrent = normalizeDate(current);
+      const iso = toISODate(normalizedCurrent);
       const info = entriesMap[iso];
       cells.push({
         iso,
-        label: String(current.getDate()),
+        label: String(normalizedCurrent.getDate()),
         status: info?.status ?? 'missing',
         summary: info?.summary ?? '—',
-        isCurrentMonth: current.getMonth() === viewDate.getMonth(),
+        isCurrentMonth: normalizedCurrent.getMonth() === viewDate.getMonth(),
         isToday: iso === todayISO,
       });
     }
@@ -84,7 +112,9 @@ export default function MonthlyCalendar({
   }, [entriesMap, viewDate, todayISO]);
 
   const changeMonth = (delta: number) => {
-    setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    setViewDate((prev) =>
+      normalizeDate(new Date(prev.getFullYear(), prev.getMonth() + delta, 1)),
+    );
   };
 
   if (isLoading && !Object.keys(entriesMap).length) {
@@ -130,12 +160,17 @@ export default function MonthlyCalendar({
           <div className="mt-2 grid grid-cols-7 gap-2">
             {calendarCells.map((cell) => {
               const styles = statusAccent[cell.status];
+              const isSelected = cell.iso === selectedDate;
               return (
-                <div
+                <button
                   key={cell.iso}
-                  className={`relative flex min-h-[78px] flex-col rounded-2xl border px-2 py-2 text-left transition-all duration-200 text-xs ${
+                  type="button"
+                  onClick={() => onSelect(cell.iso)}
+                  className={`relative flex min-h-[78px] flex-col rounded-2xl border px-2 py-2 text-left transition-all duration-200 text-xs cursor-pointer hover:scale-105 ${
                     cell.isCurrentMonth ? 'bg-white/5' : 'bg-black/30 text-white/40'
-                  } ${cell.isToday ? 'border-emerald-400/70 ring-1 ring-emerald-300/50' : 'border-white/12'} ${styles}`}
+                  } ${cell.isToday ? 'border-emerald-400/70 ring-1 ring-emerald-300/50' : 'border-white/12'} ${
+                    isSelected ? 'ring-2 ring-blue-400/70 border-blue-400/50' : ''
+                  } ${styles}`}
                 >
                   <div className="flex items-center justify-between text-[11px]">
                     <span>{cell.label}</span>
@@ -149,7 +184,7 @@ export default function MonthlyCalendar({
                   }`}>
                     {STATUS_LABELS[cell.status]}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

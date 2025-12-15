@@ -132,6 +132,27 @@ function JournalContent() {
       .finally(() => setEntryLoading(false));
   }, [user, dateISO]);
 
+  const shiftDate = (isoDate: string, deltaDays: number) => {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    date.setUTCDate(date.getUTCDate() + deltaDays);
+    return date.toISOString().split('T')[0];
+  };
+
+  const navigateToDate = (targetISO: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('date', targetISO);
+    const query = params.toString();
+    router.push(query ? `/journal?${query}` : '/journal');
+  };
+
+  const goToPreviousDay = () => {
+    navigateToDate(shiftDate(dateISO, -1));
+  };
+
+  const goToNextDay = () => {
+    navigateToDate(shiftDate(dateISO, 1));
+  };
   const handleSaveEntry = async (entry: DailyEntry) => {
     if (!user) return;
     setIsSubmitting(true);
@@ -308,6 +329,8 @@ function JournalContent() {
           isSubmitting={isSubmitting}
           onError={setSubmitError}
           onSuccess={setSubmitMessage}
+          onGoPreviousDay={goToPreviousDay}
+          onGoNextDay={goToNextDay}
         />
       </div>
     </div>
