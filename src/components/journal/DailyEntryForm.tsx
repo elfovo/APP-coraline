@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { SimpleButton } from '@/components/buttons';
 import OutlineInput from '@/components/inputs/OutlineInput';
 import ElasticSlider from '@/components/ElasticSlider';
 import type { DailyEntry, SymptomEntry, MedicationEntry } from '@/types/journal';
 
-export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'perturbateurs';
+export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'activitesDouces' | 'perturbateurs';
+type SliderGroup = 'symptomes' | 'medicaments';
+type ActivityGroup = 'activites' | 'activitesDouces';
+
+const SLIDER_VISIBILITY_STORAGE = 'journal-slider-visibility';
+const ACTIVITY_VISIBILITY_STORAGE = 'journal-activity-visibility';
+const PERTURBATEUR_VISIBILITY_STORAGE = 'journal-perturbateur-visibility';
 
 interface DailyEntryFormProps {
   dateISO: string;
@@ -16,6 +23,8 @@ interface DailyEntryFormProps {
   isSubmitting?: boolean;
   onSave?: (entry: DailyEntry) => void | Promise<void>;
   onSaveDraft?: (entry: DailyEntry) => void | Promise<void>;
+  onError?: (message: string) => void;
+  onSuccess?: (message: string) => void;
 }
 
 const SYMPTOM_OPTIONS = [
@@ -25,23 +34,115 @@ const SYMPTOM_OPTIONS = [
   { id: 'humeur', label: 'Saut d’humeur' },
   { id: 'anxiete', label: 'Anxiété' },
   { id: 'nausees', label: 'Nausées' },
+  { id: 'vertiges', label: 'Vertiges' },
+  { id: 'etourdissements', label: 'Étourdissements' },
+  { id: 'photophobie', label: 'Sensibilité à la lumière' },
+  { id: 'phonophobie', label: 'Sensibilité au bruit' },
+  { id: 'acouphenes', label: 'Acouphènes' },
+  { id: 'raideurNuque', label: 'Raideur de la nuque' },
+  { id: 'douleurOculaire', label: 'Douleur oculaire' },
+  { id: 'confusion', label: 'Confusion mentale' },
+  { id: 'concentration', label: 'Difficultés de concentration' },
+  { id: 'irritabilite', label: 'Irritabilité' },
+  { id: 'pressionTete', label: 'Sensation de pression dans la tête' },
+  { id: 'douleurFaciale', label: 'Douleur faciale' },
+  { id: 'equilibre', label: 'Troubles de l\'équilibre' },
+  { id: 'teteLourde', label: 'Sensation de tête lourde' },
+  { id: 'brouillardMental', label: 'Brouillard mental' },
+  { id: 'sensibiliteMouvement', label: 'Sensibilité au mouvement' },
 ];
+
+const DEFAULT_VISIBLE_SYMPTOMS = new Set<string>([
+  'cephalee',
+  'fatigue',
+  'nausees',
+  'vertiges',
+  'photophobie',
+  'phonophobie',
+  'concentration',
+  'brouillardMental',
+  'equilibre',
+]);
 
 const MEDICATION_OPTIONS = [
   { id: 'analgesique', label: 'Analgésique' },
   { id: 'antiInflammatoire', label: 'Anti-inflammatoire' },
-  { id: 'repos', label: 'Repos guidé' },
-  { id: 'hydratation', label: 'Hydratation' },
-  { id: 'vestibulaire', label: 'Thérapie vestibulaire' },
+  { id: 'triptan', label: 'Triptan' },
+  { id: 'antinauseeux', label: 'Antinauséeux' },
+  { id: 'betaBloquant', label: 'Bêta-bloquant' },
+  { id: 'antidepresseur', label: 'Antidépresseur' },
+  { id: 'anticonvulsivant', label: 'Anticonvulsivant' },
+  { id: 'antihistaminique', label: 'Antihistaminique' },
+  { id: 'benzodiazepine', label: 'Benzodiazépine' },
+  { id: 'magnesium', label: 'Magnésium' },
+  { id: 'vitamineB2', label: 'Vitamine B2' },
+  { id: 'coenzymeQ10', label: 'Coenzyme Q10' },
 ];
 
+const DEFAULT_VISIBLE_MEDICATIONS = new Set<string>([
+  'analgesique',
+  'antiInflammatoire',
+  'antinauseeux',
+  'betaBloquant',
+  'magnesium',
+  'vitamineB2',
+]);
+
+const MEDICATION_INFO: Record<string, string> = {
+  analgesique: 'Médicament qui soulage la douleur (ex: paracétamol, aspirine).',
+  antiInflammatoire: 'Médicament qui réduit l\'inflammation et la douleur (ex: ibuprofène, naproxène).',
+  triptan: 'Médicament spécifique pour traiter les migraines aiguës (ex: sumatriptan, rizatriptan).',
+  antinauseeux: 'Médicament qui prévient ou traite les nausées et vomissements (ex: métoclopramide, dompéridone).',
+  betaBloquant: 'Médicament utilisé en prévention des migraines (ex: propranolol, métoprolol).',
+  antidepresseur: 'Médicament parfois prescrit en prévention des migraines chroniques (ex: amitriptyline).',
+  anticonvulsivant: 'Médicament utilisé en prévention des migraines (ex: topiramate, valproate).',
+  antihistaminique: 'Médicament utilisé pour les vertiges et troubles vestibulaires (ex: méclizine, dimenhydrinate).',
+  benzodiazepine: 'Médicament anxiolytique parfois utilisé pour l\'anxiété liée aux vertiges (ex: diazépam, lorazépam).',
+  magnesium: 'Supplément minéral qui peut aider à prévenir les migraines.',
+  vitamineB2: 'Vitamine (riboflavine) utilisée en prévention des migraines.',
+  coenzymeQ10: 'Antioxydant qui peut aider à réduire la fréquence des migraines.',
+};
+
 const ACTIVITY_OPTIONS = [
-  { id: 'marche', label: 'Marche légère' },
-  { id: 'respiration', label: 'Respiration guidée' },
-  { id: 'yoga', label: 'Yoga doux' },
+  { id: 'marche', label: 'Marche' },
+  { id: 'yoga', label: 'Yoga' },
   { id: 'lecture', label: 'Lecture' },
   { id: 'ecran', label: 'Ecrans < 30 min' },
+  { id: 'natation', label: 'Natation' },
+  { id: 'velo', label: 'Vélo' },
+  { id: 'etirements', label: 'Étirements' },
+  { id: 'jardinage', label: 'Jardinage' },
+  { id: 'cuisine', label: 'Cuisine' },
+  { id: 'bricolage', label: 'Bricolage' },
 ];
+
+const DEFAULT_VISIBLE_ACTIVITIES = new Set<string>([
+  'marche',
+  'yoga',
+  'lecture',
+  'ecran',
+]);
+
+const GENTLE_ACTIVITY_OPTIONS = [
+  { id: 'meditation', label: 'Méditation' },
+  { id: 'relaxation', label: 'Relaxation musculaire' },
+  { id: 'respiration', label: 'Respiration guidée' },
+  { id: 'musique', label: 'Musique apaisante' },
+  { id: 'bain', label: 'Bain chaud' },
+  { id: 'massage', label: 'Auto-massage' },
+  { id: 'aromatherapie', label: 'Aromathérapie' },
+  { id: 'acupuncture', label: 'Acupuncture' },
+  { id: 'osteopathie', label: 'Ostéopathie' },
+  { id: 'physiotherapie', label: 'Physiothérapie' },
+  { id: 'sophrologie', label: 'Sophrologie' },
+];
+
+const DEFAULT_VISIBLE_GENTLE_ACTIVITIES = new Set<string>([
+  'meditation',
+  'relaxation',
+  'respiration',
+  'musique',
+]);
 
 const PERTURBATEUR_OPTIONS = [
   'Lumière forte',
@@ -49,7 +150,33 @@ const PERTURBATEUR_OPTIONS = [
   'Stress',
   'Manque de sommeil',
   'Sur-stimulation',
+  'Odeurs fortes',
+  'Changements météo',
+  'Repas sauté',
+  'Déshydratation',
+  'Écrans prolongés',
+  'Conduite longue',
+  'Changements hormonaux',
+  'Alcool',
+  'Caféine excessive',
+  'Exercice intense',
+  'Chaleur excessive',
+  'Froid intense',
+  'Position prolongée',
 ];
+
+const DEFAULT_VISIBLE_PERTURBATEURS = new Set<string>([
+  'Lumière forte',
+  'Bruit élevé',
+  'Stress',
+  'Manque de sommeil',
+  'Sur-stimulation',
+  'Odeurs fortes',
+  'Changements météo',
+  'Repas sauté',
+  'Déshydratation',
+  'Écrans prolongés',
+]);
 
 const formatter = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'short',
@@ -62,12 +189,14 @@ const SectionCard = ({
   description,
   id,
   highlight,
+  actionButton,
   children,
 }: {
   title: string;
   description: string;
   id: SectionKey;
   highlight?: boolean;
+  actionButton?: React.ReactNode;
   children: React.ReactNode;
 }) => (
   <div
@@ -77,9 +206,12 @@ const SectionCard = ({
       highlight ? 'ring-2 ring-white/50' : '',
     ].join(' ')}
   >
-    <div className="flex flex-col gap-1 mb-4">
-      <p className="text-sm uppercase tracking-[0.3em] text-white/60">{title}</p>
-      <p className="text-white/80 text-sm">{description}</p>
+    <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex flex-col gap-1 flex-1">
+        <p className="text-sm uppercase tracking-[0.3em] text-white/60">{title}</p>
+        <p className="text-white/80 text-sm">{description}</p>
+      </div>
+      {actionButton && <div className="flex-shrink-0">{actionButton}</div>}
     </div>
     {children}
   </div>
@@ -96,6 +228,8 @@ export default function DailyEntryForm({
   isSubmitting,
   onSave,
   onSaveDraft,
+  onError,
+  onSuccess,
 }: DailyEntryFormProps) {
   const [symptoms, setSymptoms] = useState<Record<string, number>>(() =>
     buildBaseState(SYMPTOM_OPTIONS),
@@ -111,8 +245,57 @@ export default function DailyEntryForm({
   >([]);
   const [newActivityName, setNewActivityName] = useState('');
   const [newActivityDuration, setNewActivityDuration] = useState('');
+  const [gentleActivityMinutes, setGentleActivityMinutes] = useState<Record<string, number>>(
+    () => buildBaseState(GENTLE_ACTIVITY_OPTIONS),
+  );
+  const [customGentleActivities, setCustomGentleActivities] = useState<
+    { id: string; label: string; duration: number }[]
+  >([]);
+  const [newGentleActivityName, setNewGentleActivityName] = useState('');
+  const [newGentleActivityDuration, setNewGentleActivityDuration] = useState('');
   const [perturbateurs, setPerturbateurs] = useState<Set<string>>(new Set());
+  const [customPerturbateurs, setCustomPerturbateurs] = useState<string[]>([]);
+  const [newPerturbateurName, setNewPerturbateurName] = useState('');
   const [notes, setNotes] = useState('');
+  const [medicationInfoId, setMedicationInfoId] = useState<string | null>(null);
+  const [editingSliders, setEditingSliders] = useState(false);
+  const [hiddenSliders, setHiddenSliders] = useState<{
+    symptomes: Set<string>;
+    medicaments: Set<string>;
+  }>(() => ({
+    symptomes: new Set(
+      SYMPTOM_OPTIONS.filter((option) => !DEFAULT_VISIBLE_SYMPTOMS.has(option.id)).map(
+        (option) => option.id,
+      ),
+    ),
+    medicaments: new Set(
+      MEDICATION_OPTIONS.filter((option) => !DEFAULT_VISIBLE_MEDICATIONS.has(option.id)).map(
+        (option) => option.id,
+      ),
+    ),
+  }));
+  const [editingActivities, setEditingActivities] = useState(false);
+  const [hiddenActivities, setHiddenActivities] = useState<{
+    activites: Set<string>;
+    activitesDouces: Set<string>;
+  }>(() => ({
+    activites: new Set(
+      ACTIVITY_OPTIONS.filter((option) => !DEFAULT_VISIBLE_ACTIVITIES.has(option.id)).map(
+        (option) => option.id,
+      ),
+    ),
+    activitesDouces: new Set(
+      GENTLE_ACTIVITY_OPTIONS.filter((option) => !DEFAULT_VISIBLE_GENTLE_ACTIVITIES.has(option.id)).map(
+        (option) => option.id,
+      ),
+    ),
+  }));
+  const [editingPerturbateurs, setEditingPerturbateurs] = useState(false);
+  const [hiddenPerturbateurs, setHiddenPerturbateurs] = useState<Set<string>>(
+    () => new Set(
+      PERTURBATEUR_OPTIONS.filter((item) => !DEFAULT_VISIBLE_PERTURBATEURS.has(item)),
+    ),
+  );
 
   useEffect(() => {
     if (!initialEntry) {
@@ -120,6 +303,8 @@ export default function DailyEntryForm({
       setMedications(buildBaseState(MEDICATION_OPTIONS));
       setActivityMinutes(buildBaseState(ACTIVITY_OPTIONS));
       setCustomActivities([]);
+      setGentleActivityMinutes(buildBaseState(GENTLE_ACTIVITY_OPTIONS));
+      setCustomGentleActivities([]);
       setPerturbateurs(new Set());
       setNotes('');
       return;
@@ -147,7 +332,7 @@ export default function DailyEntryForm({
 
     setCustomActivities(
       initialEntry.activities
-        .filter((activity) => activity.custom)
+        .filter((activity) => activity.custom && !activity.id.startsWith('gentle_'))
         .map((activity) => ({
           id: activity.id,
           label: activity.label,
@@ -155,9 +340,105 @@ export default function DailyEntryForm({
         })),
     );
 
-    setPerturbateurs(new Set(initialEntry.perturbateurs));
+    const gentleActivityState = buildBaseState(GENTLE_ACTIVITY_OPTIONS);
+    initialEntry.activities
+      .filter((activity) => !activity.custom && GENTLE_ACTIVITY_OPTIONS.some(opt => opt.id === activity.id))
+      .forEach((activity) => {
+        gentleActivityState[activity.id] = activity.duration;
+      });
+    setGentleActivityMinutes(gentleActivityState);
+
+    setCustomGentleActivities(
+      initialEntry.activities
+        .filter((activity) => activity.custom && activity.id.startsWith('gentle_'))
+        .map((activity) => ({
+          id: activity.id.replace(/^gentle_/, ''),
+          label: activity.label,
+          duration: activity.duration,
+        })),
+    );
+
+    const allPerturbateurs = initialEntry.perturbateurs || [];
+    const standardPerturbateurs = allPerturbateurs.filter((p) =>
+      PERTURBATEUR_OPTIONS.includes(p),
+    );
+    const customPerturbateursLoaded = allPerturbateurs.filter(
+      (p) => !PERTURBATEUR_OPTIONS.includes(p),
+    );
+    // Les perturbateurs personnalisés qui étaient sélectionnés doivent aussi être dans le set
+    setPerturbateurs(new Set([...standardPerturbateurs, ...customPerturbateursLoaded]));
+    setCustomPerturbateurs(customPerturbateursLoaded);
     setNotes(initialEntry.notes ?? '');
   }, [initialEntry]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Record<SliderGroup, string[]>>;
+        setHiddenSliders({
+          symptomes: new Set(parsed.symptomes ?? []),
+          medicaments: new Set(parsed.medicaments ?? []),
+        });
+      }
+    } catch (error) {
+      console.warn('Impossible de charger les préférences de sliders', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload = {
+      symptomes: Array.from(hiddenSliders.symptomes),
+      medicaments: Array.from(hiddenSliders.medicaments),
+    };
+    window.localStorage.setItem(SLIDER_VISIBILITY_STORAGE, JSON.stringify(payload));
+  }, [hiddenSliders]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Partial<Record<ActivityGroup, string[]>>;
+        setHiddenActivities({
+          activites: new Set(parsed.activites ?? []),
+          activitesDouces: new Set(parsed.activitesDouces ?? []),
+        });
+      }
+    } catch (error) {
+      console.warn('Impossible de charger les préférences d\'activités', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload = {
+      activites: Array.from(hiddenActivities.activites),
+      activitesDouces: Array.from(hiddenActivities.activitesDouces),
+    };
+    window.localStorage.setItem(ACTIVITY_VISIBILITY_STORAGE, JSON.stringify(payload));
+  }, [hiddenActivities]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
+      if (raw) {
+        const parsed = JSON.parse(raw) as string[];
+        setHiddenPerturbateurs(new Set(parsed));
+      }
+    } catch (error) {
+      console.warn('Impossible de charger les préférences de perturbateurs', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload = Array.from(hiddenPerturbateurs);
+    window.localStorage.setItem(PERTURBATEUR_VISIBILITY_STORAGE, JSON.stringify(payload));
+  }, [hiddenPerturbateurs]);
 
   const symptomTotal = useMemo(
     () => Object.values(symptoms).reduce((acc, value) => acc + value, 0),
@@ -173,10 +454,27 @@ export default function DailyEntryForm({
     return base + custom;
   }, [activityMinutes, customActivities]);
 
+  const gentleActivityTotal = useMemo(() => {
+    const base = Object.values(gentleActivityMinutes).reduce(
+      (acc, value) => acc + value,
+      0,
+    );
+    const custom = customGentleActivities.reduce((acc, item) => acc + item.duration, 0);
+    return base + custom;
+  }, [gentleActivityMinutes, customGentleActivities]);
+
   const handleAddCustomActivity = () => {
     const name = newActivityName.trim();
-    const duration = Number(newActivityDuration);
-    if (!name || Number.isNaN(duration) || duration <= 0) return;
+    if (!name) {
+      onError?.('Veuillez saisir un nom pour l\'activité');
+      return;
+    }
+
+    const duration = newActivityDuration.trim() === '' ? 0 : Number(newActivityDuration);
+    if (Number.isNaN(duration) || duration < 0) {
+      onError?.('La durée doit être un nombre valide (≥ 0)');
+      return;
+    }
 
     setCustomActivities((prev) => [
       ...prev,
@@ -184,6 +482,107 @@ export default function DailyEntryForm({
     ]);
     setNewActivityName('');
     setNewActivityDuration('');
+    onSuccess?.('Activité ajoutée avec succès');
+  };
+
+  const handleRemoveCustomActivity = (id: string) => {
+    setCustomActivities((prev) => prev.filter((activity) => activity.id !== id));
+  };
+
+  const handleAddCustomGentleActivity = () => {
+    const name = newGentleActivityName.trim();
+    if (!name) {
+      onError?.('Veuillez saisir un nom pour l\'activité');
+      return;
+    }
+
+    const duration = newGentleActivityDuration.trim() === '' ? 0 : Number(newGentleActivityDuration);
+    if (Number.isNaN(duration) || duration < 0) {
+      onError?.('La durée doit être un nombre valide (≥ 0)');
+      return;
+    }
+
+    setCustomGentleActivities((prev) => [
+      ...prev,
+      { id: `${Date.now()}-${name}`, label: name, duration },
+    ]);
+    setNewGentleActivityName('');
+    setNewGentleActivityDuration('');
+    onSuccess?.('Activité douce ajoutée avec succès');
+  };
+
+  const handleRemoveCustomGentleActivity = (id: string) => {
+    setCustomGentleActivities((prev) => prev.filter((activity) => activity.id !== id));
+  };
+
+  const handleAddCustomPerturbateur = () => {
+    const name = newPerturbateurName.trim();
+    if (!name) {
+      onError?.('Veuillez saisir un nom pour l\'élément perturbateur');
+      return;
+    }
+
+    // Vérifier si le perturbateur existe déjà (standard ou personnalisé)
+    if (PERTURBATEUR_OPTIONS.includes(name) || customPerturbateurs.includes(name)) {
+      onError?.('Cet élément perturbateur existe déjà');
+      return;
+    }
+
+    setCustomPerturbateurs((prev) => [...prev, name]);
+    setNewPerturbateurName('');
+    onSuccess?.('Élément perturbateur ajouté avec succès');
+  };
+
+  const handleRemoveCustomPerturbateur = (name: string) => {
+    setCustomPerturbateurs((prev) => prev.filter((p) => p !== name));
+    // Retirer aussi du set des perturbateurs sélectionnés si présent
+    setPerturbateurs((prev) => {
+      const next = new Set(prev);
+      next.delete(name);
+      return next;
+    });
+  };
+
+  const toggleSliderVisibility = (group: SliderGroup, id: string) => {
+    setHiddenSliders((prev) => {
+      const nextGroup = new Set(prev[group]);
+      if (nextGroup.has(id)) {
+        nextGroup.delete(id);
+      } else {
+        nextGroup.add(id);
+      }
+      return {
+        ...prev,
+        [group]: nextGroup,
+      };
+    });
+  };
+
+  const toggleActivityVisibility = (group: ActivityGroup, id: string) => {
+    setHiddenActivities((prev) => {
+      const nextGroup = new Set(prev[group]);
+      if (nextGroup.has(id)) {
+        nextGroup.delete(id);
+      } else {
+        nextGroup.add(id);
+      }
+      return {
+        ...prev,
+        [group]: nextGroup,
+      };
+    });
+  };
+
+  const togglePerturbateurVisibility = (item: string) => {
+    setHiddenPerturbateurs((prev) => {
+      const next = new Set(prev);
+      if (next.has(item)) {
+        next.delete(item);
+      } else {
+        next.add(item);
+      }
+      return next;
+    });
   };
 
   const togglePerturbateur = (item: string) => {
@@ -228,7 +627,21 @@ export default function DailyEntryForm({
         custom: true as const,
       }));
 
-      return [...baseActivities, ...custom];
+      const baseGentleActivities = GENTLE_ACTIVITY_OPTIONS.map((option) => ({
+        id: option.id,
+        label: option.label,
+        duration: gentleActivityMinutes[option.id] ?? 0,
+        custom: false as const,
+      })).filter((item) => item.duration > 0);
+
+      const customGentle = customGentleActivities.map((activity) => ({
+        id: `gentle_${activity.id}`,
+        label: activity.label,
+        duration: activity.duration,
+        custom: true as const,
+      }));
+
+      return [...baseActivities, ...custom, ...baseGentleActivities, ...customGentle];
     };
 
     const baseEntry: DailyEntry = {
@@ -274,41 +687,100 @@ export default function DailyEntryForm({
         </p>
       </div>
 
+
       <SectionCard
         id="symptomes"
         title="Symptômes (1-6)"
         description="Indique l’intensité ressentie pour chaque symptôme (0 = non ressenti)."
         highlight={initialSection === 'symptomes'}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {SYMPTOM_OPTIONS.map((option) => (
-            <div
-              key={option.id}
-              className="bg-black/30 border border-white/5 rounded-2xl p-4"
+        actionButton={
+          <button
+            type="button"
+            onClick={() => setEditingSliders((prev) => !prev)}
+            className={[
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+              editingSliders
+                ? 'bg-white/20 border-2 border-white/50 text-white'
+                : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
+            ].join(' ')}
+            title={editingSliders ? 'Terminer le mode édition' : 'Mode édition des curseurs'}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-white font-medium">{option.label}</p>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        }
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {SYMPTOM_OPTIONS.map((option) => {
+            const isHidden = hiddenSliders.symptomes.has(option.id);
+            if (!editingSliders && isHidden) {
+              return null;
+            }
+            return (
+              <div
+                key={option.id}
+                className={[
+                  'bg-black/30 border border-white/5 rounded-2xl p-4 transition-opacity duration-200',
+                  editingSliders && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-white font-medium">{option.label}</p>
+                  <div className="flex items-center gap-2">
+                    {!editingSliders && (
+                      <span className="text-white/70 text-sm font-medium">
+                        {Math.round(symptoms[option.id] ?? 0)}/6
+                      </span>
+                    )}
+                    {editingSliders && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSliderVisibility('symptomes', option.id)}
+                        className={[
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          isHidden
+                            ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
+                            : 'border-white/30 text-white/80 hover:bg-white/10',
+                        ].join(' ')}
+                      >
+                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ElasticSlider
+                  min={0}
+                  max={6}
+                  step={1}
+                  value={symptoms[option.id]}
+                  onChange={(newValue: number) =>
+                    setSymptoms((prev) => ({
+                      ...prev,
+                      [option.id]: Math.round(newValue),
+                    }))
+                  }
+                  className={`mt-4 ${editingSliders ? 'pointer-events-none opacity-60' : ''}`}
+                  trackColor="rgba(236,72,153,0.25)"
+                  rangeColor="linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(168,85,247,1) 100%)"
+                  labelFormatter={() => ''}
+                  leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
+                  rightIcon={<span className="text-white/60 text-xs">6</span> as React.ReactNode}
+                />
               </div>
-              <ElasticSlider
-                min={0}
-                max={6}
-                step={1}
-                value={symptoms[option.id]}
-                onChange={(newValue: number) =>
-                  setSymptoms((prev) => ({
-                    ...prev,
-                    [option.id]: Math.round(newValue),
-                  }))
-                }
-                className="mt-4"
-                trackColor="rgba(236,72,153,0.25)"
-                rangeColor="linear-gradient(90deg, rgba(236,72,153,1) 0%, rgba(168,85,247,1) 100%)"
-                labelFormatter={(val: number) => `${Math.round(val)}/6`}
-                leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
-                rightIcon={<span className="text-white/60 text-xs">6</span> as React.ReactNode}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="text-white/70 text-sm mt-4">
           Total du jour : <span className="text-white">{symptomTotal}/132</span>
@@ -317,39 +789,107 @@ export default function DailyEntryForm({
 
       <SectionCard
         id="medicaments"
-        title="Médicaments / Thérapies (1-10)"
-        description="Valide ce que tu as pris / réalisé et ajuste l’intensité (observance)."
+        title="Médicaments (1-10)"
+        description="Valide ce que tu as pris et ajuste (0 = aucune prise)."
         highlight={initialSection === 'medicaments'}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {MEDICATION_OPTIONS.map((option) => (
-            <div
-              key={option.id}
-              className="bg-black/30 border border-white/5 rounded-2xl p-4"
+        actionButton={
+          <button
+            type="button"
+            onClick={() => setEditingSliders((prev) => !prev)}
+            className={[
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+              editingSliders
+                ? 'bg-white/20 border-2 border-white/50 text-white'
+                : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
+            ].join(' ')}
+            title={editingSliders ? 'Terminer le mode édition' : 'Mode édition des curseurs'}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <div className="flex items-center justify-between">
-                <p className="text-white font-medium">{option.label}</p>
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        }
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {MEDICATION_OPTIONS.map((option) => {
+            const isHidden = hiddenSliders.medicaments.has(option.id);
+            if (!editingSliders && isHidden) {
+              return null;
+            }
+            return (
+              <div
+                key={option.id}
+                className={[
+                  'bg-black/30 border border-white/5 rounded-2xl p-4 transition-opacity duration-200',
+                  editingSliders && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-white font-medium">{option.label}</p>
+                  <div className="flex items-center gap-2">
+                    {!editingSliders && (
+                      <>
+                        <span className="text-white/70 text-sm font-medium">
+                          {Math.round(medications[option.id] ?? 0)}/10
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setMedicationInfoId(option.id)}
+                          className="flex-shrink-0 w-4 h-4 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 text-[10px] font-semibold"
+                          title="Information"
+                        >
+                          i
+                        </button>
+                      </>
+                    )}
+                    {editingSliders && (
+                      <button
+                        type="button"
+                        onClick={() => toggleSliderVisibility('medicaments', option.id)}
+                        className={[
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          isHidden
+                            ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
+                            : 'border-white/30 text-white/80 hover:bg-white/10',
+                        ].join(' ')}
+                      >
+                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <ElasticSlider
+                  min={0}
+                  max={10}
+                  step={1}
+                  value={medications[option.id]}
+                  onChange={(newValue: number) =>
+                    setMedications((prev) => ({
+                      ...prev,
+                      [option.id]: Math.round(newValue),
+                    }))
+                  }
+                  className={`mt-4 ${editingSliders ? 'pointer-events-none opacity-60' : ''}`}
+                  trackColor="rgba(59,130,246,0.25)"
+                  rangeColor="linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(14,165,233,1) 100%)"
+                  labelFormatter={() => ''}
+                  leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
+                  rightIcon={<span className="text-white/60 text-xs">10</span> as React.ReactNode}
+                />
               </div>
-              <ElasticSlider
-                min={0}
-                max={10}
-                step={1}
-                value={medications[option.id]}
-                onChange={(newValue: number) =>
-                  setMedications((prev) => ({
-                    ...prev,
-                    [option.id]: Math.round(newValue),
-                  }))
-                }
-                className="mt-4"
-                trackColor="rgba(59,130,246,0.25)"
-                rangeColor="linear-gradient(90deg, rgba(59,130,246,1) 0%, rgba(14,165,233,1) 100%)"
-                labelFormatter={(val: number) => `${Math.round(val)}/10`}
-                leftIcon={<span className="text-white/60 text-xs">0</span> as React.ReactNode}
-                rightIcon={<span className="text-white/60 text-xs">10</span> as React.ReactNode}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </SectionCard>
 
@@ -358,38 +898,136 @@ export default function DailyEntryForm({
         title="Activités & temps effectué"
         description="Note la durée (en minutes) pour chaque activité."
         highlight={initialSection === 'activites'}
+        actionButton={
+          <button
+            type="button"
+            onClick={() => setEditingActivities((prev) => !prev)}
+            className={[
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+              editingActivities
+                ? 'bg-white/20 border-2 border-white/50 text-white'
+                : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
+            ].join(' ')}
+            title={editingActivities ? 'Terminer le mode édition' : 'Mode édition des activités'}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        }
       >
-        <div className="space-y-4">
-          {ACTIVITY_OPTIONS.map((option) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {ACTIVITY_OPTIONS.map((option) => {
+            const isHidden = hiddenActivities.activites.has(option.id);
+            if (!editingActivities && isHidden) {
+              return null;
+            }
+            return (
+              <div
+                key={option.id}
+                className={[
+                  'bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3 transition-opacity duration-200',
+                  editingActivities && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-medium">{option.label}</p>
+                  <div className="flex items-center gap-2">
+                    {!editingActivities && (
+                      <span className="text-white/70 text-sm">
+                        {activityMinutes[option.id]} min
+                      </span>
+                    )}
+                    {editingActivities && (
+                      <button
+                        type="button"
+                        onClick={() => toggleActivityVisibility('activites', option.id)}
+                        className={[
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          isHidden
+                            ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
+                            : 'border-white/30 text-white/80 hover:bg-white/10',
+                        ].join(' ')}
+                      >
+                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <OutlineInput
+                  type="number"
+                  min={0}
+                  placeholder="Durée en minutes"
+                  value={activityMinutes[option.id] ? String(activityMinutes[option.id]) : ''}
+                  onChange={(event) =>
+                    setActivityMinutes((prev) => ({
+                      ...prev,
+                      [option.id]: Number(event.target.value),
+                    }))
+                  }
+                  variant="white"
+                  size="md"
+                  disabled={editingActivities}
+                  className={editingActivities ? 'opacity-60 pointer-events-none' : ''}
+                />
+              </div>
+            );
+          })}
+
+          {customActivities.map((activity) => (
             <div
-              key={option.id}
+              key={activity.id}
               className="bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3"
             >
               <div className="flex items-center justify-between">
-                <p className="text-white font-medium">{option.label}</p>
-                <span className="text-white/70 text-sm">
-                  {activityMinutes[option.id]} min
-                </span>
+                <p className="text-white font-medium">{activity.label}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/70 text-sm">
+                    {activity.duration} min
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCustomActivity(activity.id)}
+                    className="text-white/60 hover:text-white transition-colors text-lg leading-none"
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
               <OutlineInput
                 type="number"
                 min={0}
                 placeholder="Durée en minutes"
-                value={activityMinutes[option.id] ? String(activityMinutes[option.id]) : ''}
-                onChange={(event) =>
-                  setActivityMinutes((prev) => ({
-                    ...prev,
-                    [option.id]: Number(event.target.value),
-                  }))
-                }
+                value={activity.duration ? String(activity.duration) : ''}
+                onChange={(event) => {
+                  const newDuration = Number(event.target.value);
+                  setCustomActivities((prev) =>
+                    prev.map((a) =>
+                      a.id === activity.id ? { ...a, duration: newDuration } : a,
+                    ),
+                  );
+                }}
                 variant="white"
                 size="md"
               />
             </div>
           ))}
 
-          <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3">
-            <p className="text-white font-medium">Ajouter une activité perso</p>
+          {editingActivities && (
+            <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
+              <p className="text-white font-medium">Ajouter une activité perso</p>
             <div className="flex flex-col md:flex-row gap-3">
               <OutlineInput
                 placeholder="Nom de l’activité"
@@ -412,19 +1050,8 @@ export default function DailyEntryForm({
                 Ajouter
               </SimpleButton>
             </div>
-            {customActivities.length > 0 && (
-              <div className="flex flex-wrap gap-3 mt-2">
-                {customActivities.map((activity) => (
-                  <span
-                    key={activity.id}
-                    className="px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/80 text-sm"
-                  >
-                    {activity.label} · {activity.duration} min
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <p className="text-white/70 text-sm mt-4">
           Total temps actif :{' '}
@@ -433,31 +1060,297 @@ export default function DailyEntryForm({
       </SectionCard>
 
       <SectionCard
+        id="activitesDouces"
+        title="Activités douces & thérapies"
+        description="Note la durée (en minutes) pour chaque activité douce ou séance de thérapie."
+        highlight={initialSection === 'activitesDouces'}
+        actionButton={
+          <button
+            type="button"
+            onClick={() => setEditingActivities((prev) => !prev)}
+            className={[
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+              editingActivities
+                ? 'bg-white/20 border-2 border-white/50 text-white'
+                : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
+            ].join(' ')}
+            title={editingActivities ? 'Terminer le mode édition' : 'Mode édition des activités'}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        }
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {GENTLE_ACTIVITY_OPTIONS.map((option) => {
+            const isHidden = hiddenActivities.activitesDouces.has(option.id);
+            if (!editingActivities && isHidden) {
+              return null;
+            }
+            return (
+              <div
+                key={option.id}
+                className={[
+                  'bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3 transition-opacity duration-200',
+                  editingActivities && isHidden ? 'opacity-40 border-dashed border-white/20' : '',
+                ].join(' ')}
+              >
+                <div className="flex items-center justify-between">
+                  <p className="text-white font-medium">{option.label}</p>
+                  <div className="flex items-center gap-2">
+                    {!editingActivities && (
+                      <span className="text-white/70 text-sm">
+                        {gentleActivityMinutes[option.id]} min
+                      </span>
+                    )}
+                    {editingActivities && (
+                      <button
+                        type="button"
+                        onClick={() => toggleActivityVisibility('activitesDouces', option.id)}
+                        className={[
+                          'px-2 py-1 rounded-full text-xs border transition-colors duration-200',
+                          isHidden
+                            ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
+                            : 'border-white/30 text-white/80 hover:bg-white/10',
+                        ].join(' ')}
+                      >
+                        {isHidden ? 'Ré-afficher' : 'Masquer'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <OutlineInput
+                  type="number"
+                  min={0}
+                  placeholder="Durée en minutes"
+                  value={gentleActivityMinutes[option.id] ? String(gentleActivityMinutes[option.id]) : ''}
+                  onChange={(event) =>
+                    setGentleActivityMinutes((prev) => ({
+                      ...prev,
+                      [option.id]: Number(event.target.value),
+                    }))
+                  }
+                  variant="white"
+                  size="md"
+                  disabled={editingActivities}
+                  className={editingActivities ? 'opacity-60 pointer-events-none' : ''}
+                />
+              </div>
+            );
+          })}
+
+          {customGentleActivities.map((activity) => (
+            <div
+              key={activity.id}
+              className="bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-white font-medium">{activity.label}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-white/70 text-sm">
+                    {activity.duration} min
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCustomGentleActivity(activity.id)}
+                    className="text-white/60 hover:text-white transition-colors text-lg leading-none"
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <OutlineInput
+                type="number"
+                min={0}
+                placeholder="Durée en minutes"
+                value={activity.duration ? String(activity.duration) : ''}
+                onChange={(event) => {
+                  const newDuration = Number(event.target.value);
+                  setCustomGentleActivities((prev) =>
+                    prev.map((a) =>
+                      a.id === activity.id ? { ...a, duration: newDuration } : a,
+                    ),
+                  );
+                }}
+                variant="white"
+                size="md"
+              />
+            </div>
+          ))}
+
+          {editingActivities && (
+            <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
+              <p className="text-white font-medium">Ajouter une activité douce / thérapie perso</p>
+            <div className="flex flex-col md:flex-row gap-3">
+              <OutlineInput
+                placeholder="Nom de l'activité"
+                value={newGentleActivityName}
+                onChange={(event) => setNewGentleActivityName(event.target.value)}
+                variant="white"
+                size="md"
+                className="flex-1"
+              />
+              <OutlineInput
+                placeholder="Durée (min)"
+                type="number"
+                value={newGentleActivityDuration}
+                onChange={(event) => setNewGentleActivityDuration(event.target.value)}
+                variant="white"
+                size="md"
+                className="flex-1"
+              />
+              <SimpleButton type="button" onClick={handleAddCustomGentleActivity}>
+                Ajouter
+              </SimpleButton>
+            </div>
+            </div>
+          )}
+        </div>
+        <p className="text-white/70 text-sm mt-4">
+          Total temps activités douces :{' '}
+          <span className="text-white font-semibold">{gentleActivityTotal} min</span>
+        </p>
+      </SectionCard>
+
+      <SectionCard
         id="perturbateurs"
         title="Éléments perturbateurs"
         description="Sélectionne les facteurs déclencheurs identifiés."
         highlight={initialSection === 'perturbateurs'}
+        actionButton={
+          <button
+            type="button"
+            onClick={() => setEditingPerturbateurs((prev) => !prev)}
+            className={[
+              'w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200',
+              editingPerturbateurs
+                ? 'bg-white/20 border-2 border-white/50 text-white'
+                : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
+            ].join(' ')}
+            title={editingPerturbateurs ? 'Terminer le mode édition' : 'Mode édition des perturbateurs'}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+            </svg>
+          </button>
+        }
       >
         <div className="flex flex-wrap gap-3">
           {PERTURBATEUR_OPTIONS.map((item) => {
+            const isHidden = hiddenPerturbateurs.has(item);
+            if (!editingPerturbateurs && isHidden) {
+              return null;
+            }
             const isActive = perturbateurs.has(item);
             return (
-              <button
-                type="button"
-                key={item}
-                onClick={() => togglePerturbateur(item)}
-                className={[
-                  'px-4 py-2 rounded-full border transition-all duration-200 text-sm',
-                  isActive
-                    ? 'bg-white text-black border-white shadow-lg'
-                    : 'bg-transparent border-white/30 text-white/70 hover:text-white',
-                ].join(' ')}
-              >
-                {item}
-              </button>
+              <div key={item} className="relative">
+                <button
+                  type="button"
+                  onClick={() => !editingPerturbateurs && togglePerturbateur(item)}
+                  disabled={editingPerturbateurs}
+                  className={[
+                    'px-4 py-2 rounded-full border transition-all duration-200 text-sm',
+                    editingPerturbateurs && isHidden
+                      ? 'opacity-40 border-dashed border-white/20 bg-transparent text-white/70'
+                      : isActive
+                      ? 'bg-white text-black border-white shadow-lg'
+                      : 'bg-transparent border-white/30 text-white/70 hover:text-white',
+                    editingPerturbateurs && !isHidden ? 'opacity-60 pointer-events-none' : '',
+                  ].join(' ')}
+                >
+                  {item}
+                </button>
+                {editingPerturbateurs && (
+                  <button
+                    type="button"
+                    onClick={() => togglePerturbateurVisibility(item)}
+                    className={[
+                      'absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs border transition-colors duration-200 bg-black/80 backdrop-blur-sm',
+                      isHidden
+                        ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
+                        : 'border-white/30 text-white/80 hover:bg-white/10',
+                    ].join(' ')}
+                  >
+                    {isHidden ? 'Ré-afficher' : 'Masquer'}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {customPerturbateurs.map((item) => {
+            const isActive = perturbateurs.has(item);
+            return (
+              <div key={item} className="relative">
+                <button
+                  type="button"
+                  onClick={() => !editingPerturbateurs && togglePerturbateur(item)}
+                  disabled={editingPerturbateurs}
+                  className={[
+                    'px-4 py-2 rounded-full border transition-all duration-200 text-sm',
+                    isActive
+                      ? 'bg-white text-black border-white shadow-lg'
+                      : 'bg-transparent border-white/30 text-white/70 hover:text-white',
+                    editingPerturbateurs ? 'opacity-60 pointer-events-none' : '',
+                  ].join(' ')}
+                >
+                  {item}
+                </button>
+                {editingPerturbateurs && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCustomPerturbateur(item)}
+                    className="absolute -top-2 -right-2 px-2 py-1 rounded-full text-xs border transition-colors duration-200 bg-black/80 backdrop-blur-sm border-red-300/60 text-red-200 hover:bg-red-300/10"
+                    title="Supprimer"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
+        {editingPerturbateurs && (
+          <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 mt-4">
+            <p className="text-white font-medium">Ajouter un élément perturbateur perso</p>
+            <div className="flex flex-col md:flex-row gap-3">
+              <OutlineInput
+                placeholder="Nom de l'élément perturbateur"
+                value={newPerturbateurName}
+                onChange={(event) => setNewPerturbateurName(event.target.value)}
+                variant="white"
+                size="md"
+                className="flex-1"
+              />
+              <SimpleButton type="button" onClick={handleAddCustomPerturbateur}>
+                Ajouter
+              </SimpleButton>
+            </div>
+          </div>
+        )}
       </SectionCard>
 
       <div>
@@ -487,6 +1380,42 @@ export default function DailyEntryForm({
           {isSubmitting ? 'Enregistrement...' : 'Enregistrer la journée'}
         </SimpleButton>
       </div>
+
+      <AnimatePresence>
+        {medicationInfoId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMedicationInfoId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white/10 border border-white/20 rounded-3xl p-6 max-w-md w-full backdrop-blur-md"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <h3 className="text-xl font-semibold text-white">
+                  {MEDICATION_OPTIONS.find((m) => m.id === medicationInfoId)?.label}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setMedicationInfoId(null)}
+                  className="text-white/70 hover:text-white transition-colors text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-white/80 text-sm leading-relaxed">
+                {MEDICATION_INFO[medicationInfoId] || 'Information non disponible.'}
+              </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </form>
   );
 }

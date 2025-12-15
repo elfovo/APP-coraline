@@ -16,14 +16,37 @@ const SEED_SYMPTOMS = [
   { id: 'humeur', label: 'Saut d’humeur' },
   { id: 'anxiete', label: 'Anxiété' },
   { id: 'nausees', label: 'Nausées' },
+  { id: 'vertiges', label: 'Vertiges' },
+  { id: 'etourdissements', label: 'Étourdissements' },
+  { id: 'photophobie', label: 'Sensibilité à la lumière' },
+  { id: 'phonophobie', label: 'Sensibilité au bruit' },
+  { id: 'acouphenes', label: 'Acouphènes' },
+  { id: 'raideurNuque', label: 'Raideur de la nuque' },
+  { id: 'douleurOculaire', label: 'Douleur oculaire' },
+  { id: 'confusion', label: 'Confusion mentale' },
+  { id: 'concentration', label: 'Difficultés de concentration' },
+  { id: 'irritabilite', label: 'Irritabilité' },
+  { id: 'pressionTete', label: 'Sensation de pression dans la tête' },
+  { id: 'douleurFaciale', label: 'Douleur faciale' },
+  { id: 'equilibre', label: 'Troubles de l\'équilibre' },
+  { id: 'teteLourde', label: 'Sensation de tête lourde' },
+  { id: 'brouillardMental', label: 'Brouillard mental' },
+  { id: 'sensibiliteMouvement', label: 'Sensibilité au mouvement' },
 ] as const;
 
 const SEED_MEDICATIONS = [
   { id: 'analgesique', label: 'Analgésique' },
   { id: 'antiInflammatoire', label: 'Anti-inflammatoire' },
-  { id: 'repos', label: 'Repos guidé' },
-  { id: 'hydratation', label: 'Hydratation' },
-  { id: 'vestibulaire', label: 'Thérapie vestibulaire' },
+  { id: 'triptan', label: 'Triptan' },
+  { id: 'antinauseeux', label: 'Antinauséeux' },
+  { id: 'betaBloquant', label: 'Bêta-bloquant' },
+  { id: 'antidepresseur', label: 'Antidépresseur' },
+  { id: 'anticonvulsivant', label: 'Anticonvulsivant' },
+  { id: 'antihistaminique', label: 'Antihistaminique' },
+  { id: 'benzodiazepine', label: 'Benzodiazépine' },
+  { id: 'magnesium', label: 'Magnésium' },
+  { id: 'vitamineB2', label: 'Vitamine B2' },
+  { id: 'coenzymeQ10', label: 'Coenzyme Q10' },
 ] as const;
 
 const SEED_ACTIVITIES = [
@@ -40,6 +63,19 @@ const SEED_PERTURBATEURS = [
   'Stress',
   'Manque de sommeil',
   'Sur-stimulation',
+  'Odeurs fortes',
+  'Changements météo',
+  'Repas sauté',
+  'Déshydratation',
+  'Écrans prolongés',
+  'Conduite longue',
+  'Changements hormonaux',
+  'Alcool',
+  'Caféine excessive',
+  'Exercice intense',
+  'Chaleur excessive',
+  'Froid intense',
+  'Position prolongée',
 ] as const;
 
 const seedDateFormatter = new Intl.DateTimeFormat('fr-FR', {
@@ -270,6 +306,8 @@ function JournalContent() {
           onSave={handleSaveEntry}
           onSaveDraft={handleSaveEntry}
           isSubmitting={isSubmitting}
+          onError={setSubmitError}
+          onSuccess={setSubmitMessage}
         />
       </div>
     </div>
