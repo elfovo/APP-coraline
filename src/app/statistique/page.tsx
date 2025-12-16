@@ -9,6 +9,8 @@ import TrendChart, {
 } from '@/components/dashboard/TrendChart';
 import type { DailyEntry } from '@/types/journal';
 import { listenRecentEntries } from '@/lib/firestoreEntries';
+import { getDbInstance } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const GENTLE_ACTIVITY_IDS = new Set([
   'meditation',
@@ -58,11 +60,12 @@ export default function StatistiquePage() {
   const [entriesLoading, setEntriesLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [detailCategory, setDetailCategory] = useState<DetailCategory>('symptomScore');
-  const [symptomChartPeriod, setSymptomChartPeriod] = useState<7 | 30 | 90 | 360>(7);
-  const [activityChartPeriod, setActivityChartPeriod] = useState<7 | 30 | 90 | 360>(7);
-  const [medicationChartPeriod, setMedicationChartPeriod] = useState<7 | 30 | 90 | 360>(7);
-  const [perturbateurChartPeriod, setPerturbateurChartPeriod] = useState<7 | 30 | 90 | 360>(7);
-  const [gentleActivityChartPeriod, setGentleActivityChartPeriod] = useState<7 | 30 | 90 | 360>(7);
+  const [daysSinceAccident, setDaysSinceAccident] = useState<number | null>(null);
+  const [symptomChartPeriod, setSymptomChartPeriod] = useState<number>(7);
+  const [activityChartPeriod, setActivityChartPeriod] = useState<number>(7);
+  const [medicationChartPeriod, setMedicationChartPeriod] = useState<number>(7);
+  const [perturbateurChartPeriod, setPerturbateurChartPeriod] = useState<number>(7);
+  const [gentleActivityChartPeriod, setGentleActivityChartPeriod] = useState<number>(7);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -73,7 +76,11 @@ export default function StatistiquePage() {
   useEffect(() => {
     if (!user) return;
     setEntriesLoading(true);
-    const unsubscribe = listenRecentEntries(user.uid, 400, (docs) => {
+    // Charger plus d'entrées si nécessaire (jusqu'à 1000 pour couvrir les cas d'accidents anciens)
+    const maxEntries = daysSinceAccident && daysSinceAccident > 400 
+      ? Math.min(daysSinceAccident + 50, 1000) 
+      : 400;
+    const unsubscribe = listenRecentEntries(user.uid, maxEntries, (docs) => {
       setEntries(docs);
       setEntriesLoading(false);
       if (docs.length) {
@@ -81,6 +88,36 @@ export default function StatistiquePage() {
       }
     });
     return () => unsubscribe();
+  }, [user, daysSinceAccident]);
+
+  useEffect(() => {
+    const loadAccidentDate = async () => {
+      if (!user) return;
+      try {
+        const db = getDbInstance();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          if (data.accidentDates && Array.isArray(data.accidentDates) && data.accidentDates.length > 0) {
+            // Trouver la date la plus ancienne
+            const sortedDates = data.accidentDates
+              .filter((date: string) => date && date.trim() !== '')
+              .sort((a: string, b: string) => new Date(a).getTime() - new Date(b).getTime());
+            
+            if (sortedDates.length > 0) {
+              const oldestDate = new Date(sortedDates[0]);
+              const today = new Date();
+              const diffTime = today.getTime() - oldestDate.getTime();
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              setDaysSinceAccident(Math.max(diffDays, 1)); // Au minimum 1 jour
+            }
+          }
+        }
+      } catch (error) {
+        console.warn('Impossible de charger la date d\'accident:', error);
+      }
+    };
+    loadAccidentDate();
   }, [user]);
 
   useEffect(() => {
@@ -159,7 +196,7 @@ export default function StatistiquePage() {
   }, [selectedEntry]);
 
   // Helper function pour générer les labels de dates
-  const getDateLabel = (date: Date, period: 7 | 30 | 90 | 360): string => {
+  const getDateLabel = (date: Date, period: number): string => {
     if (period <= 7) {
       return new Intl.DateTimeFormat('fr-FR', {
         weekday: 'short',
@@ -799,60 +836,90 @@ export default function StatistiquePage() {
             <div className="w-full min-w-0 flex">
               <TrendChart
                 title="Évolution des symptômes"
-                description={`Nombre total de symptômes sur les ${symptomChartPeriod} derniers jours`}
+                description={
+                  daysSinceAccident && symptomChartPeriod === daysSinceAccident
+                    ? `Nombre total de symptômes depuis l'accident`
+                    : `Nombre total de symptômes sur les ${symptomChartPeriod} derniers jours`
+                }
                 data={symptomChartData}
                 period={symptomChartPeriod}
                 onPeriodChange={setSymptomChartPeriod}
                 lineColor="#C084FC"
                 valueFormatter={(value) => `Symptômes: ${value}/132`}
+                daysSinceAccident={daysSinceAccident}
+                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
                 title="Évolution des activités"
-                description={`Temps total d'activités sur les ${activityChartPeriod} derniers jours`}
+                description={
+                  daysSinceAccident && activityChartPeriod === daysSinceAccident
+                    ? `Temps total d'activités depuis l'accident`
+                    : `Temps total d'activités sur les ${activityChartPeriod} derniers jours`
+                }
                 data={activityChartData}
                 period={activityChartPeriod}
                 onPeriodChange={setActivityChartPeriod}
                 lineColor="#F97316"
                 valueFormatter={(value) => `${value} min`}
+                daysSinceAccident={daysSinceAccident}
+                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
                 title="Évolution des médicaments"
-                description={`Nombre total de prises sur les ${medicationChartPeriod} derniers jours`}
+                description={
+                  daysSinceAccident && medicationChartPeriod === daysSinceAccident
+                    ? `Nombre total de prises depuis l'accident`
+                    : `Nombre total de prises sur les ${medicationChartPeriod} derniers jours`
+                }
                 data={medicationChartData}
                 period={medicationChartPeriod}
                 onPeriodChange={setMedicationChartPeriod}
                 lineColor="#38BDF8"
                 valueFormatter={(value) => `${value} prise${value > 1 ? 's' : ''}`}
+                daysSinceAccident={daysSinceAccident}
+                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
                 title="Évolution des éléments perturbateurs"
-                description={`Nombre d'éléments perturbateurs sur les ${perturbateurChartPeriod} derniers jours`}
+                description={
+                  daysSinceAccident && perturbateurChartPeriod === daysSinceAccident
+                    ? `Nombre d'éléments perturbateurs depuis l'accident`
+                    : `Nombre d'éléments perturbateurs sur les ${perturbateurChartPeriod} derniers jours`
+                }
                 data={perturbateurChartData}
                 period={perturbateurChartPeriod}
                 onPeriodChange={setPerturbateurChartPeriod}
                 lineColor="#F43F5E"
                 valueFormatter={(value) => `${value} élément${value > 1 ? 's' : ''}`}
+                daysSinceAccident={daysSinceAccident}
+                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
                 title="Évolution des activités douces & thérapies"
-                description={`Temps total d'activités douces sur les ${gentleActivityChartPeriod} derniers jours`}
+                description={
+                  daysSinceAccident && gentleActivityChartPeriod === daysSinceAccident
+                    ? `Temps total d'activités douces depuis l'accident`
+                    : `Temps total d'activités douces sur les ${gentleActivityChartPeriod} derniers jours`
+                }
                 data={gentleActivityChartData}
                 period={gentleActivityChartPeriod}
                 onPeriodChange={setGentleActivityChartPeriod}
                 lineColor="#34D399"
                 valueFormatter={(value) => `${value} min`}
+                daysSinceAccident={daysSinceAccident}
+                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
               />
             </div>
           </div>

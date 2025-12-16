@@ -3,9 +3,12 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { SimpleButton, TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
 import SwitchButton from '@/components/buttons/SwitchButton';
+import { getDbInstance } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 type NotificationPrefs = {
   dailyReminder: boolean;
@@ -70,9 +73,9 @@ const IdCardIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   </svg>
 );
 
-const StarIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+const CalendarDateIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
 
@@ -124,9 +127,13 @@ export default function ProfilPage() {
   const { user, loading, logout, updateUserProfile, deleteAccount } = useAuth();
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
+  const [accidentDates, setAccidentDates] = useState<string[]>([]);
+  const [newAccidentDate, setNewAccidentDate] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -148,7 +155,27 @@ export default function ProfilPage() {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.displayName ?? user.email?.split('@')[0] ?? '');
+    loadAccidentDate();
   }, [user]);
+
+  const loadAccidentDate = async () => {
+    if (!user) return;
+    try {
+      const db = getDbInstance();
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.accidentDates && Array.isArray(data.accidentDates)) {
+          setAccidentDates(data.accidentDates);
+        } else if (data.accidentDate) {
+          // Migration depuis l'ancien format (une seule date)
+          setAccidentDates([data.accidentDate]);
+        }
+      }
+    } catch (error) {
+      console.warn('Impossible de charger les dates d\'accident:', error);
+    }
+  };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -170,6 +197,14 @@ export default function ProfilPage() {
     );
   }, [notificationPrefs]);
 
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [toastMessage]);
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -182,7 +217,8 @@ export default function ProfilPage() {
   const handleProfileSave = async () => {
     if (!user) return;
     if (!displayName.trim()) {
-      setProfileError('Le nom affiché est requis.');
+      setToastMessage('Le nom affiché est requis.');
+      setToastType('error');
       return;
     }
     try {
@@ -190,11 +226,19 @@ export default function ProfilPage() {
       setProfileMessage(null);
       setSavingProfile(true);
       await updateUserProfile(displayName.trim());
-      setProfileMessage('Profil mis à jour avec succès.');
-      setTimeout(() => setProfileMessage(null), 3000);
+      
+      // Sauvegarder les dates d'accident dans Firestore
+      const db = getDbInstance();
+      await setDoc(doc(db, 'users', user.uid), {
+        accidentDates: accidentDates.filter(date => date.trim() !== ''),
+      }, { merge: true });
+      
+      setToastMessage('Profil mis à jour avec succès.');
+      setToastType('success');
     } catch (error) {
       console.error(error);
-      setProfileError("Impossible d'enregistrer pour le moment.");
+      setToastMessage("Impossible d'enregistrer pour le moment.");
+      setToastType('error');
     } finally {
       setSavingProfile(false);
     }
@@ -284,6 +328,28 @@ export default function ProfilPage() {
 
   return (
     <div className="min-h-screen bg-transparent pt-16 pb-24">
+      {/* Toast notifications */}
+      <div className="pointer-events-none fixed top-4 right-4 z-[60] flex flex-col gap-3">
+        <AnimatePresence>
+          {toastMessage && (
+            <motion.div
+              key={toastMessage}
+              initial={{ opacity: 0, y: -12, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.95 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className={`pointer-events-auto rounded-2xl px-4 py-3 text-sm shadow-lg backdrop-blur-md min-w-[240px] border ${
+                toastType === 'success'
+                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-50'
+                  : 'bg-red-500/15 border-red-500/40 text-red-50'
+              }`}
+            >
+              {toastMessage}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Header avec avatar */}
         <header className="relative overflow-hidden rounded-4xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-8 sm:p-12 backdrop-blur-sm">
@@ -384,16 +450,89 @@ export default function ProfilPage() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <StarIcon className="w-5 h-5" /> Statut
+                      <CalendarDateIcon className="w-5 h-5" /> Dates des accidents
                     </label>
-                    <OutlineInput
-                      value="Programme Beta · accès complet"
-                      disabled
-                      variant="white"
-                      size="lg"
-                    />
+                    <div className="space-y-3">
+                      {accidentDates.length > 0 && (
+                        <div className="space-y-2">
+                          {accidentDates.map((date, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                              <input
+                                type="date"
+                                value={date}
+                                onChange={(e) => {
+                                  const newDates = [...accidentDates];
+                                  newDates[index] = e.target.value;
+                                  setAccidentDates(newDates);
+                                  setProfileMessage(null);
+                                  setProfileError(null);
+                                }}
+                                className="flex-1 px-4 py-3 rounded-full bg-black/20 border-2 border-white text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 text-sm sm:text-base md:text-lg font-medium shadow-lg transition-all duration-300"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newDates = accidentDates.filter((_, i) => i !== index);
+                                  setAccidentDates(newDates);
+                                  setProfileError(null);
+                                  setToastMessage('Date d\'accident supprimée avec succès.');
+                                  setToastType('success');
+                                }}
+                                className="px-4 py-3 rounded-full bg-red-500/20 border-2 border-red-400/50 text-red-300 hover:bg-red-500/30 transition-all duration-300 font-medium shadow-lg"
+                                title="Supprimer cette date"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Champ pour ajouter une nouvelle date */}
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="date"
+                          value={newAccidentDate}
+                          onChange={(e) => {
+                            setNewAccidentDate(e.target.value);
+                            setProfileMessage(null);
+                            setProfileError(null);
+                          }}
+                          placeholder="Sélectionner une date"
+                          className="flex-1 px-4 py-3 rounded-full bg-black/20 border-2 border-white text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50 text-sm sm:text-base md:text-lg font-medium shadow-lg transition-all duration-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newAccidentDate.trim() !== '') {
+                              // Vérifier que la date n'existe pas déjà
+                              if (!accidentDates.includes(newAccidentDate)) {
+                                setAccidentDates([...accidentDates, newAccidentDate]);
+                                setNewAccidentDate('');
+                                setProfileError(null);
+                                setToastMessage('Date d\'accident ajoutée avec succès.');
+                                setToastType('success');
+                              } else {
+                                setToastMessage('Cette date est déjà ajoutée.');
+                                setToastType('error');
+                              }
+                            }
+                          }}
+                          disabled={!newAccidentDate.trim()}
+                          className="px-6 py-3 rounded-full bg-emerald-500/20 border-2 border-emerald-400/50 text-emerald-300 hover:bg-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium shadow-lg flex items-center gap-2"
+                          title="Ajouter cette date"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Ajouter
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

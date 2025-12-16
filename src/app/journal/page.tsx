@@ -6,8 +6,10 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import DailyEntryForm, { SectionKey } from '@/components/journal/DailyEntryForm';
 import { fetchDailyEntry, saveDailyEntry, deleteAllEntries } from '@/lib/firestoreEntries';
-import type { DailyEntry } from '@/types/journal';
+import type { DailyEntry, MedicationEntry, ActivityEntry } from '@/types/journal';
 import { SimpleButton } from '@/components/buttons';
+import { getDbInstance } from '@/lib/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const SEED_SYMPTOMS = [
   { id: 'cephalee', label: 'Céphalée' },
@@ -50,11 +52,21 @@ const SEED_MEDICATIONS = [
 ] as const;
 
 const SEED_ACTIVITIES = [
-  { id: 'marche', label: 'Marche légère' },
-  { id: 'respiration', label: 'Respiration guidée' },
-  { id: 'yoga', label: 'Yoga doux' },
+  { id: 'marche', label: 'Marche' },
+  { id: 'yoga', label: 'Yoga' },
   { id: 'lecture', label: 'Lecture' },
-  { id: 'ecran', label: 'Écrans < 30 min' },
+  { id: 'ecran', label: 'Ecrans < 30 min' },
+  { id: 'natation', label: 'Natation' },
+  { id: 'etirements', label: 'Étirements' },
+] as const;
+
+const SEED_GENTLE_ACTIVITIES = [
+  { id: 'meditation', label: 'Méditation' },
+  { id: 'relaxation', label: 'Relaxation musculaire' },
+  { id: 'respiration', label: 'Respiration guidée' },
+  { id: 'musique', label: 'Musique apaisante' },
+  { id: 'bain', label: 'Bain chaud' },
+  { id: 'massage', label: 'Auto-massage' },
 ] as const;
 
 const SEED_PERTURBATEURS = [
@@ -175,48 +187,133 @@ function JournalContent() {
     }
   };
 
-  const buildSeedEntry = (targetDate: Date): DailyEntry => {
+  const buildSeedEntry = (targetDate: Date, daysAgo: number): DailyEntry => {
     const dateISOSeed = targetDate.toISOString().split('T')[0];
-    const symptoms = SEED_SYMPTOMS.map((symptom) => {
-      const intensity = Math.random() < 0.4 ? 0 : Math.max(1, randomInt(6));
-      return { id: symptom.id, label: symptom.label, intensity };
-    }).filter((item) => item.intensity > 0);
-    if (!symptoms.length) {
-      symptoms.push({
-        id: SEED_SYMPTOMS[0].id,
-        label: SEED_SYMPTOMS[0].label,
-        intensity: 1,
-      });
+    
+    // Progression : amélioration au fil du temps (0 = aujourd'hui, 119 = il y a 120 jours)
+    // Les premiers jours sont les pires, puis amélioration progressive
+    const totalDays = 120;
+    const progressRatio = daysAgo / (totalDays - 1); // 0 = récent (mieux), 1 = ancien (pire, juste après l'accident)
+    const improvementFactor = 1 - progressRatio * 0.7; // Amélioration de 70% sur 4 mois
+    
+    // Symptômes : beaucoup plus nombreux et intenses au début (juste après l'accident), diminuent avec le temps
+    // Au début (progressRatio proche de 1) : 12-15 symptômes, intensité 4-6
+    // À la fin (progressRatio proche de 0) : 2-4 symptômes, intensité 1-3
+    const baseSymptomCount = Math.max(2, Math.floor(13 * progressRatio + 2));
+    const symptomIntensityBase = Math.max(1, Math.floor(5 * progressRatio + 1));
+    
+    // Sélectionner des symptômes variés selon la période
+    // Plus de symptômes au début (juste après l'accident)
+    const commonEarlySymptoms = ['cephalee', 'fatigue', 'nausees', 'vertiges', 'photophobie', 'phonophobie', 'concentration', 'brouillardMental', 'vision', 'humeur', 'anxiete', 'etourdissements', 'raideurNuque', 'douleurOculaire', 'confusion', 'irritabilite'];
+    const commonMidSymptoms = ['cephalee', 'fatigue', 'vision', 'humeur', 'concentration', 'irritabilite', 'photophobie', 'phonophobie', 'brouillardMental'];
+    const commonLateSymptoms = ['cephalee', 'fatigue', 'concentration', 'humeur'];
+    
+    const symptomPool = daysAgo > 80 ? commonEarlySymptoms : daysAgo > 40 ? commonMidSymptoms : commonLateSymptoms;
+    const selectedSymptomIds = new Set<string>();
+    
+    // Sélectionner un nombre variable de symptômes
+    const symptomCount = Math.min(baseSymptomCount, symptomPool.length);
+    while (selectedSymptomIds.size < symptomCount) {
+      selectedSymptomIds.add(symptomPool[randomInt(symptomPool.length - 1)]);
     }
+    
+    const symptoms = SEED_SYMPTOMS.filter(s => selectedSymptomIds.has(s.id)).map((symptom) => {
+      const baseIntensity = symptomIntensityBase;
+      const variation = randomInt(2) - 1; // -1, 0, ou +1
+      const intensity = Math.max(1, Math.min(6, baseIntensity + variation));
+      return { id: symptom.id, label: symptom.label, intensity };
+    });
 
-    const medications = SEED_MEDICATIONS.map((med) => {
-      const useMed = Math.random() < 0.45;
-      return {
-        id: med.id,
-        label: med.label,
-        intensity: useMed ? Math.max(1, randomInt(10)) : 0,
-      };
-    }).filter((item) => item.intensity > 0);
+    // Médicaments : très fréquents au début (juste après l'accident), puis diminution progressive
+    // Au début : 80-90% de chance d'avoir des médicaments, intensité élevée
+    // À la fin : 20-30% de chance, intensité faible
+    const medicationUseRate = 0.85 - (progressRatio * 0.6); // 85% au début, 25% à la fin
+    const commonMeds = ['analgesique', 'antiInflammatoire', 'magnesium', 'vitamineB2', 'betaBloquant'];
+    const medications = SEED_MEDICATIONS.filter(med => commonMeds.includes(med.id))
+      .filter(() => Math.random() < medicationUseRate)
+      .map((med) => {
+        // Intensité plus élevée au début, diminue avec le temps
+        let intensity;
+        if (med.id === 'magnesium' || med.id === 'vitamineB2') {
+          intensity = 1; // Suppléments toujours à 1
+        } else {
+          // Autres médicaments : intensité 2-3 au début, 1-2 à la fin
+          const baseIntensity = progressRatio > 0.5 ? 3 : progressRatio > 0.2 ? 2 : 1;
+          intensity = Math.max(1, baseIntensity + randomInt(1) - 1);
+        }
+        return {
+          id: med.id,
+          label: med.label,
+          intensity,
+        };
+      });
 
-    const activities = SEED_ACTIVITIES.map((activity) => {
-      const duration =
-        Math.random() < 0.55 ? Math.max(10, randomInt(60)) : 0;
-      return {
-        id: activity.id,
-        label: activity.label,
-        duration,
-        custom: false as const,
-      };
-    }).filter((item) => item.duration > 0);
+    // Activités normales : augmentent avec le temps (signe de récupération)
+    const activityRate = 0.3 + (1 - progressRatio) * 0.5; // 30% au début, 80% à la fin
+    const activities = SEED_ACTIVITIES.filter(() => Math.random() < activityRate)
+      .map((activity) => {
+        const baseDuration = daysAgo > 60 ? 15 : daysAgo > 30 ? 25 : 35;
+        const duration = baseDuration + randomInt(20);
+        return {
+          id: activity.id,
+          label: activity.label,
+          duration,
+          custom: false as const,
+        };
+      });
 
-    const perturbations = SEED_PERTURBATEURS.filter(
-      () => Math.random() < 0.35,
-    );
+    // Activités douces : très présentes au début (récupération), puis maintien
+    const gentleActivityRate = 0.8 - (progressRatio * 0.3); // 80% au début, 50% à la fin
+    const gentleActivities = SEED_GENTLE_ACTIVITIES.filter(() => Math.random() < gentleActivityRate)
+      .map((activity) => {
+        const baseDuration = daysAgo > 60 ? 20 : daysAgo > 30 ? 15 : 10;
+        const duration = baseDuration + randomInt(15);
+        return {
+          id: activity.id,
+          label: activity.label,
+          duration,
+          custom: false as const,
+        } as ActivityEntry;
+      });
 
-    const noteSeed =
-      Math.random() < 0.4
-        ? `Démo : énergie ${Math.random() < 0.5 ? 'stable' : 'fatigué'}.`
-        : '';
+    // Perturbateurs : plus fréquents au début, diminuent avec le temps
+    const perturbateurRate = 0.5 - (progressRatio * 0.3); // 50% au début, 20% à la fin
+    const perturbations = SEED_PERTURBATEURS.filter(() => Math.random() < perturbateurRate);
+
+    // Notes complémentaires variées et pertinentes selon la période
+    const notesTemplates = [
+      // Notes du début (période difficile)
+      ...(daysAgo > 60 ? [
+        'Journée difficile, beaucoup de fatigue. Repos complet nécessaire.',
+        'Symptômes intenses ce matin, amélioration en fin de journée après repos.',
+        'Maux de tête persistants, évité les écrans toute la journée.',
+        'Nausées importantes, difficulté à me concentrer. Prise de médicaments selon prescription.',
+        'Vertiges au réveil, journée calme avec activités douces uniquement.',
+        'Sensibilité à la lumière très marquée, porté des lunettes de soleil même à l\'intérieur.',
+      ] : []),
+      // Notes du milieu (amélioration progressive)
+      ...(daysAgo > 30 && daysAgo <= 60 ? [
+        'Meilleure journée, moins de symptômes qu\'hier. Réussi à faire une petite marche.',
+        'Fatigue modérée, mais capable de lire 20 minutes sans problème.',
+        'Quelques maux de tête légers, mais gérables. Activités douces aidantes.',
+        'Journée stable, pas de pics de symptômes. Continue les exercices de respiration.',
+        'Légère amélioration de la concentration, réussi à travailler 30 minutes.',
+        'Moins de sensibilité au bruit qu\'avant, progrès encourageant.',
+      ] : []),
+      // Notes récentes (bien mieux)
+      ...(daysAgo <= 30 ? [
+        'Très bonne journée, symptômes minimes. Activités normales possibles.',
+        'Presque plus de maux de tête, récupération en cours. Continue les bonnes habitudes.',
+        'Concentration beaucoup mieux, réussi à travailler 1h sans problème.',
+        'Journée presque normale, juste un peu de fatigue en fin d\'après-midi.',
+        'Excellent progrès, se sent presque comme avant. Garde le rythme doux.',
+        'Symptômes très légers, récupération presque complète. Continue la prudence.',
+      ] : []),
+    ];
+
+    const noteSeed = notesTemplates.length > 0 && Math.random() < 0.65
+      ? notesTemplates[randomInt(notesTemplates.length - 1)]
+      : '';
 
     const entry: DailyEntry = {
       dateISO: dateISOSeed,
@@ -224,7 +321,10 @@ function JournalContent() {
       status: 'complete',
       symptoms,
       medications,
-      activities,
+      activities: [
+        ...activities.map(a => ({ ...a, custom: false as const }) as ActivityEntry),
+        ...gentleActivities.map(a => ({ ...a, custom: false as const }) as ActivityEntry),
+      ],
       perturbateurs: perturbations,
     };
 
@@ -240,16 +340,30 @@ function JournalContent() {
     setSeedLoading(true);
     try {
       const today = new Date();
-      for (let i = 0; i < 90; i++) {
+      
+      // Créer les entrées pour 120 jours
+      let oldestDateISO = '';
+      for (let i = 0; i < 120; i++) {
         const target = new Date(today);
         target.setDate(today.getDate() - i);
-        const entry = buildSeedEntry(target);
+        const entry = buildSeedEntry(target, i);
         await saveDailyEntry(user.uid, entry);
         if (entry.dateISO === dateISO) {
           setInitialEntry(entry);
         }
+        // Garder la date la plus ancienne (dernière itération)
+        if (i === 119) {
+          oldestDateISO = entry.dateISO;
+        }
       }
-      setSubmitMessage('2 semaines de démonstration ajoutées.');
+      
+      // Sauvegarder la date d'accident dans Firestore (date de la première donnée)
+      const db = getDbInstance();
+      await setDoc(doc(db, 'users', user.uid), {
+        accidentDates: [oldestDateISO],
+      }, { merge: true });
+      
+      setSubmitMessage('4 mois de données de démonstration ajoutées avec progression réaliste.');
     } catch (error) {
       console.error(error);
       setSubmitError('Impossible de générer les données démo.');
@@ -385,4 +499,5 @@ export default function JournalPage() {
     </Suspense>
   );
 }
+
 

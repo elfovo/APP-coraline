@@ -1,7 +1,5 @@
 import React, { useId, useMemo, useState } from 'react';
 
-type Period = 7 | 30 | 90 | 360;
-
 export interface TrendChartDataPoint {
   dateISO: string;
   label: string;
@@ -12,11 +10,13 @@ interface TrendChartProps {
   title: string;
   description?: string;
   data: TrendChartDataPoint[];
-  period: Period;
-  onPeriodChange?: (period: Period) => void;
+  period: number;
+  onPeriodChange?: (period: number) => void;
   lineColor?: string;
   valueFormatter?: (value: number) => string;
   emptyStateText?: string;
+  customPeriodLabel?: string; // Label personnalisé pour la période dynamique (ex: "Depuis l'accident")
+  daysSinceAccident?: number | null; // Nombre de jours depuis l'accident pour remplacer 360
 }
 
 type HoveredPoint = {
@@ -33,8 +33,6 @@ type MousePosition = {
   height: number;
 } | null;
 
-const PERIOD_OPTIONS: Period[] = [7, 30, 90, 360];
-
 export default function TrendChart({
   title,
   description,
@@ -44,7 +42,17 @@ export default function TrendChart({
   lineColor = '#C084FC',
   valueFormatter = (value) => `${value}`,
   emptyStateText = 'Aucune donnée à afficher pour cette période.',
+  customPeriodLabel,
+  daysSinceAccident,
 }: TrendChartProps) {
+  // Options de période par défaut
+  const defaultPeriods = [7, 30, 90];
+  const allPeriods = daysSinceAccident && daysSinceAccident > 90 
+    ? [...defaultPeriods, daysSinceAccident]
+    : [...defaultPeriods, 360];
+  
+  // Trier les périodes et supprimer les doublons
+  const PERIOD_OPTIONS = Array.from(new Set(allPeriods)).sort((a, b) => a - b);
   const gradientId = useId();
 
   const [hoveredPoint, setHoveredPoint] = useState<HoveredPoint>(null);
@@ -154,20 +162,26 @@ export default function TrendChart({
         </div>
         {onPeriodChange && (
           <div className="flex gap-1.5 sm:gap-2 flex-wrap">
-            {PERIOD_OPTIONS.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => onPeriodChange(option)}
-                className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  period === option
-                    ? 'bg-white/20 text-white border border-white/40'
-                    : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
-                }`}
-              >
-                {option}j
-              </button>
-            ))}
+            {PERIOD_OPTIONS.map((option) => {
+              const isCustomPeriod = daysSinceAccident && option === daysSinceAccident;
+              const label = isCustomPeriod && customPeriodLabel 
+                ? customPeriodLabel 
+                : `${option}j`;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => onPeriodChange(option)}
+                  className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                    period === option
+                      ? 'bg-white/20 text-white border border-white/40'
+                      : 'bg-white/5 text-white/60 border border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -368,3 +382,4 @@ export default function TrendChart({
     </section>
   );
 }
+
