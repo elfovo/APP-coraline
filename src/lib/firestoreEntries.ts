@@ -37,6 +37,24 @@ const caregiverCodeLookupDoc = (code: string) =>
 const caregiverObservationsCollection = (userId: string) =>
   collection(getDb(), 'users', userId, CAREGIVER_OBSERVATIONS_SUBCOLLECTION);
 
+const journalPreferencesDocument = (userId: string) =>
+  doc(getDb(), 'users', userId, 'preferences', 'journal');
+
+export interface JournalPreferences {
+  hiddenSliders: {
+    symptomes: string[];
+    medicaments: string[];
+  };
+  hiddenActivities: {
+    activites: string[];
+    activitesDouces: string[];
+  };
+  hiddenPerturbateurs: string[];
+  customActivities?: { id: string; label: string; duration: number }[];
+  customGentleActivities?: { id: string; label: string; duration: number }[];
+  customPerturbateurs?: string[];
+}
+
 export function listenRecentEntries(
   userId: string,
   maxEntries = 7,
@@ -169,6 +187,25 @@ export async function saveCaregiverObservation(
     code,
     createdAt: serverTimestamp(),
   });
+}
+
+export async function saveJournalPreferences(
+  userId: string,
+  preferences: JournalPreferences,
+) {
+  const ref = journalPreferencesDocument(userId);
+  await setDoc(ref, preferences, { merge: true });
+}
+
+export async function loadJournalPreferences(
+  userId: string,
+): Promise<JournalPreferences | null> {
+  const ref = journalPreferencesDocument(userId);
+  const snapshot = await getDoc(ref);
+  if (!snapshot.exists()) {
+    return null;
+  }
+  return snapshot.data() as JournalPreferences;
 }
 
 /**

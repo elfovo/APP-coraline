@@ -31,7 +31,6 @@ interface DailyEntryFormProps {
   initialSection?: SectionKey;
   isSubmitting?: boolean;
   onSave?: (entry: DailyEntry) => void | Promise<void>;
-  onSaveDraft?: (entry: DailyEntry) => void | Promise<void>;
   onError?: (message: string) => void;
   onSuccess?: (message: string) => void;
   onGoPreviousDay?: () => void;
@@ -238,7 +237,6 @@ export default function DailyEntryForm({
   initialSection,
   isSubmitting,
   onSave,
-  onSaveDraft,
   onError,
   onSuccess,
   onGoPreviousDay,
@@ -906,23 +904,16 @@ export default function DailyEntryForm({
     return cleanedNotes ? { ...baseEntry, notes: cleanedNotes } : baseEntry;
   };
 
-  const handleSubmit = async (
-    event: React.FormEvent,
-    status: DailyEntry['status'],
-  ) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const entry = buildEntryPayload(status);
-    if (status === 'draft') {
-      await onSaveDraft?.(entry);
-    } else {
-      await onSave?.(entry);
-    }
+    const entry = buildEntryPayload('complete');
+    await onSave?.(entry);
   };
 
   return (
     <form
       className="space-y-8"
-      onSubmit={(event) => handleSubmit(event, 'complete')}
+      onSubmit={handleSubmit}
     >
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6">
         <div className="flex flex-col gap-3">
@@ -1865,17 +1856,7 @@ export default function DailyEntryForm({
         />
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <SimpleButton
-          type="button"
-          size="lg"
-          variant="outline"
-          className="flex-1 bg-white text-gray-900 border-white/30"
-          onClick={(event) => handleSubmit(event, 'draft')}
-          disabled={isSubmitting}
-        >
-          Sauvegarder en brouillon
-        </SimpleButton>
+      <div className="sticky bottom-6 flex flex-col md:flex-row gap-4 bg-black/60 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <SimpleButton type="submit" size="lg" className="flex-1" disabled={isSubmitting}>
           {isSubmitting ? 'Enregistrement...' : 'Enregistrer la journée'}
         </SimpleButton>
