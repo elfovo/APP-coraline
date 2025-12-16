@@ -101,6 +101,12 @@ export async function saveDailyEntry(userId: string, entry: DailyEntry) {
   await setDoc(ref, entry, { merge: true });
 }
 
+export async function deleteAllEntries(userId: string) {
+  const snapshot = await getDocs(entriesCollection(userId));
+  const deletePromises = snapshot.docs.map((docSnap) => deleteDoc(docSnap.ref));
+  await Promise.all(deletePromises);
+}
+
 export function computeWeeklyTotals(entries: DailyEntry[]): WeeklyTotals {
   return entries.reduce(
     (acc, entry) => ({

@@ -769,55 +769,93 @@ export default function StatistiquePage() {
             </section>
           )}
 
-          <TrendChart
-            title="Évolution des symptômes"
-            description={`Nombre total de symptômes sur les ${symptomChartPeriod} derniers jours`}
-            data={symptomChartData}
-            period={symptomChartPeriod}
-            onPeriodChange={setSymptomChartPeriod}
-            lineColor="#C084FC"
-            valueFormatter={(value) => `Symptômes: ${value}/132`}
-          />
+          {selectedDate && (
+            <section className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+              <div className="mb-4">
+                <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
+                  Notes complémentaires
+                </p>
+                <p className="text-white/80 text-sm">
+                  Informations supplémentaires pour cette journée
+                </p>
+              </div>
+              {selectedEntry?.notes ? (
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
+                  <p className="text-white/90 whitespace-pre-wrap leading-relaxed">
+                    {selectedEntry.notes}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
+                  <p className="text-white/60 text-sm italic">
+                    Aucune note complémentaire pour ce jour
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
 
-          <TrendChart
-            title="Évolution des activités"
-            description={`Temps total d'activités sur les ${activityChartPeriod} derniers jours`}
-            data={activityChartData}
-            period={activityChartPeriod}
-            onPeriodChange={setActivityChartPeriod}
-            lineColor="#F97316"
-            valueFormatter={(value) => `${value} min`}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+            <div className="w-full min-w-0 flex">
+              <TrendChart
+                title="Évolution des symptômes"
+                description={`Nombre total de symptômes sur les ${symptomChartPeriod} derniers jours`}
+                data={symptomChartData}
+                period={symptomChartPeriod}
+                onPeriodChange={setSymptomChartPeriod}
+                lineColor="#C084FC"
+                valueFormatter={(value) => `Symptômes: ${value}/132`}
+              />
+            </div>
 
-          <TrendChart
-            title="Évolution des médicaments"
-            description={`Nombre total de prises sur les ${medicationChartPeriod} derniers jours`}
-            data={medicationChartData}
-            period={medicationChartPeriod}
-            onPeriodChange={setMedicationChartPeriod}
-            lineColor="#38BDF8"
-            valueFormatter={(value) => `${value} prise${value > 1 ? 's' : ''}`}
-          />
+            <div className="w-full min-w-0 flex">
+              <TrendChart
+                title="Évolution des activités"
+                description={`Temps total d'activités sur les ${activityChartPeriod} derniers jours`}
+                data={activityChartData}
+                period={activityChartPeriod}
+                onPeriodChange={setActivityChartPeriod}
+                lineColor="#F97316"
+                valueFormatter={(value) => `${value} min`}
+              />
+            </div>
 
-          <TrendChart
-            title="Évolution des éléments perturbateurs"
-            description={`Nombre d'éléments perturbateurs sur les ${perturbateurChartPeriod} derniers jours`}
-            data={perturbateurChartData}
-            period={perturbateurChartPeriod}
-            onPeriodChange={setPerturbateurChartPeriod}
-            lineColor="#F43F5E"
-            valueFormatter={(value) => `${value} élément${value > 1 ? 's' : ''}`}
-          />
+            <div className="w-full min-w-0 flex">
+              <TrendChart
+                title="Évolution des médicaments"
+                description={`Nombre total de prises sur les ${medicationChartPeriod} derniers jours`}
+                data={medicationChartData}
+                period={medicationChartPeriod}
+                onPeriodChange={setMedicationChartPeriod}
+                lineColor="#38BDF8"
+                valueFormatter={(value) => `${value} prise${value > 1 ? 's' : ''}`}
+              />
+            </div>
 
-          <TrendChart
-            title="Évolution des activités douces & thérapies"
-            description={`Temps total d'activités douces sur les ${gentleActivityChartPeriod} derniers jours`}
-            data={gentleActivityChartData}
-            period={gentleActivityChartPeriod}
-            onPeriodChange={setGentleActivityChartPeriod}
-            lineColor="#34D399"
-            valueFormatter={(value) => `${value} min`}
-          />
+            <div className="w-full min-w-0 flex">
+              <TrendChart
+                title="Évolution des éléments perturbateurs"
+                description={`Nombre d'éléments perturbateurs sur les ${perturbateurChartPeriod} derniers jours`}
+                data={perturbateurChartData}
+                period={perturbateurChartPeriod}
+                onPeriodChange={setPerturbateurChartPeriod}
+                lineColor="#F43F5E"
+                valueFormatter={(value) => `${value} élément${value > 1 ? 's' : ''}`}
+              />
+            </div>
+
+            <div className="w-full min-w-0 flex">
+              <TrendChart
+                title="Évolution des activités douces & thérapies"
+                description={`Temps total d'activités douces sur les ${gentleActivityChartPeriod} derniers jours`}
+                data={gentleActivityChartData}
+                period={gentleActivityChartPeriod}
+                onPeriodChange={setGentleActivityChartPeriod}
+                lineColor="#34D399"
+                valueFormatter={(value) => `${value} min`}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

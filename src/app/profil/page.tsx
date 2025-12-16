@@ -440,7 +440,15 @@ export default function ProfilPage() {
                 <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl" />
               </div>
               
-              <div className="relative z-10 space-y-6">
+              {/* Overlay grisé pour indiquer que c'est pas encore disponible */}
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-20 rounded-3xl flex items-center justify-center pointer-events-none">
+                <div className="text-center space-y-2 px-4">
+                  <p className="text-white/90 text-lg font-semibold">Bientôt disponible</p>
+                  <p className="text-white/60 text-sm">Cette fonctionnalité sera disponible dans une prochaine mise à jour</p>
+                </div>
+              </div>
+              
+              <div className="relative z-10 space-y-6 opacity-40">
                 <div className="space-y-1">
                   <p className="text-sm uppercase tracking-[0.3em] text-white/60">
                     Notifications
@@ -454,7 +462,7 @@ export default function ProfilPage() {
                   {preferenceOptions.map((option) => (
                     <div
                       key={option.id}
-                      className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all duration-300 backdrop-blur-sm"
+                      className="flex items-start justify-between gap-4 p-5 rounded-2xl bg-white/5 border border-white/10 transition-all duration-300 backdrop-blur-sm"
                     >
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-3">
@@ -471,6 +479,7 @@ export default function ProfilPage() {
                         initialState={notificationPrefs[option.id]}
                         onToggle={() => togglePreference(option.id)}
                         size="md"
+                        disabled={true}
                       />
                     </div>
                   ))}

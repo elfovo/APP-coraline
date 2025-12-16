@@ -1,0 +1,26 @@
+// Firestore security rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Règle pour le document utilisateur (pour stocker la photo de profil)
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    match /users/{userId}/entries/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/caregiverCodes/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /caregiverCodes/{code} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+    match /users/{userId}/caregiverObservations/{docId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow create: if true; // ou mieux : condition sur le code temporaire
+    }
+  }
+}
+

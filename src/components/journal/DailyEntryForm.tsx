@@ -1856,10 +1856,12 @@ export default function DailyEntryForm({
         />
       </div>
 
-      <div className="sticky bottom-6 flex flex-col md:flex-row gap-4 bg-black/60 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-        <SimpleButton type="submit" size="lg" className="flex-1" disabled={isSubmitting}>
-          {isSubmitting ? 'Enregistrement...' : 'Enregistrer la journée'}
-        </SimpleButton>
+      <div className="sticky bottom-6 z-20 flex justify-center md:justify-end pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-lg flex flex-col gap-4 bg-black/70 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+          <SimpleButton type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Enregistrement...' : 'Enregistrer la journée'}
+          </SimpleButton>
+        </div>
       </div>
 
       <AnimatePresence>

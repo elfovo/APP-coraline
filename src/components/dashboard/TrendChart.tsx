@@ -144,7 +144,7 @@ export default function TrendChart({
   const areaPath = `${pathData} L ${points[points.length - 1].x} 200 L ${points[0].x} 200 Z`;
 
   return (
-    <section className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+    <section className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md w-full min-w-0 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex-1">
           <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
@@ -172,7 +172,7 @@ export default function TrendChart({
         )}
       </div>
 
-      <div className="relative">
+      <div className="relative flex-1 flex items-center">
         <svg
           viewBox="0 0 600 200"
           className="w-full h-auto"

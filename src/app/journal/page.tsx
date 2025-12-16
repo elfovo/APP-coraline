@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import DailyEntryForm, { SectionKey } from '@/components/journal/DailyEntryForm';
-import { fetchDailyEntry, saveDailyEntry } from '@/lib/firestoreEntries';
+import { fetchDailyEntry, saveDailyEntry, deleteAllEntries } from '@/lib/firestoreEntries';
 import type { DailyEntry } from '@/types/journal';
 import { SimpleButton } from '@/components/buttons';
 
@@ -115,6 +115,7 @@ function JournalContent() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [seedLoading, setSeedLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -257,6 +258,29 @@ function JournalContent() {
     }
   };
 
+  const handleClearEntries = async () => {
+    if (!user || clearLoading) return;
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(
+        'Cela supprimera définitivement toutes tes entrées. Continuer ?',
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+    setClearLoading(true);
+    try {
+      await deleteAllEntries(user.uid);
+      setInitialEntry(null);
+      setSubmitMessage('Toutes les données ont été supprimées.');
+    } catch (error) {
+      console.error(error);
+      setSubmitError('Impossible de supprimer les données.');
+    } finally {
+      setClearLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!submitMessage && !submitError) return;
     const timer = setTimeout(() => {
@@ -308,14 +332,23 @@ function JournalContent() {
           ))}
         </AnimatePresence>
       </div>
-      <div className="container mx-auto px-4 pt-6 flex justify-end">
+      <div className="container mx-auto px-4 pt-6 flex flex-wrap gap-3 justify-end">
         <SimpleButton
           size="sm"
           className="bg-white/90 text-gray-900 border-white/60 px-4 py-2 rounded-xl"
           onClick={handleSeedEntries}
-          disabled={seedLoading}
+          disabled={seedLoading || clearLoading}
         >
           {seedLoading ? 'Génération…' : 'Créer des données de démo'}
+        </SimpleButton>
+        <SimpleButton
+          size="sm"
+          variant="outline"
+          className="text-white border-red-300/60 hover:bg-red-500/10 px-4 py-2 rounded-xl"
+          onClick={handleClearEntries}
+          disabled={clearLoading || seedLoading}
+        >
+          {clearLoading ? 'Suppression…' : 'Supprimer toutes les données'}
         </SimpleButton>
       </div>
       <div className="container mx-auto px-4 py-8 space-y-6">
@@ -325,7 +358,6 @@ function JournalContent() {
           initialEntry={initialEntry}
           initialSection={initialSection ?? undefined}
           onSave={handleSaveEntry}
-          onSaveDraft={handleSaveEntry}
           isSubmitting={isSubmitting}
           onError={setSubmitError}
           onSuccess={setSubmitMessage}
