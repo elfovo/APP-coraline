@@ -1,14 +1,32 @@
 'use client';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import { SimpleButton, TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
 import SwitchButton from '@/components/buttons/SwitchButton';
 import { getDbInstance } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import Toast from '@/components/profil/Toast';
+import DeleteAccountModal from '@/components/profil/DeleteAccountModal';
+import AccidentDatesManager from '@/components/profil/AccidentDatesManager';
+import {
+  CalendarIcon,
+  ChartIcon,
+  UsersIcon,
+  ClockIcon,
+  SparklesIcon,
+  KeyIcon,
+  UserIcon,
+  MailIcon,
+  IdCardIcon,
+  SaveIcon,
+  LockIcon,
+} from '@/components/profil/icons';
+import { formatDate } from '@/lib/dateUtils';
 
 type NotificationPrefs = {
   dailyReminder: boolean;
@@ -17,85 +35,6 @@ type NotificationPrefs = {
 };
 
 const NOTIFICATION_STORAGE_KEY = 'commocare-notification-prefs';
-
-// Composants d'icônes SVG
-const CalendarIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-const ChartIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-  </svg>
-);
-
-const UsersIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-  </svg>
-);
-
-const ClockIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-  </svg>
-);
-
-const SparklesIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-  </svg>
-);
-
-const KeyIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-  </svg>
-);
-
-const UserIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-  </svg>
-);
-
-const MailIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-  </svg>
-);
-
-const IdCardIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-  </svg>
-);
-
-const CalendarDateIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-  </svg>
-);
-
-const SaveIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-  </svg>
-);
-
-const LockIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-  </svg>
-);
-
-const WarningIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-  </svg>
-);
 
 const preferenceOptions: {
   id: keyof NotificationPrefs;
@@ -124,11 +63,11 @@ const preferenceOptions: {
 ];
 
 export default function ProfilPage() {
-  const { user, loading, logout, updateUserProfile, deleteAccount } = useAuth();
+  const { user, loading: authLoading } = useRequireAuth();
+  const { logout, updateUserProfile, deleteAccount } = useAuth();
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [accidentDates, setAccidentDates] = useState<string[]>([]);
-  const [newAccidentDate, setNewAccidentDate] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -145,12 +84,6 @@ export default function ProfilPage() {
   });
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsMessage, setPrefsMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -278,13 +211,6 @@ export default function ProfilPage() {
     if (!user) {
       return [];
     }
-    const formatDate = (dateString?: string | null) => {
-      if (!dateString) return 'Non disponible';
-      return new Intl.DateTimeFormat('fr-FR', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      }).format(new Date(dateString));
-    };
     return [
       {
         label: 'Dernière connexion',
@@ -304,15 +230,8 @@ export default function ProfilPage() {
     ];
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white/70">Chargement...</p>
-        </div>
-      </div>
-    );
+  if (authLoading) {
+    return <LoadingSpinner />;
   }
 
   if (!user) {
@@ -328,27 +247,7 @@ export default function ProfilPage() {
 
   return (
     <div className="min-h-screen bg-transparent pt-16 pb-24">
-      {/* Toast notifications */}
-      <div className="pointer-events-none fixed top-4 right-4 z-[60] flex flex-col gap-3">
-        <AnimatePresence>
-          {toastMessage && (
-            <motion.div
-              key={toastMessage}
-              initial={{ opacity: 0, y: -12, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -12, scale: 0.95 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className={`pointer-events-auto rounded-2xl px-4 py-3 text-sm shadow-lg backdrop-blur-md min-w-[240px] border ${
-                toastType === 'success'
-                  ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-50'
-                  : 'bg-red-500/15 border-red-500/40 text-red-50'
-              }`}
-            >
-              {toastMessage}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <Toast message={toastMessage} type={toastType} />
 
       <div className="container mx-auto px-4 py-8 space-y-8">
         {/* Header avec avatar */}
@@ -450,110 +349,18 @@ export default function ProfilPage() {
                     />
                   </div>
                   
-                  <div className="space-y-3 md:col-span-2">
-                    <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <CalendarDateIcon className="w-5 h-5" /> Dates des accidents
-                    </label>
-                    <p className="text-white/60 text-xs">Ajoutez les dates de vos accidents ou traumatismes. Elles seront visibles dans le calendrier.</p>
-                    
-                    <div className="space-y-3">
-                      {accidentDates.length > 0 && (
-                        <div className="space-y-2">
-                          {accidentDates.map((date, index) => {
-                            const dateObj = new Date(date);
-                            const formattedDate = new Intl.DateTimeFormat('fr-FR', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric'
-                            }).format(dateObj);
-                            
-                            return (
-                              <div key={index} className="group relative flex items-center gap-3 p-3 rounded-2xl bg-red-500/10 border border-red-400/30 backdrop-blur-sm hover:bg-red-500/15 transition-all duration-300">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                    </svg>
-                                    <span className="text-white/90 font-medium text-sm">{formattedDate}</span>
-                                  </div>
-                                  <input
-                                    type="date"
-                                    value={date}
-                                    onChange={(e) => {
-                                      const newDates = [...accidentDates];
-                                      newDates[index] = e.target.value;
-                                      setAccidentDates(newDates);
-                                      setProfileMessage(null);
-                                      setProfileError(null);
-                                    }}
-                                    className="mt-2 w-full px-3 py-2 rounded-xl bg-black/30 border border-white/20 text-white text-xs focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:border-red-400/50 transition-all duration-300"
-                                  />
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newDates = accidentDates.filter((_, i) => i !== index);
-                                    setAccidentDates(newDates);
-                                    setProfileError(null);
-                                    setToastMessage('Date d\'accident supprimée avec succès.');
-                                    setToastType('success');
-                                  }}
-                                  className="p-2 rounded-xl bg-red-500/20 border border-red-400/50 text-red-300 hover:bg-red-500/30 hover:border-red-400/70 transition-all duration-300 flex-shrink-0"
-                                  title="Supprimer cette date"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      
-                      {/* Champ pour ajouter une nouvelle date */}
-                      <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                        <input
-                          type="date"
-                          value={newAccidentDate}
-                          onChange={(e) => {
-                            setNewAccidentDate(e.target.value);
-                            setProfileMessage(null);
-                            setProfileError(null);
-                          }}
-                          placeholder="Sélectionner une date"
-                          className="flex-1 px-4 py-2 rounded-xl bg-black/30 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:border-red-400/50 transition-all duration-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (newAccidentDate.trim() !== '') {
-                              // Vérifier que la date n'existe pas déjà
-                              if (!accidentDates.includes(newAccidentDate)) {
-                                setAccidentDates([...accidentDates, newAccidentDate]);
-                                setNewAccidentDate('');
-                                setProfileError(null);
-                                setToastMessage('Date d\'accident ajoutée avec succès.');
-                                setToastType('success');
-                              } else {
-                                setToastMessage('Cette date est déjà ajoutée.');
-                                setToastType('error');
-                              }
-                            }
-                          }}
-                          disabled={!newAccidentDate.trim()}
-                          className="px-5 py-2 rounded-xl bg-red-500/20 border border-red-400/50 text-red-300 hover:bg-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium flex items-center gap-2 text-sm"
-                          title="Ajouter cette date"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                          </svg>
-                          Ajouter
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  <AccidentDatesManager
+                    dates={accidentDates}
+                    onDatesChange={(dates) => {
+                      setAccidentDates(dates);
+                      setProfileMessage(null);
+                      setProfileError(null);
+                    }}
+                    onToast={(message, type) => {
+                      setToastMessage(message);
+                      setToastType(type);
+                    }}
+                  />
                 </div>
 
                 {profileError && (
@@ -687,71 +494,16 @@ export default function ProfilPage() {
         </section>
       </div>
 
-      {/* Modal de confirmation de suppression */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm" 
-            onClick={() => setShowDeleteConfirm(false)} 
-          />
-          <div className="relative w-full max-w-md bg-gradient-to-br from-black/95 via-black/90 to-black/95 border border-red-500/30 rounded-3xl p-8 space-y-6 shadow-2xl">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <WarningIcon className="w-8 h-8 text-red-400" />
-                <h2 className="text-2xl font-semibold text-white">
-                  Confirmer la suppression
-                </h2>
-              </div>
-              <p className="text-white/70">
-                Cette action est irréversible. Toutes tes données seront définitivement supprimées :
-              </p>
-              <ul className="text-white/60 text-sm space-y-2 ml-4">
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Ton journal et toutes tes entrées</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Tes statistiques et rapports</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Les codes accompagnants</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-red-400">•</span>
-                  <span>Ton compte et tes préférences</span>
-                </li>
-              </ul>
-            </div>
-            {deleteError && (
-              <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/30">
-                <p className="text-red-300 text-sm">{deleteError}</p>
-              </div>
-            )}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <SimpleButton
-                variant="outline"
-                className="flex-1 bg-transparent text-white border-white/30 hover:bg-white/10"
-                onClick={() => {
-                  setShowDeleteConfirm(false);
-                  setDeleteError(null);
-                }}
-                disabled={deletingAccount}
-              >
-                Annuler
-              </SimpleButton>
-              <SimpleButton
-                className="flex-1 bg-red-500 hover:bg-red-600 text-white border-red-500"
-                onClick={handleDeleteAccount}
-                disabled={deletingAccount}
-              >
-                {deletingAccount ? 'Suppression...' : 'Confirmer la suppression'}
-              </SimpleButton>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteAccountModal
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setDeleteError(null);
+        }}
+        onConfirm={handleDeleteAccount}
+        isDeleting={deletingAccount}
+        error={deleteError}
+      />
     </div>
   );
 }

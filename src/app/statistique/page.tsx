@@ -1,8 +1,10 @@
 'use client';
 
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import MonthlyCalendar from '@/components/dashboard/MonthlyCalendar';
 import TrendChart, {
   type TrendChartDataPoint,
@@ -68,7 +70,7 @@ type ComputedSummarySegment = SummarySegment & {
 };
 
 export default function StatistiquePage() {
-  const { user, loading } = useAuth();
+  const { user, loading } = useRequireAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
@@ -77,17 +79,19 @@ export default function StatistiquePage() {
   const [hoveredSegment, setHoveredSegment] = useState<DetailCategory | null>(null);
   const [daysSinceAccident, setDaysSinceAccident] = useState<number | null>(null);
   const [accidentDates, setAccidentDates] = useState<string[]>([]);
-  const [symptomChartPeriod, setSymptomChartPeriod] = useState<number>(7);
-  const [activityChartPeriod, setActivityChartPeriod] = useState<number>(7);
-  const [medicationChartPeriod, setMedicationChartPeriod] = useState<number>(7);
-  const [perturbateurChartPeriod, setPerturbateurChartPeriod] = useState<number>(7);
-  const [gentleActivityChartPeriod, setGentleActivityChartPeriod] = useState<number>(7);
+  // Gestion des périodes avec un objet au lieu de 5 états séparés
+  const [chartPeriods, setChartPeriods] = useState({
+    symptom: 7,
+    activity: 7,
+    medication: 7,
+    perturbateur: 7,
+    gentleActivity: 7,
+  });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
+  const setChartPeriod = (key: keyof typeof chartPeriods, value: number) => {
+    setChartPeriods((prev) => ({ ...prev, [key]: value }));
+  };
+
 
   useEffect(() => {
     if (!user) return;
@@ -224,11 +228,6 @@ export default function StatistiquePage() {
         day: 'numeric',
         month: 'short',
       }).format(date);
-    } else if (period <= 30) {
-      return new Intl.DateTimeFormat('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-      }).format(date);
     } else {
       return new Intl.DateTimeFormat('fr-FR', {
         day: 'numeric',
@@ -237,10 +236,14 @@ export default function StatistiquePage() {
     }
   };
 
-  const symptomChartData = useMemo<TrendChartDataPoint[]>(() => {
+  // Fonction générique pour générer les données de graphiques
+  const generateChartData = (
+    period: number,
+    valueExtractor: (entry: DailyEntry | undefined) => number
+  ): TrendChartDataPoint[] => {
     const today = new Date();
-    const data = [];
-    const daysCount = symptomChartPeriod - 1;
+    const data: TrendChartDataPoint[] = [];
+    const daysCount = period - 1;
     
     for (let i = daysCount; i >= 0; i--) {
       const date = new Date(today);
@@ -248,257 +251,163 @@ export default function StatistiquePage() {
       const dateISO = date.toISOString().split('T')[0];
       const entry = entries.find((e) => e.dateISO === dateISO);
       
-      const symptomCount = entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0;
-      
       data.push({
         dateISO,
-        label: getDateLabel(date, symptomChartPeriod),
-        value: symptomCount,
+        label: getDateLabel(date, period),
+        value: valueExtractor(entry),
       });
     }
     
     return data;
-  }, [entries, symptomChartPeriod]);
+  };
 
-  const activityChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const today = new Date();
-    const data = [];
-    const daysCount = activityChartPeriod - 1;
-    
-    for (let i = daysCount; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateISO = date.toISOString().split('T')[0];
-      const entry = entries.find((e) => e.dateISO === dateISO);
-      
-      const totalMinutes = entry?.activities?.reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0;
-      
-      data.push({
-        dateISO,
-        label: getDateLabel(date, activityChartPeriod),
-        value: totalMinutes,
-      });
-    }
-    
-    return data;
-  }, [entries, activityChartPeriod]);
+  const symptomChartData = useMemo<TrendChartDataPoint[]>(
+    () => generateChartData(chartPeriods.symptom, (entry) =>
+      entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0
+    ),
+    [entries, chartPeriods.symptom]
+  );
 
-  const medicationChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const today = new Date();
-    const data = [];
-    const daysCount = medicationChartPeriod - 1;
-    
-    for (let i = daysCount; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateISO = date.toISOString().split('T')[0];
-      const entry = entries.find((e) => e.dateISO === dateISO);
-      
-      // Somme des intensités des médicaments (comme dans daySummary)
-      const medicationTakes = entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0;
-      
-      data.push({
-        dateISO,
-        label: getDateLabel(date, medicationChartPeriod),
-        value: medicationTakes,
-      });
-    }
-    
-    return data;
-  }, [entries, medicationChartPeriod]);
+  const activityChartData = useMemo<TrendChartDataPoint[]>(
+    () => generateChartData(chartPeriods.activity, (entry) =>
+      entry?.activities?.reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0
+    ),
+    [entries, chartPeriods.activity]
+  );
 
-  const perturbateurChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const today = new Date();
-    const data = [];
-    const daysCount = perturbateurChartPeriod - 1;
-    
-    for (let i = daysCount; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateISO = date.toISOString().split('T')[0];
-      const entry = entries.find((e) => e.dateISO === dateISO);
-      
-      // Nombre de perturbateurs (comme dans daySummary)
-      const perturbateurCount = entry?.perturbateurs?.length ?? 0;
-      
-      data.push({
-        dateISO,
-        label: getDateLabel(date, perturbateurChartPeriod),
-        value: perturbateurCount,
-      });
-    }
-    
-    return data;
-  }, [entries, perturbateurChartPeriod]);
+  const medicationChartData = useMemo<TrendChartDataPoint[]>(
+    () => generateChartData(chartPeriods.medication, (entry) =>
+      entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0
+    ),
+    [entries, chartPeriods.medication]
+  );
 
-  const gentleActivityChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const today = new Date();
-    const data = [];
-    const daysCount = gentleActivityChartPeriod - 1;
-    
-    for (let i = daysCount; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateISO = date.toISOString().split('T')[0];
-      const entry = entries.find((e) => e.dateISO === dateISO);
-      
-      // Minutes d'activités douces
-      const gentleMinutes = entry?.activities
+  const perturbateurChartData = useMemo<TrendChartDataPoint[]>(
+    () => generateChartData(chartPeriods.perturbateur, (entry) =>
+      entry?.perturbateurs?.length ?? 0
+    ),
+    [entries, chartPeriods.perturbateur]
+  );
+
+  const gentleActivityChartData = useMemo<TrendChartDataPoint[]>(
+    () => generateChartData(chartPeriods.gentleActivity, (entry) =>
+      entry?.activities
         ?.filter((a) => isGentleActivityId(a.id))
-        .reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0;
-      
-      data.push({
-        dateISO,
-        label: getDateLabel(date, gentleActivityChartPeriod),
-        value: gentleMinutes,
-      });
+        .reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0
+    ),
+    [entries, chartPeriods.gentleActivity]
+  );
+
+
+  // Composants pour les sections de détails
+  const SymptomDetailSection = () => {
+    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    const symptoms = selectedEntry.symptoms ?? [];
+    if (!symptoms.length) return <p className="text-white/60 text-sm">Aucun symptôme enregistré.</p>;
+    
+    return (
+      <>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {symptoms.map((symptom) => {
+            const option = SYMPTOM_OPTIONS.find((opt) => opt.id === symptom.id);
+            const label = option?.label ?? symptom.label ?? symptom.id;
+            const intensity = symptom.intensity ?? 0;
+            return (
+              <div key={symptom.id} className="bg-black/30 border border-white/5 rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <p className="text-white font-medium text-sm">{label}</p>
+                  <span className="text-white/70 text-sm font-medium">{intensity}/6</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-pink-500 to-purple-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(intensity / 6, 1) * 100}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-white/70 text-sm">
+          Total du jour : <span className="text-white">{daySummary.symptomScore}/132</span>
+        </p>
+      </>
+    );
+  };
+
+  const MedicationDetailSection = () => {
+    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    const meds = selectedEntry.medications?.filter((med) => (med.intensity ?? 0) > 0) ?? [];
+    if (!meds.length) return <p className="text-white/60 text-sm">Aucune prise enregistrée.</p>;
+    
+    return (
+      <div className="space-y-3">
+        {meds.map((med) => (
+          <div key={med.id} className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-white font-medium text-sm">{med.label}</p>
+              {med.dosage && <p className="text-white/60 text-xs">{med.dosage}</p>}
+            </div>
+            <span className="text-white text-lg font-semibold">{med.intensity}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const ActivityDetailSection = ({ isGentle = false }: { isGentle?: boolean }) => {
+    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    const activities = selectedEntry.activities?.filter((activity) => {
+      const normalizedId = activity.id.replace(/^gentle_/, '');
+      return isGentle ? isGentleActivityId(normalizedId) : !isGentleActivityId(normalizedId);
+    }) ?? [];
+    if (!activities.length) {
+      return <p className="text-white/60 text-sm">{isGentle ? 'Aucune activité douce enregistrée.' : 'Aucune activité enregistrée.'}</p>;
     }
     
-    return data;
-  }, [entries, gentleActivityChartPeriod]);
-
-
-  const renderDetailSection = () => {
-    if (!selectedEntry) {
-      return (
-        <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>
-      );
-    }
-
-    if (detailCategory === 'symptomScore') {
-      const symptoms = selectedEntry.symptoms ?? [];
-      if (!symptoms.length) {
-        return <p className="text-white/60 text-sm">Aucun symptôme enregistré.</p>;
-      }
-      return (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {symptoms.map((symptom) => {
-              const option = SYMPTOM_OPTIONS.find((opt) => opt.id === symptom.id);
-              const label = option?.label ?? symptom.label ?? symptom.id;
-              const intensity = symptom.intensity ?? 0;
-              return (
-                <div
-                  key={symptom.id}
-                  className="bg-black/30 border border-white/5 rounded-2xl p-4"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-white font-medium text-sm">{label}</p>
-                    <span className="text-white/70 text-sm font-medium">
-                      {intensity}/6
-                    </span>
-                  </div>
-                  <div className="w-full bg-white/10 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-pink-500 to-purple-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min(intensity / 6, 1) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+    return (
+      <div className="space-y-3">
+        {activities.map((activity) => (
+          <div key={activity.id} className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+            <p className="text-white font-medium text-sm">{activity.label}</p>
+            <span className="text-white text-lg font-semibold">{activity.duration ?? 0} min</span>
           </div>
-          <p className="text-white/70 text-sm">
-            Total du jour : <span className="text-white">{daySummary.symptomScore}/132</span>
-          </p>
-        </>
-      );
-    }
+        ))}
+      </div>
+    );
+  };
 
-    if (detailCategory === 'medications') {
-      const meds =
-        selectedEntry.medications?.filter((med) => (med.intensity ?? 0) > 0) ?? [];
-      if (!meds.length) {
-        return <p className="text-white/60 text-sm">Aucune prise enregistrée.</p>;
-      }
-      return (
-        <div className="space-y-3">
-          {meds.map((med) => (
-            <div
-              key={med.id}
-              className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between"
-            >
-              <div>
-                <p className="text-white font-medium text-sm">{med.label}</p>
-                {med.dosage && (
-                  <p className="text-white/60 text-xs">{med.dosage}</p>
-                )}
-              </div>
-              <span className="text-white text-lg font-semibold">{med.intensity}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (detailCategory === 'activities') {
-      const activities =
-        selectedEntry.activities?.filter((activity) => {
-          const normalizedId = activity.id.replace(/^gentle_/, '');
-          return !isGentleActivityId(normalizedId);
-        }) ?? [];
-      if (!activities.length) {
-        return <p className="text-white/60 text-sm">Aucune activité enregistrée.</p>;
-      }
-      return (
-        <div className="space-y-3">
-          {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between"
-            >
-              <p className="text-white font-medium text-sm">{activity.label}</p>
-              <span className="text-white text-lg font-semibold">
-                {activity.duration ?? 0} min
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (detailCategory === 'gentleActivities') {
-      const gentleActivities =
-        selectedEntry.activities?.filter((activity) => {
-          const normalizedId = activity.id.replace(/^gentle_/, '');
-          return isGentleActivityId(normalizedId);
-        }) ?? [];
-      if (!gentleActivities.length) {
-        return <p className="text-white/60 text-sm">Aucune activité douce enregistrée.</p>;
-      }
-      return (
-        <div className="space-y-3">
-          {gentleActivities.map((activity) => (
-            <div
-              key={activity.id}
-              className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between"
-            >
-              <p className="text-white font-medium text-sm">{activity.label}</p>
-              <span className="text-white text-lg font-semibold">
-                {activity.duration ?? 0} min
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-
+  const PerturbateurDetailSection = () => {
+    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
     const perturbateurs = selectedEntry.perturbateurs ?? [];
-    if (!perturbateurs.length) {
-      return <p className="text-white/60 text-sm">Aucun élément perturbateur enregistré.</p>;
-    }
+    if (!perturbateurs.length) return <p className="text-white/60 text-sm">Aucun élément perturbateur enregistré.</p>;
+    
     return (
       <div className="flex flex-wrap gap-3">
         {perturbateurs.map((item) => (
-          <span
-            key={item}
-            className="px-4 py-2 rounded-full border border-white/20 text-white/80 bg-black/30 text-sm"
-          >
+          <span key={item} className="px-4 py-2 rounded-full border border-white/20 text-white/80 bg-black/30 text-sm">
             {item}
           </span>
         ))}
       </div>
     );
+  };
+
+  const renderDetailSection = () => {
+    switch (detailCategory) {
+      case 'symptomScore':
+        return <SymptomDetailSection />;
+      case 'medications':
+        return <MedicationDetailSection />;
+      case 'activities':
+        return <ActivityDetailSection />;
+      case 'gentleActivities':
+        return <ActivityDetailSection isGentle />;
+      case 'perturbateurs':
+        return <PerturbateurDetailSection />;
+      default:
+        return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    }
   };
   const summaryChart = useMemo(() => {
     const baseSegments: SummarySegment[] = [
@@ -577,6 +486,73 @@ export default function StatistiquePage() {
     const targetKey = hoveredSegment ?? detailCategory;
     return summaryChart.segments.find((segment) => segment.key === targetKey) ?? summaryChart.segments[0];
   }, [summaryChart, hoveredSegment, detailCategory]);
+
+  // Configuration des styles pour chaque segment
+  const segmentConfig: Record<DetailCategory, {
+    gradientId: string;
+    filterId: string;
+    gradientColors: { offset: string; color: string }[];
+    glowColor: string;
+  }> = {
+    symptomScore: {
+      gradientId: 'symptomGradient',
+      filterId: 'glow-symptom',
+      gradientColors: [
+        { offset: '0%', color: '#C084FC' },
+        { offset: '50%', color: '#A855F7' },
+        { offset: '100%', color: '#9333EA' },
+      ],
+      glowColor: '#A855F7',
+    },
+    medications: {
+      gradientId: 'medicationGradient',
+      filterId: 'glow-medication',
+      gradientColors: [
+        { offset: '0%', color: '#60CDF5' },
+        { offset: '50%', color: '#0EA5E9' },
+        { offset: '100%', color: '#38BDF8' },
+      ],
+      glowColor: '#0EA5E9',
+    },
+    activities: {
+      gradientId: 'activityGradient',
+      filterId: 'glow-activity',
+      gradientColors: [
+        { offset: '0%', color: '#FF8C69' },
+        { offset: '50%', color: '#FF6B35' },
+        { offset: '100%', color: '#F97316' },
+      ],
+      glowColor: '#FF6B35',
+    },
+    gentleActivities: {
+      gradientId: 'gentleGradient',
+      filterId: 'glow-gentle',
+      gradientColors: [
+        { offset: '0%', color: '#4ADE80' },
+        { offset: '50%', color: '#10B981' },
+        { offset: '100%', color: '#34D399' },
+      ],
+      glowColor: '#10B981',
+    },
+    perturbateurs: {
+      gradientId: 'perturbateurGradient',
+      filterId: 'glow-perturbateur',
+      gradientColors: [
+        { offset: '0%', color: '#F87171' },
+        { offset: '50%', color: '#EF4444' },
+        { offset: '100%', color: '#F43F5E' },
+      ],
+      glowColor: '#EF4444',
+    },
+  };
+
+  // Helper pour générer les descriptions des graphiques
+  const getChartDescription = (period: number, daysSinceAccident: number | null, baseLabel: string): string => {
+    if (daysSinceAccident && period === daysSinceAccident) {
+      return baseLabel.replace('sur les X derniers jours', 'depuis l\'accident');
+    }
+    return baseLabel.replace('X', period.toString());
+  };
 
   const chartRadius = 90;
   const chartCircumference = 2 * Math.PI * chartRadius;
@@ -682,81 +658,26 @@ export default function StatistiquePage() {
                         className="w-full h-auto drop-shadow-2xl"
                       >
                         <defs>
-                          <filter id="glow-symptom" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                            <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
-                            <feFlood floodColor="#A855F7" floodOpacity="0.6"/>
-                            <feComposite in2="offsetBlur" operator="in"/>
-                            <feMerge>
-                              <feMergeNode/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <filter id="glow-medication" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                            <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
-                            <feFlood floodColor="#0EA5E9" floodOpacity="0.6"/>
-                            <feComposite in2="offsetBlur" operator="in"/>
-                            <feMerge>
-                              <feMergeNode/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <filter id="glow-activity" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                            <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
-                            <feFlood floodColor="#FF6B35" floodOpacity="0.6"/>
-                            <feComposite in2="offsetBlur" operator="in"/>
-                            <feMerge>
-                              <feMergeNode/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <filter id="glow-gentle" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                            <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
-                            <feFlood floodColor="#10B981" floodOpacity="0.6"/>
-                            <feComposite in2="offsetBlur" operator="in"/>
-                            <feMerge>
-                              <feMergeNode/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <filter id="glow-perturbateur" x="-50%" y="-50%" width="200%" height="200%">
-                            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-                            <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
-                            <feFlood floodColor="#EF4444" floodOpacity="0.6"/>
-                            <feComposite in2="offsetBlur" operator="in"/>
-                            <feMerge>
-                              <feMergeNode/>
-                              <feMergeNode in="SourceGraphic"/>
-                            </feMerge>
-                          </filter>
-                          <radialGradient id="symptomGradient" cx="50%" cy="50%">
-                            <stop offset="0%" stopColor="#C084FC" stopOpacity="1" />
-                            <stop offset="50%" stopColor="#A855F7" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#9333EA" stopOpacity="1" />
-                          </radialGradient>
-                          <radialGradient id="medicationGradient" cx="50%" cy="50%">
-                            <stop offset="0%" stopColor="#60CDF5" stopOpacity="1" />
-                            <stop offset="50%" stopColor="#0EA5E9" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#38BDF8" stopOpacity="1" />
-                          </radialGradient>
-                          <radialGradient id="activityGradient" cx="50%" cy="50%">
-                            <stop offset="0%" stopColor="#FF8C69" stopOpacity="1" />
-                            <stop offset="50%" stopColor="#FF6B35" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#F97316" stopOpacity="1" />
-                          </radialGradient>
-                          <radialGradient id="gentleGradient" cx="50%" cy="50%">
-                            <stop offset="0%" stopColor="#4ADE80" stopOpacity="1" />
-                            <stop offset="50%" stopColor="#10B981" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#34D399" stopOpacity="1" />
-                          </radialGradient>
-                          <radialGradient id="perturbateurGradient" cx="50%" cy="50%">
-                            <stop offset="0%" stopColor="#F87171" stopOpacity="1" />
-                            <stop offset="50%" stopColor="#EF4444" stopOpacity="1" />
-                            <stop offset="100%" stopColor="#F43F5E" stopOpacity="1" />
-                          </radialGradient>
+                          {/* Génération dynamique des filtres et gradients */}
+                          {Object.entries(segmentConfig).map(([key, config]) => (
+                            <React.Fragment key={key}>
+                              <filter id={config.filterId} x="-50%" y="-50%" width="200%" height="200%">
+                                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                                <feOffset in="coloredBlur" dx="0" dy="0" result="offsetBlur"/>
+                                <feFlood floodColor={config.glowColor} floodOpacity="0.6"/>
+                                <feComposite in2="offsetBlur" operator="in"/>
+                                <feMerge>
+                                  <feMergeNode/>
+                                  <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                              </filter>
+                              <radialGradient id={config.gradientId} cx="50%" cy="50%">
+                                {config.gradientColors.map((stop, idx) => (
+                                  <stop key={idx} offset={stop.offset} stopColor={stop.color} stopOpacity="1" />
+                                ))}
+                              </radialGradient>
+                            </React.Fragment>
+                          ))}
                         </defs>
                         <circle
                           cx="120"
@@ -772,18 +693,7 @@ export default function StatistiquePage() {
                           const dash = (segment.percentage / 100) * chartCircumference;
                           const gap = chartCircumference - dash;
                           const offset = chartCircumference * (1 - segment.start / 100);
-                          const gradientId = 
-                            segment.key === 'symptomScore' ? 'symptomGradient' :
-                            segment.key === 'medications' ? 'medicationGradient' :
-                            segment.key === 'activities' ? 'activityGradient' :
-                            segment.key === 'gentleActivities' ? 'gentleGradient' :
-                            'perturbateurGradient';
-                          const filterId = 
-                            segment.key === 'symptomScore' ? 'glow-symptom' :
-                            segment.key === 'medications' ? 'glow-medication' :
-                            segment.key === 'activities' ? 'glow-activity' :
-                            segment.key === 'gentleActivities' ? 'glow-gentle' :
-                            'glow-perturbateur';
+                          const { gradientId, filterId } = segmentConfig[segment.key];
                           const isHovered = hoveredSegment === segment.key;
                           return (
                             <g key={segment.key}>
@@ -920,13 +830,13 @@ export default function StatistiquePage() {
               <TrendChart
                 title="Évolution des symptômes"
                 description={
-                  daysSinceAccident && symptomChartPeriod === daysSinceAccident
+                  daysSinceAccident && chartPeriods.symptom === daysSinceAccident
                     ? `Nombre total de symptômes depuis l'accident`
-                    : `Nombre total de symptômes sur les ${symptomChartPeriod} derniers jours`
+                    : `Nombre total de symptômes sur les ${chartPeriods.symptom} derniers jours`
                 }
                 data={symptomChartData}
-                period={symptomChartPeriod}
-                onPeriodChange={setSymptomChartPeriod}
+                period={chartPeriods.symptom}
+                onPeriodChange={(period) => setChartPeriod('symptom', period)}
                 lineColor="#C084FC"
                 valueFormatter={(value) => `Symptômes: ${value}/132`}
                 daysSinceAccident={daysSinceAccident}
@@ -938,13 +848,13 @@ export default function StatistiquePage() {
               <TrendChart
                 title="Évolution des activités"
                 description={
-                  daysSinceAccident && activityChartPeriod === daysSinceAccident
+                  daysSinceAccident && chartPeriods.activity === daysSinceAccident
                     ? `Temps total d'activités depuis l'accident`
-                    : `Temps total d'activités sur les ${activityChartPeriod} derniers jours`
+                    : `Temps total d'activités sur les ${chartPeriods.activity} derniers jours`
                 }
                 data={activityChartData}
-                period={activityChartPeriod}
-                onPeriodChange={setActivityChartPeriod}
+                period={chartPeriods.activity}
+                onPeriodChange={(period) => setChartPeriod('activity', period)}
                 lineColor="#F97316"
                 valueFormatter={(value) => `${value} min`}
                 daysSinceAccident={daysSinceAccident}
@@ -956,13 +866,13 @@ export default function StatistiquePage() {
               <TrendChart
                 title="Évolution des médicaments"
                 description={
-                  daysSinceAccident && medicationChartPeriod === daysSinceAccident
+                  daysSinceAccident && chartPeriods.medication === daysSinceAccident
                     ? `Nombre total de prises depuis l'accident`
-                    : `Nombre total de prises sur les ${medicationChartPeriod} derniers jours`
+                    : `Nombre total de prises sur les ${chartPeriods.medication} derniers jours`
                 }
                 data={medicationChartData}
-                period={medicationChartPeriod}
-                onPeriodChange={setMedicationChartPeriod}
+                period={chartPeriods.medication}
+                onPeriodChange={(period) => setChartPeriod('medication', period)}
                 lineColor="#38BDF8"
                 valueFormatter={(value) => `${value} prise${value > 1 ? 's' : ''}`}
                 daysSinceAccident={daysSinceAccident}
@@ -974,13 +884,13 @@ export default function StatistiquePage() {
               <TrendChart
                 title="Évolution des éléments perturbateurs"
                 description={
-                  daysSinceAccident && perturbateurChartPeriod === daysSinceAccident
+                  daysSinceAccident && chartPeriods.perturbateur === daysSinceAccident
                     ? `Nombre d'éléments perturbateurs depuis l'accident`
-                    : `Nombre d'éléments perturbateurs sur les ${perturbateurChartPeriod} derniers jours`
+                    : `Nombre d'éléments perturbateurs sur les ${chartPeriods.perturbateur} derniers jours`
                 }
                 data={perturbateurChartData}
-                period={perturbateurChartPeriod}
-                onPeriodChange={setPerturbateurChartPeriod}
+                period={chartPeriods.perturbateur}
+                onPeriodChange={(period) => setChartPeriod('perturbateur', period)}
                 lineColor="#F43F5E"
                 valueFormatter={(value) => `${value} élément${value > 1 ? 's' : ''}`}
                 daysSinceAccident={daysSinceAccident}
@@ -992,13 +902,13 @@ export default function StatistiquePage() {
               <TrendChart
                 title="Évolution des activités douces & thérapies"
                 description={
-                  daysSinceAccident && gentleActivityChartPeriod === daysSinceAccident
+                  daysSinceAccident && chartPeriods.gentleActivity === daysSinceAccident
                     ? `Temps total d'activités douces depuis l'accident`
-                    : `Temps total d'activités douces sur les ${gentleActivityChartPeriod} derniers jours`
+                    : `Temps total d'activités douces sur les ${chartPeriods.gentleActivity} derniers jours`
                 }
                 data={gentleActivityChartData}
-                period={gentleActivityChartPeriod}
-                onPeriodChange={setGentleActivityChartPeriod}
+                period={chartPeriods.gentleActivity}
+                onPeriodChange={(period) => setChartPeriod('gentleActivity', period)}
                 lineColor="#34D399"
                 valueFormatter={(value) => `${value} min`}
                 daysSinceAccident={daysSinceAccident}
