@@ -107,6 +107,7 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           onGoogleClick={handleGoogleSignIn}
           onAppleClick={handleAppleSignIn}
+          isLoading={isLoading}
         />
       </div>
     </div>

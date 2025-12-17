@@ -13,7 +13,10 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   OAuthProvider,
-  deleteUser
+  deleteUser,
+  reauthenticateWithCredential,
+  reauthenticateWithPopup,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { deleteUserData } from '@/lib/firestoreEntries';
@@ -28,7 +31,8 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
-  deleteAccount: () => Promise<void>;
+  deleteAccount: (password?: string) => Promise<void>;
+  reauthenticateUser: (password?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,9 +66,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string, displayName?: string) => {
     const auth = getAuthInstance();
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    
     if (displayName && userCredential.user) {
       await updateProfile(userCredential.user, { displayName });
     }
+    
     return userCredential;
   };
 
@@ -110,7 +116,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const deleteAccount = async () => {
+  /**
+   * Ré-authentifie l'utilisateur selon son provider
+   * @param password - Mot de passe requis pour les comptes email/password
+   */
+  const reauthenticateUser = async (password?: string) => {
+    const auth = getAuthInstance();
+    const currentUser = auth.currentUser;
+    
+    if (!currentUser) {
+      throw new Error('Aucun utilisateur connecté');
+    }
+
+    // Détecter le provider principal
+    const providerId = currentUser.providerData[0]?.providerId;
+    
+    if (providerId === 'password') {
+      // Ré-authentification avec email/password
+      if (!password) {
+        throw new Error('Le mot de passe est requis pour la ré-authentification');
+      }
+      if (!currentUser.email) {
+        throw new Error('Email non disponible');
+      }
+      const credential = EmailAuthProvider.credential(currentUser.email, password);
+      await reauthenticateWithCredential(currentUser, credential);
+    } else if (providerId === 'google.com') {
+      // Ré-authentification avec Google
+      const provider = new GoogleAuthProvider();
+      await reauthenticateWithPopup(currentUser, provider);
+    } else if (providerId === 'apple.com') {
+      // Ré-authentification avec Apple
+      const provider = new OAuthProvider('apple.com');
+      provider.addScope('email');
+      provider.addScope('name');
+      await reauthenticateWithPopup(currentUser, provider);
+    } else {
+      throw new Error(`Provider non supporté: ${providerId}`);
+    }
+  };
+
+  const deleteAccount = async (password?: string) => {
     const auth = getAuthInstance();
     const currentUser = auth.currentUser;
     
@@ -120,11 +166,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const userId = currentUser.uid;
 
-    // Supprimer toutes les données Firestore
-    await deleteUserData(userId);
-
-    // Supprimer le compte Firebase Auth
-    await deleteUser(currentUser);
+    try {
+      // Supprimer toutes les données Firestore
+      await deleteUserData(userId);
+      // Supprimer le compte Firebase Auth
+      await deleteUser(currentUser);
+    } catch (error: any) {
+      // Si l'erreur est "requires-recent-login", ré-authentifier puis réessayer
+      if (error.code === 'auth/requires-recent-login') {
+        // Ré-authentifier l'utilisateur (le mot de passe est requis pour email/password)
+        await reauthenticateUser(password);
+        
+        // Réessayer la suppression après ré-authentification
+        await deleteUserData(userId);
+        await deleteUser(currentUser);
+      } else {
+        // Re-lancer l'erreur si ce n'est pas une erreur de ré-authentification
+        throw error;
+      }
+    }
   };
 
   const value = {
@@ -137,7 +197,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     resetPassword,
     updateUserProfile,
-    deleteAccount
+    deleteAccount,
+    reauthenticateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

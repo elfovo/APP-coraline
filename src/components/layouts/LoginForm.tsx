@@ -10,13 +10,15 @@ interface LoginFormProps {
   onGoogleClick?: () => void;
   onAppleClick?: () => void;
   className?: string;
+  isLoading?: boolean;
 }
 
 export default function LoginForm({
   onSubmit,
   onGoogleClick,
   onAppleClick,
-  className = ''
+  className = '',
+  isLoading: externalIsLoading = false
 }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +28,9 @@ export default function LoginForm({
     email: false,
     password: false
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalIsLoading, setInternalIsLoading] = useState(false);
+  
+  const isLoading = externalIsLoading || internalIsLoading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,11 +53,11 @@ export default function LoginForm({
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
+      setInternalIsLoading(true);
       try {
         await onSubmit?.({ email, password });
       } finally {
-        setIsLoading(false);
+        setInternalIsLoading(false);
       }
     }
   };
@@ -181,6 +185,7 @@ export default function LoginForm({
         </div>
         
         <SimpleButton
+          type="submit"
           size="lg"
           className="w-full"
           disabled={isLoading}

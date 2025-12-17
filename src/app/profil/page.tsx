@@ -10,6 +10,7 @@ import { OutlineInput } from '@/components/inputs';
 import SwitchButton from '@/components/buttons/SwitchButton';
 import { getDbInstance } from '@/lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getPatientId, generateNextPatientId, initializeUserDocument } from '@/lib/firestoreEntries';
 import Toast from '@/components/profil/Toast';
 import DeleteAccountModal from '@/components/profil/DeleteAccountModal';
 import AccidentDatesManager from '@/components/profil/AccidentDatesManager';
@@ -64,7 +65,7 @@ const preferenceOptions: {
 
 export default function ProfilPage() {
   const { user, loading: authLoading } = useRequireAuth();
-  const { logout, updateUserProfile, deleteAccount } = useAuth();
+  const { logout, updateUserProfile, deleteAccount, reauthenticateUser } = useAuth();
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [accidentDates, setAccidentDates] = useState<string[]>([]);
@@ -84,12 +85,50 @@ export default function ProfilPage() {
   });
   const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsMessage, setPrefsMessage] = useState<string | null>(null);
+  
+  const [patientId, setPatientId] = useState<number | null>(null);
+  const [loadingPatientId, setLoadingPatientId] = useState(false);
+  const [generatingPatientId, setGeneratingPatientId] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.displayName ?? user.email?.split('@')[0] ?? '');
     loadAccidentDate();
+    loadPatientId();
   }, [user]);
+  
+  const loadPatientId = async () => {
+    if (!user) return;
+    try {
+      setLoadingPatientId(true);
+      const id = await getPatientId(user.uid);
+      setPatientId(id);
+    } catch (error) {
+      console.error('Erreur lors du chargement de l\'ID patient:', error);
+    } finally {
+      setLoadingPatientId(false);
+    }
+  };
+  
+  const handleGeneratePatientId = async () => {
+    if (!user) return;
+    try {
+      setGeneratingPatientId(true);
+      setToastMessage(null);
+      const newPatientId = await generateNextPatientId();
+      await initializeUserDocument(user.uid, newPatientId);
+      setPatientId(newPatientId);
+      setToastMessage(`ID patient créé : ${newPatientId}`);
+      setToastType('success');
+    } catch (error: any) {
+      console.error('Erreur lors de la génération de l\'ID patient:', error);
+      const errorMessage = error.message || 'Erreur lors de la création de l\'ID patient. Veuillez réessayer.';
+      setToastMessage(errorMessage);
+      setToastType('error');
+    } finally {
+      setGeneratingPatientId(false);
+    }
+  };
 
   const loadAccidentDate = async () => {
     if (!user) return;
@@ -192,17 +231,48 @@ export default function ProfilPage() {
     }, 500);
   };
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (password?: string) => {
     if (!user) return;
     
     try {
       setDeleteError(null);
       setDeletingAccount(true);
-      await deleteAccount();
+      
+      // Détecter le provider
+      const providerId = user.providerData[0]?.providerId;
+      const isEmailPassword = providerId === 'password';
+      
+      // Si c'est un provider OAuth (Google/Apple), ré-authentifier via popup d'abord
+      if (!isEmailPassword) {
+        try {
+          await reauthenticateUser();
+        } catch (reauthError: any) {
+          if (reauthError.code === 'auth/popup-closed-by-user' || reauthError.code === 'auth/popup-blocked') {
+            setDeleteError('La ré-authentification a été annulée. Veuillez réessayer.');
+            setDeletingAccount(false);
+            return;
+          }
+          throw reauthError;
+        }
+      }
+      
+      // Supprimer le compte (avec mot de passe si nécessaire)
+      await deleteAccount(password);
       router.push('/login');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la suppression du compte:', error);
-      setDeleteError('Impossible de supprimer le compte pour le moment. Veuillez réessayer.');
+      
+      let errorMessage = 'Impossible de supprimer le compte pour le moment. Veuillez réessayer.';
+      
+      if (error.code === 'auth/requires-recent-login') {
+        errorMessage = 'Une ré-authentification est requise. Veuillez réessayer.';
+      } else if (error.code === 'auth/wrong-password') {
+        errorMessage = 'Mot de passe incorrect. Veuillez réessayer.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setDeleteError(errorMessage);
       setDeletingAccount(false);
     }
   };
@@ -221,11 +291,6 @@ export default function ProfilPage() {
         label: 'Création du compte',
         value: formatDate(user.metadata?.creationTime),
         icon: <SparklesIcon className="w-5 h-5 text-white/70" />,
-      },
-      {
-        label: 'Identifiant',
-        value: user.uid.slice(0, 8) + '...',
-        icon: <KeyIcon className="w-5 h-5 text-white/70" />,
       },
     ];
   }, [user]);
@@ -339,14 +404,37 @@ export default function ProfilPage() {
                   
                   <div className="space-y-2">
                     <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <IdCardIcon className="w-5 h-5" /> Identifiant patient
+                      <IdCardIcon className="w-5 h-5" /> ID patient
                     </label>
-                    <OutlineInput
-                      value={user.uid.slice(0, 12) + '…'}
-                      disabled
-                      variant="white"
-                      size="lg"
-                    />
+                    {loadingPatientId ? (
+                      <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60">
+                        Chargement...
+                      </div>
+                    ) : patientId !== null ? (
+                      <OutlineInput
+                        value={patientId.toString()}
+                        disabled
+                        variant="white"
+                        size="lg"
+                      />
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <OutlineInput
+                          value="Non défini"
+                          disabled
+                          variant="white"
+                          size="lg"
+                          className="flex-1"
+                        />
+                        <SimpleButton
+                          size="md"
+                          onClick={handleGeneratePatientId}
+                          disabled={generatingPatientId}
+                        >
+                          {generatingPatientId ? 'Création...' : 'Créer'}
+                        </SimpleButton>
+                      </div>
+                    )}
                   </div>
                   
                   <AccidentDatesManager
@@ -503,6 +591,7 @@ export default function ProfilPage() {
         onConfirm={handleDeleteAccount}
         isDeleting={deletingAccount}
         error={deleteError}
+        requiresPassword={user?.providerData[0]?.providerId === 'password'}
       />
     </div>
   );

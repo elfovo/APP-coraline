@@ -9,6 +9,7 @@ import {
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   Timestamp,
@@ -212,6 +213,79 @@ export async function loadJournalPreferences(
     return null;
   }
   return snapshot.data() as JournalPreferences;
+}
+
+/**
+ * Génère le prochain ID patient de manière atomique
+ * Utilise une transaction Firestore pour garantir l'unicité et la séquentialité
+ */
+export async function generateNextPatientId(): Promise<number> {
+  const db = getDbInstance();
+  const counterRef = doc(db, '_metadata', 'patientCounter');
+
+  try {
+    return await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      
+      let nextId: number;
+      if (!counterDoc.exists()) {
+        // Premier compte : initialiser à 1
+        nextId = 1;
+        transaction.set(counterRef, { lastId: nextId });
+      } else {
+        // Incrémenter le dernier ID
+        const data = counterDoc.data();
+        nextId = (data.lastId ?? 0) + 1;
+        transaction.update(counterRef, { lastId: nextId });
+      }
+      
+      return nextId;
+    });
+  } catch (error: any) {
+    console.error('Erreur lors de la génération de l\'ID patient:', error);
+    
+    // Message d'erreur plus détaillé
+    if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+      throw new Error('Permissions insuffisantes. Vérifiez que les règles Firestore pour _metadata/patientCounter sont publiées dans Firebase Console.');
+    }
+    
+    throw new Error(`Impossible de générer l'ID patient: ${error.message || 'Erreur inconnue'}`);
+  }
+}
+
+/**
+ * Initialise le document utilisateur avec l'ID patient
+ * À appeler lors de la création d'un nouveau compte
+ */
+export async function initializeUserDocument(userId: string, patientId: number) {
+  const db = getDbInstance();
+  const userRef = doc(db, 'users', userId);
+  
+  // Vérifier si le document existe déjà
+  const userDoc = await getDoc(userRef);
+  if (userDoc.exists() && userDoc.data().patientId) {
+    // L'utilisateur a déjà un ID patient, ne pas le modifier
+    return userDoc.data().patientId as number;
+  }
+  
+  // Créer ou mettre à jour le document avec l'ID patient
+  await setDoc(userRef, { patientId }, { merge: true });
+  return patientId;
+}
+
+/**
+ * Récupère l'ID patient d'un utilisateur
+ */
+export async function getPatientId(userId: string): Promise<number | null> {
+  const db = getDbInstance();
+  const userRef = doc(db, 'users', userId);
+  const userDoc = await getDoc(userRef);
+  
+  if (!userDoc.exists()) {
+    return null;
+  }
+  
+  return userDoc.data().patientId ?? null;
 }
 
 /**

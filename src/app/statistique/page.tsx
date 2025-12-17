@@ -584,7 +584,7 @@ export default function StatistiquePage() {
             </p>
           </header>
 
-          <section className="space-y-4">
+          <section className="space-y-4 w-full">
             <MonthlyCalendar
               selectedDate={selectedDate}
               onSelect={setSelectedDate}

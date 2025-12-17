@@ -18,12 +18,16 @@ export default function RegisterPage() {
   }, [user, router]);
 
   const handleSubmit = async (data: { email: string; password: string }) => {
+    console.log('RegisterPage: handleSubmit appelé', { email: data.email });
     try {
       setError('');
       setIsLoading(true);
+      console.log('RegisterPage: Appel à signUp...');
       await signUp(data.email, data.password);
+      console.log('RegisterPage: signUp réussi, redirection...');
       router.push('/');
     } catch (err: any) {
+      console.error('RegisterPage: Erreur lors de l\'inscription', err);
       // Gérer les erreurs Firebase
       let errorMessage = 'Une erreur est survenue lors de l\'inscription';
       
@@ -42,6 +46,7 @@ export default function RegisterPage() {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+      console.log('RegisterPage: handleSubmit terminé');
     }
   };
 
@@ -105,6 +110,7 @@ export default function RegisterPage() {
           onSubmit={handleSubmit}
           onGoogleClick={handleGoogleSignIn}
           onAppleClick={handleAppleSignIn}
+          isLoading={isLoading}
         />
       </div>
     </div>

@@ -129,7 +129,7 @@ export default function MonthlyCalendar({
   }
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md">
+    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md w-full overflow-visible">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.4em] text-white/50">Calendrier</p>
@@ -155,8 +155,8 @@ export default function MonthlyCalendar({
         </div>
       </div>
 
-      <div className="mt-6 overflow-x-auto">
-        <div className="min-w-[560px]">
+      <div className="mt-6 overflow-x-auto overflow-y-visible w-full">
+        <div className="min-w-[560px] w-full max-w-full py-4 px-4 mx-auto">
           <div className="grid grid-cols-7 gap-2 text-center text-[10px] uppercase tracking-[0.4em] text-white/40">
             {WEEKDAY_LABELS.map((day) => (
               <span key={day}>{day}</span>
@@ -171,7 +171,7 @@ export default function MonthlyCalendar({
                   key={cell.iso}
                   type="button"
                   onClick={() => onSelect(cell.iso)}
-                  className={`relative flex min-h-[78px] flex-col rounded-2xl border px-2 py-2 text-left transition-all duration-200 text-xs cursor-pointer hover:scale-105 ${
+                  className={`relative flex min-h-[78px] flex-col rounded-2xl border px-2 py-2 text-left transition-all duration-200 text-xs cursor-pointer hover:scale-105 hover:z-10 ${
                     cell.isCurrentMonth ? 'bg-white/5' : 'bg-black/30 text-white/40'
                   } ${cell.isToday ? 'border-emerald-400/70 ring-1 ring-emerald-300/50' : 'border-white/12'} ${
                     isSelected ? 'ring-2 ring-blue-400/70 border-blue-400/50' : ''

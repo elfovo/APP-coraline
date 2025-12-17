@@ -13,13 +13,15 @@ interface SignupFormProps {
   onGoogleClick?: () => void;
   onAppleClick?: () => void;
   className?: string;
+  isLoading?: boolean;
 }
 
 export default function SignupForm({
   onSubmit,
   onGoogleClick,
   onAppleClick,
-  className = ''
+  className = '',
+  isLoading: externalIsLoading = false
 }: SignupFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,10 +37,13 @@ export default function SignupForm({
     email: false,
     password: false
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalIsLoading, setInternalIsLoading] = useState(false);
+  
+  const isLoading = externalIsLoading || internalIsLoading;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('SignupForm: handleSubmit appelé', { email, password: '***' });
     
     // Validation simple
     const newErrors: { 
@@ -58,15 +63,23 @@ export default function SignupForm({
       newErrors.password = 'Minimum 6 caractères';
     }
     
+    console.log('SignupForm: Erreurs de validation', newErrors);
     setErrors(newErrors);
     
     if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
+      console.log('SignupForm: Validation OK, appel de onSubmit');
+      setInternalIsLoading(true);
       try {
         await onSubmit?.({ email, password });
+        console.log('SignupForm: onSubmit terminé avec succès');
+      } catch (error) {
+        console.error('SignupForm: Erreur dans onSubmit', error);
+        throw error; // Re-lancer pour que la page parente puisse la gérer
       } finally {
-        setIsLoading(false);
+        setInternalIsLoading(false);
       }
+    } else {
+      console.log('SignupForm: Validation échouée, pas d\'appel à onSubmit');
     }
   };
 
@@ -189,6 +202,7 @@ export default function SignupForm({
         </div>
         
         <SimpleButton
+          type="submit"
           size="lg"
           className="w-full"
           disabled={isLoading}

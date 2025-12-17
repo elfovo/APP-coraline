@@ -65,8 +65,8 @@ interface SliderProps {
 
 function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackColor, rangeColor, labelFormatter }: SliderProps) {
   const [internalValue, setInternalValue] = useState(value);
-  const sliderRef = useRef(null);
-  const [region, setRegion] = useState('middle');
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [region, setRegion] = useState<'left' | 'middle' | 'right'>('middle');
   const clientX = useMotionValue(0);
   const overflow = useMotionValue(0);
   const scale = useMotionValue(1);
@@ -95,11 +95,11 @@ function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackCol
     }
   });
 
-  const clampValue = (val) => {
+  const clampValue = (val: number): number => {
     return Math.min(Math.max(val, min), max);
   };
 
-  const getNextValue = (clientPosition) => {
+  const getNextValue = (clientPosition: number): number => {
     if (!sliderRef.current) return internalValue;
     const { left, width } = sliderRef.current.getBoundingClientRect();
     let newValue = min + ((clientPosition - left) / width) * (max - min);
@@ -111,7 +111,7 @@ function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackCol
     return clampValue(newValue);
   };
 
-  const handlePointerMove = e => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.buttons > 0) {
       const newValue = getNextValue(e.clientX);
       setInternalValue(newValue);
@@ -120,7 +120,7 @@ function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackCol
     }
   };
 
-  const handlePointerDown = e => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const newValue = getNextValue(e.clientX);
     setInternalValue(newValue);
     onChange?.(newValue);
@@ -189,8 +189,11 @@ function Slider({ value, min, max, step, onChange, leftIcon, rightIcon, trackCol
           >
             <div className={styles['slider-track']} style={{ backgroundColor: trackColor }}>
               <div
-                className={styles['slider-range']}
-                style={{ width: `${getRangePercentage()}%`, background: rangeColor }}
+                className={`${styles['slider-range']} ${internalValue > min ? styles['slider-range-filled'] : ''}`}
+                style={{ 
+                  width: `${getRangePercentage()}%`, 
+                  background: rangeColor,
+                }}
               />
             </div>
           </motion.div>
