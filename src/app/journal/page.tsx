@@ -224,22 +224,56 @@ function JournalContent() {
       return { id: symptom.id, label: symptom.label, intensity };
     });
 
-    // Médicaments : très fréquents au début (juste après l'accident), puis diminution progressive
-    // Au début : 80-90% de chance d'avoir des médicaments, intensité élevée
-    // À la fin : 20-30% de chance, intensité faible
-    const medicationUseRate = 0.85 - (progressRatio * 0.6); // 85% au début, 25% à la fin
+    // Médicaments : très fréquents au début (juste après l'accident), puis diminution progressive marquée
+    // La logique doit garantir une baisse claire de la somme totale des intensités au fil du temps
     const commonMeds = ['analgesique', 'antiInflammatoire', 'magnesium', 'vitamineB2', 'betaBloquant'];
-    const medications = SEED_MEDICATIONS.filter(med => commonMeds.includes(med.id))
+    
+    // Calculer le nombre maximum de médicaments et leur intensité moyenne selon la période
+    let maxMedsCount: number;
+    let avgIntensityPerMed: number;
+    let medicationUseRate: number;
+    
+    if (progressRatio > 0.75) {
+      // Juste après l'accident (jours 90-119) : beaucoup de médicaments, intensité élevée
+      maxMedsCount = 4;
+      avgIntensityPerMed = 3.5;
+      medicationUseRate = 0.95; // 95% de chance d'avoir des médicaments
+    } else if (progressRatio > 0.5) {
+      // Période intermédiaire 1 (jours 60-90) : médicaments modérés
+      maxMedsCount = 3;
+      avgIntensityPerMed = 2.5;
+      medicationUseRate = 0.70;
+    } else if (progressRatio > 0.3) {
+      // Période intermédiaire 2 (jours 35-60) : moins de médicaments
+      maxMedsCount = 2;
+      avgIntensityPerMed = 2.0;
+      medicationUseRate = 0.45;
+    } else if (progressRatio > 0.15) {
+      // Période récente (jours 18-35) : très peu de médicaments
+      maxMedsCount = 2;
+      avgIntensityPerMed = 1.5;
+      medicationUseRate = 0.25;
+    } else {
+      // Très récent (jours 0-18) : presque plus de médicaments
+      maxMedsCount = 1;
+      avgIntensityPerMed = 1.0;
+      medicationUseRate = 0.10; // 10% de chance seulement
+    }
+    
+    const selectedMeds = commonMeds.slice(0, Math.min(maxMedsCount, commonMeds.length));
+    
+    // Générer les médicaments avec une intensité qui diminue vraiment
+    const medications = SEED_MEDICATIONS.filter(med => selectedMeds.includes(med.id))
       .filter(() => Math.random() < medicationUseRate)
       .map((med) => {
-        // Intensité plus élevée au début, diminue avec le temps
-        let intensity;
+        let intensity: number;
         if (med.id === 'magnesium' || med.id === 'vitamineB2') {
-          intensity = 1; // Suppléments toujours à 1
+          // Suppléments : toujours à 1, mais moins fréquents à la fin
+          intensity = 1;
         } else {
-          // Autres médicaments : intensité 2-3 au début, 1-2 à la fin
-          const baseIntensity = progressRatio > 0.5 ? 3 : progressRatio > 0.2 ? 2 : 1;
-          intensity = Math.max(1, baseIntensity + randomInt(1) - 1);
+          // Autres médicaments : intensité basée sur avgIntensityPerMed avec variation
+          const variation = randomInt(1) - 0.5; // -0.5, 0, ou +0.5
+          intensity = Math.max(1, Math.min(4, Math.round(avgIntensityPerMed + variation)));
         }
         return {
           id: med.id,
@@ -282,36 +316,49 @@ function JournalContent() {
 
     // Notes complémentaires variées et pertinentes selon la période
     const notesTemplates = [
-      // Notes du début (période difficile)
-      ...(daysAgo > 60 ? [
+      // Notes du début (période difficile - jours 80-119)
+      ...(daysAgo > 80 ? [
         'Journée difficile, beaucoup de fatigue. Repos complet nécessaire.',
         'Symptômes intenses ce matin, amélioration en fin de journée après repos.',
         'Maux de tête persistants, évité les écrans toute la journée.',
         'Nausées importantes, difficulté à me concentrer. Prise de médicaments selon prescription.',
         'Vertiges au réveil, journée calme avec activités douces uniquement.',
         'Sensibilité à la lumière très marquée, porté des lunettes de soleil même à l\'intérieur.',
+        'Journée éprouvante, beaucoup de repos. Suivi les recommandations médicales.',
+        'Symptômes multiples aujourd\'hui, priorité au repos et à l\'hydratation.',
+        'Difficulté à supporter le bruit et la lumière, journée passée dans le calme.',
+        'Fatigue extrême, besoin de pauses fréquentes. Médicaments pris régulièrement.',
       ] : []),
-      // Notes du milieu (amélioration progressive)
-      ...(daysAgo > 30 && daysAgo <= 60 ? [
+      // Notes du milieu (amélioration progressive - jours 40-80)
+      ...(daysAgo > 40 && daysAgo <= 80 ? [
         'Meilleure journée, moins de symptômes qu\'hier. Réussi à faire une petite marche.',
         'Fatigue modérée, mais capable de lire 20 minutes sans problème.',
         'Quelques maux de tête légers, mais gérables. Activités douces aidantes.',
         'Journée stable, pas de pics de symptômes. Continue les exercices de respiration.',
         'Légère amélioration de la concentration, réussi à travailler 30 minutes.',
         'Moins de sensibilité au bruit qu\'avant, progrès encourageant.',
+        'Journée correcte, symptômes présents mais moins intenses qu\'au début.',
+        'Réussi à sortir un peu, pas de régression. Continue la prudence.',
+        'Amélioration progressive, capable de faire plus d\'activités douces.',
+        'Symptômes gérables, bonne journée dans l\'ensemble.',
       ] : []),
-      // Notes récentes (bien mieux)
-      ...(daysAgo <= 30 ? [
+      // Notes récentes (bien mieux - jours 0-40)
+      ...(daysAgo <= 40 ? [
         'Très bonne journée, symptômes minimes. Activités normales possibles.',
         'Presque plus de maux de tête, récupération en cours. Continue les bonnes habitudes.',
         'Concentration beaucoup mieux, réussi à travailler 1h sans problème.',
         'Journée presque normale, juste un peu de fatigue en fin d\'après-midi.',
         'Excellent progrès, se sent presque comme avant. Garde le rythme doux.',
         'Symptômes très légers, récupération presque complète. Continue la prudence.',
+        'Journée agréable, très peu de symptômes. Retour progressif à la normale.',
+        'Se sent bien aujourd\'hui, activités normales possibles avec modération.',
+        'Récupération continue, journée positive. Maintien des bonnes pratiques.',
+        'Presque plus de symptômes, excellente progression depuis le début.',
       ] : []),
     ];
 
-    const noteSeed = notesTemplates.length > 0 && Math.random() < 0.65
+    // Augmenter la probabilité d'avoir des notes (80% au lieu de 65%)
+    const noteSeed = notesTemplates.length > 0 && Math.random() < 0.80
       ? notesTemplates[randomInt(notesTemplates.length - 1)]
       : '';
 

@@ -1,4 +1,5 @@
-import React, { useId, useMemo, useState } from 'react';
+import React, { useId, useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface TrendChartDataPoint {
   dateISO: string;
@@ -57,6 +58,19 @@ export default function TrendChart({
 
   const [hoveredPoint, setHoveredPoint] = useState<HoveredPoint>(null);
   const [mousePosition, setMousePosition] = useState<MousePosition>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [prevPeriod, setPrevPeriod] = useState(period);
+
+  // Détecter le changement de période pour déclencher l'animation
+  useEffect(() => {
+    if (prevPeriod !== period) {
+      setIsAnimating(true);
+      setPrevPeriod(period);
+      // Réinitialiser l'animation après un court délai
+      const timer = setTimeout(() => setIsAnimating(false), 600);
+      return () => clearTimeout(timer);
+    }
+  }, [period, prevPeriod]);
 
   const chartState = useMemo(() => {
     if (!data.length) {
@@ -187,11 +201,23 @@ export default function TrendChart({
       </div>
 
       <div className="relative flex-1 flex items-center">
-        <svg
-          viewBox="0 0 600 200"
-          className="w-full h-auto"
-          preserveAspectRatio="none"
-          onMouseMove={(event) => {
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={period}
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{
+              duration: 0.4,
+              ease: [0.4, 0, 0.2, 1],
+            }}
+            className="w-full h-full"
+          >
+            <svg
+              viewBox="0 0 600 200"
+              className="w-full h-auto"
+              preserveAspectRatio="none"
+              onMouseMove={(event) => {
             const svg = event.currentTarget;
             const rect = svg.getBoundingClientRect();
             const relativeX = event.clientX - rect.left;
@@ -289,20 +315,44 @@ export default function TrendChart({
             </text>
           ))}
 
-          <path d={areaPath} fill={`url(#${gradientId}-area)`} />
+          <motion.path
+            d={areaPath}
+            fill={`url(#${gradientId}-area)`}
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{
+              pathLength: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+              opacity: { duration: 0.3 },
+            }}
+          />
 
-          <path
+          <motion.path
             d={pathData}
             fill="none"
             stroke={lineColor}
             strokeWidth="3"
             strokeLinecap="round"
             strokeLinejoin="round"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={{ pathLength: 1, opacity: 1 }}
+            transition={{
+              pathLength: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
+              opacity: { duration: 0.4 },
+            }}
           />
 
           {period <= 30 &&
             points.map((point, index) => (
-              <g key={`point-${index}`}>
+              <motion.g
+                key={`point-${index}`}
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  delay: 0.5 + (index * 0.03),
+                  duration: 0.3,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
+              >
                 <circle
                   cx={point.x}
                   cy={point.y}
@@ -311,19 +361,7 @@ export default function TrendChart({
                   stroke="#ffffff"
                   strokeWidth="1.5"
                 />
-                {period <= 7 && (
-                  <text
-                    x={point.x}
-                    y={point.y - 10}
-                    textAnchor="middle"
-                    fill="white"
-                    fontSize="10"
-                    fontWeight="600"
-                  >
-                    {point.value}
-                  </text>
-                )}
-              </g>
+              </motion.g>
             ))}
 
           {hoveredPoint && (
@@ -360,7 +398,9 @@ export default function TrendChart({
                 {point.label}
               </text>
             ))}
-        </svg>
+            </svg>
+          </motion.div>
+        </AnimatePresence>
 
         {hoveredPoint && mousePosition && (
           <div

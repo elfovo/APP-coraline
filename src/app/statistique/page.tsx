@@ -53,6 +53,20 @@ const SYMPTOM_OPTIONS = [
 
 type DetailCategory = 'symptomScore' | 'medications' | 'activities' | 'gentleActivities' | 'perturbateurs';
 
+type SummarySegment = {
+  key: DetailCategory;
+  label: string;
+  value: number;
+  helper: string;
+  color: string;
+  weight?: number;
+};
+
+type ComputedSummarySegment = SummarySegment & {
+  percentage: number;
+  start: number;
+};
+
 export default function StatistiquePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -60,7 +74,9 @@ export default function StatistiquePage() {
   const [entriesLoading, setEntriesLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [detailCategory, setDetailCategory] = useState<DetailCategory>('symptomScore');
+  const [hoveredSegment, setHoveredSegment] = useState<DetailCategory | null>(null);
   const [daysSinceAccident, setDaysSinceAccident] = useState<number | null>(null);
+  const [accidentDates, setAccidentDates] = useState<string[]>([]);
   const [symptomChartPeriod, setSymptomChartPeriod] = useState<number>(7);
   const [activityChartPeriod, setActivityChartPeriod] = useState<number>(7);
   const [medicationChartPeriod, setMedicationChartPeriod] = useState<number>(7);
@@ -99,9 +115,14 @@ export default function StatistiquePage() {
         if (userDoc.exists()) {
           const data = userDoc.data();
           if (data.accidentDates && Array.isArray(data.accidentDates) && data.accidentDates.length > 0) {
-            // Trouver la date la plus ancienne
-            const sortedDates = data.accidentDates
-              .filter((date: string) => date && date.trim() !== '')
+            // Filtrer et trier les dates
+            const validDates = data.accidentDates
+              .filter((date: string) => date && date.trim() !== '');
+            
+            setAccidentDates(validDates);
+            
+            // Trouver la date la plus ancienne pour calculer daysSinceAccident
+            const sortedDates = validDates
               .sort((a: string, b: string) => new Date(a).getTime() - new Date(b).getTime());
             
             if (sortedDates.length > 0) {
@@ -480,7 +501,7 @@ export default function StatistiquePage() {
     );
   };
   const summaryChart = useMemo(() => {
-    const baseSegments = [
+    const baseSegments: SummarySegment[] = [
       {
         key: 'symptomScore',
         label: 'Symptômes',
@@ -540,14 +561,22 @@ export default function StatistiquePage() {
 
     // Recalculer les positions cumulatives pour le rendu SVG
     let cumulative = 0;
-    const segments = sortedSegments.map((segment) => {
-      const data = { ...segment, start: cumulative };
+    const segments: ComputedSummarySegment[] = sortedSegments.map((segment) => {
+      const data: ComputedSummarySegment = { ...segment, start: cumulative };
       cumulative += segment.percentage;
       return data;
     });
 
     return { total, segments };
   }, [daySummary]);
+
+  const activeSummarySegment = useMemo(() => {
+    if (!summaryChart.segments.length) {
+      return null;
+    }
+    const targetKey = hoveredSegment ?? detailCategory;
+    return summaryChart.segments.find((segment) => segment.key === targetKey) ?? summaryChart.segments[0];
+  }, [summaryChart, hoveredSegment, detailCategory]);
 
   const chartRadius = 90;
   const chartCircumference = 2 * Math.PI * chartRadius;
@@ -585,6 +614,7 @@ export default function StatistiquePage() {
               onSelect={setSelectedDate}
               entriesMap={calendarEntriesMap}
               isLoading={entriesLoading}
+              accidentDates={accidentDates}
             />
           </section>
 
@@ -754,26 +784,79 @@ export default function StatistiquePage() {
                             segment.key === 'activities' ? 'glow-activity' :
                             segment.key === 'gentleActivities' ? 'glow-gentle' :
                             'glow-perturbateur';
+                          const isHovered = hoveredSegment === segment.key;
                           return (
-                            <circle
-                              key={segment.key}
-                              cx="120"
-                              cy="120"
-                              r={chartRadius}
-                              fill="transparent"
-                              stroke={`url(#${gradientId})`}
-                              strokeWidth="22"
-                              strokeDasharray={`${dash} ${gap}`}
-                              strokeDashoffset={offset}
-                              strokeLinecap="butt"
-                              transform="rotate(-90 120 120)"
-                              filter={`url(#${filterId})`}
-                              className="transition-all duration-700 ease-out group-hover:opacity-100"
-                              style={{ opacity: 1 }}
-                            />
+                            <g key={segment.key}>
+                              {/* Cercle visuel */}
+                              <circle
+                                cx="120"
+                                cy="120"
+                                r={chartRadius}
+                                fill="transparent"
+                                stroke={`url(#${gradientId})`}
+                                strokeWidth={isHovered ? 26 : 22}
+                                strokeDasharray={`${dash} ${gap}`}
+                                strokeDashoffset={offset}
+                                strokeLinecap="butt"
+                                transform="rotate(-90 120 120)"
+                                filter={`url(#${filterId})`}
+                                className="transition-all duration-300 ease-out"
+                                style={{ opacity: 1 }}
+                                pointerEvents="none"
+                              />
+                              {/* Cercle interactif élargi */}
+                              <circle
+                                cx="120"
+                                cy="120"
+                                r={chartRadius}
+                                fill="transparent"
+                                stroke="transparent"
+                                strokeWidth={32}
+                                strokeDasharray={`${dash} ${gap}`}
+                                strokeDashoffset={offset}
+                                strokeLinecap="butt"
+                                transform="rotate(-90 120 120)"
+                                className="cursor-pointer"
+                                style={{ opacity: 1 }}
+                                onMouseEnter={() => setHoveredSegment(segment.key)}
+                                onMouseLeave={() => setHoveredSegment(null)}
+                                onFocus={() => setHoveredSegment(segment.key)}
+                                onBlur={() => setHoveredSegment(null)}
+                                onClick={() => setDetailCategory(segment.key)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setDetailCategory(segment.key);
+                                  }
+                                }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${segment.label} - ${segment.value} (${segment.percentage.toFixed(0)}%)`}
+                                pointerEvents="stroke"
+                              />
+                            </g>
                           );
                         })}
                       </svg>
+                      {activeSummarySegment && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
+                          <p className="text-xs uppercase tracking-[0.3em] text-white/50 mb-1">
+                            {activeSummarySegment.label}
+                          </p>
+                          <p
+                            className="text-4xl font-semibold"
+                            style={{ color: activeSummarySegment.color }}
+                          >
+                            {activeSummarySegment.value}
+                          </p>
+                          <p className="text-sm text-white/60">
+                            {activeSummarySegment.helper}
+                          </p>
+                          <p className="mt-2 text-white/80 text-sm">
+                            {summaryChart.total > 0 ? `${activeSummarySegment.percentage.toFixed(0)}% de la journée` : 'Aucune donnée'}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

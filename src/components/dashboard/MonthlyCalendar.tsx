@@ -12,6 +12,7 @@ interface MonthlyCalendarProps {
   onSelect: (dateISO: string) => void;
   entriesMap: Record<string, DayInfo>;
   isLoading?: boolean;
+  accidentDates?: string[];
 }
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -53,6 +54,7 @@ export default function MonthlyCalendar({
   onSelect,
   entriesMap,
   isLoading = false,
+  accidentDates = [],
 }: MonthlyCalendarProps) {
   const todayISO = useMemo(() => toISODate(normalizeDate(new Date())), []);
   const [viewDate, setViewDate] = useState(() => {
@@ -81,6 +83,7 @@ export default function MonthlyCalendar({
       summary: string;
       isCurrentMonth: boolean;
       isToday: boolean;
+      isAccidentDate: boolean;
     }>;
 
     const firstOfMonth = normalizeDate(new Date(viewDate.getFullYear(), viewDate.getMonth(), 1));
@@ -98,6 +101,7 @@ export default function MonthlyCalendar({
       const normalizedCurrent = normalizeDate(current);
       const iso = toISODate(normalizedCurrent);
       const info = entriesMap[iso];
+      const isAccidentDate = accidentDates.includes(iso);
       cells.push({
         iso,
         label: String(normalizedCurrent.getDate()),
@@ -105,11 +109,12 @@ export default function MonthlyCalendar({
         summary: info?.summary ?? '—',
         isCurrentMonth: normalizedCurrent.getMonth() === viewDate.getMonth(),
         isToday: iso === todayISO,
+        isAccidentDate,
       });
     }
 
     return cells;
-  }, [entriesMap, viewDate, todayISO]);
+  }, [entriesMap, viewDate, todayISO, accidentDates]);
 
   const changeMonth = (delta: number) => {
     setViewDate((prev) =>
@@ -170,19 +175,26 @@ export default function MonthlyCalendar({
                     cell.isCurrentMonth ? 'bg-white/5' : 'bg-black/30 text-white/40'
                   } ${cell.isToday ? 'border-emerald-400/70 ring-1 ring-emerald-300/50' : 'border-white/12'} ${
                     isSelected ? 'ring-2 ring-blue-400/70 border-blue-400/50' : ''
-                  } ${styles}`}
+                  } ${cell.isAccidentDate ? 'border-red-400/60 bg-red-500/10 ring-1 ring-red-400/40' : ''} ${styles}`}
                 >
                   <div className="flex items-center justify-between text-[11px]">
-                    <span>{cell.label}</span>
-                    {cell.isToday && <span className="text-emerald-300 text-[9px]">Aujourd’hui</span>}
+                    <span className={cell.isAccidentDate ? 'text-red-300 font-semibold' : ''}>{cell.label}</span>
+                    <div className="flex items-center gap-1">
+                      {cell.isAccidentDate && (
+                        <svg className="w-3 h-3 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                      {cell.isToday && <span className="text-emerald-300 text-[9px]">Aujourd'hui</span>}
+                    </div>
                   </div>
                   <div className="mt-1 text-lg font-semibold text-white text-center drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
                     {cell.summary}
                   </div>
                   <div className={`mt-auto uppercase tracking-[0.3em] ${
                     cell.status === 'missing' ? 'text-[8px]' : 'text-[9px]'
-                  }`}>
-                    {STATUS_LABELS[cell.status]}
+                  } ${cell.isAccidentDate ? 'text-red-300' : ''}`}>
+                    {cell.isAccidentDate ? 'Accident' : STATUS_LABELS[cell.status]}
                   </div>
                 </button>
               );
