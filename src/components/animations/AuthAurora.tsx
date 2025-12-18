@@ -1,10 +1,14 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { motion, useAnimate } from 'motion/react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import FloatingLines from '@/components/FloatingLines';
+
+const FloatingLines = dynamic(() => import('@/components/FloatingLines'), {
+  ssr: false,
+});
 
 const AUTH_PATHS = ['/', '/login', '/register', '/reset-password', '/onboarding'];
 

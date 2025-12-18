@@ -7,9 +7,8 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   // output: 'export', // Désactivé pour permettre les routes API
   trailingSlash: true,
-  images: {
-    unoptimized: true
-  }
+  // On active l'optimisation d'images par défaut (next/image).
+  // Si tu fais un export statique, il faudra réactiver `unoptimized: true`.
 };
 
 export default nextConfig;

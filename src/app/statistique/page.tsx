@@ -1,11 +1,20 @@
 'use client';
 
 import LoadingSpinner from '@/components/LoadingSpinner';
-import StatisticsDashboard from '@/components/statistics/StatisticsDashboard';
+import dynamic from 'next/dynamic';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { findUserByPatientId } from '@/lib/patientAccess';
+
+const StatisticsDashboard = dynamic(() => import('@/components/statistics/StatisticsDashboard'), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen flex items-center justify-center bg-transparent">
+      <LoadingSpinner />
+    </div>
+  ),
+});
 
 export default function StatistiquePage() {
   const searchParams = useSearchParams();

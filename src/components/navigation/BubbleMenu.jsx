@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import { useTheme } from '@/contexts/ThemeContext';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import './BubbleMenu.css';
 
@@ -63,6 +65,7 @@ export default function BubbleMenu({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const { theme } = useTheme();
+  const router = useRouter();
 
   const overlayRef = useRef(null);
   const bubblesRef = useRef([]);
@@ -216,44 +219,78 @@ export default function BubbleMenu({
           <ul className="pill-list" role="menu" aria-label="Menu links">
             {menuItems.map((item, idx) => (
               <li key={idx} role="none" className="pill-col">
-                <a
-                  role="menuitem"
-                  href={item.href}
-                  aria-label={item.ariaLabel || item.label}
-                  className="pill-link"
-                  onClick={(e) => {
-                    if (disableNavigation) {
-                      e.preventDefault(); // Empêche la navigation seulement si désactivée
-                    }
-                    if (onItemClick) {
-                      onItemClick(e);
-                    }
-                    // Fermer le menu après le clic
-                    setTimeout(() => {
+                {typeof item.href === 'string' && item.href.startsWith('/') ? (
+                  <Link
+                    role="menuitem"
+                    href={item.href}
+                    prefetch={true}
+                    aria-label={item.ariaLabel || item.label}
+                    className="pill-link"
+                    onMouseEnter={() => router.prefetch(item.href)}
+                    onTouchStart={() => router.prefetch(item.href)}
+                    onClick={(e) => {
+                      if (disableNavigation) {
+                        e.preventDefault();
+                      }
+                      onItemClick?.(e);
                       setIsMenuOpen(false);
-                    }, 100);
-                    // Le scroll automatique se fait grâce au href="#section"
-                  }}
-                  style={{
-                    '--item-rot': `${item.rotation ?? 0}deg`,
-                    '--pill-bg': menuBg,
-                    '--pill-color': menuContentColor,
-                    '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6',
-                    '--hover-color': item.hoverStyles?.textColor || menuContentColor
-                  }}
-                  ref={el => {
-                    if (el) bubblesRef.current[idx] = el;
-                  }}
-                >
-                  <span
-                    className="pill-label"
+                    }}
+                    style={{
+                      '--item-rot': `${item.rotation ?? 0}deg`,
+                      '--pill-bg': menuBg,
+                      '--pill-color': menuContentColor,
+                      '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6',
+                      '--hover-color': item.hoverStyles?.textColor || menuContentColor
+                    }}
                     ref={el => {
-                      if (el) labelRefs.current[idx] = el;
+                      if (el) bubblesRef.current[idx] = el;
                     }}
                   >
-                    {item.label}
-                  </span>
-                </a>
+                    <span
+                      className="pill-label"
+                      ref={el => {
+                        if (el) labelRefs.current[idx] = el;
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                ) : (
+                  <a
+                    role="menuitem"
+                    href={item.href}
+                    aria-label={item.ariaLabel || item.label}
+                    className="pill-link"
+                    onClick={(e) => {
+                      if (disableNavigation) {
+                        e.preventDefault(); // Empêche la navigation seulement si désactivée
+                      }
+                      onItemClick?.(e);
+                      // Fermer le menu après le clic
+                      setIsMenuOpen(false);
+                      // Le scroll automatique se fait grâce au href="#section"
+                    }}
+                    style={{
+                      '--item-rot': `${item.rotation ?? 0}deg`,
+                      '--pill-bg': menuBg,
+                      '--pill-color': menuContentColor,
+                      '--hover-bg': item.hoverStyles?.bgColor || '#f3f4f6',
+                      '--hover-color': item.hoverStyles?.textColor || menuContentColor
+                    }}
+                    ref={el => {
+                      if (el) bubblesRef.current[idx] = el;
+                    }}
+                  >
+                    <span
+                      className="pill-label"
+                      ref={el => {
+                        if (el) labelRefs.current[idx] = el;
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                  </a>
+                )}
               </li>
             ))}
           </ul>

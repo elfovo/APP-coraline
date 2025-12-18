@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 
 interface SelectableCardProps {
   title: string;
@@ -26,19 +26,31 @@ export default function SelectableCard({
   onInfoClick,
   showInfoButton = false
 }: SelectableCardProps) {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const ms = Math.round((delay + 0.5) * 1000) + 50;
+    const t = setTimeout(() => setEntered(true), ms);
+    return () => clearTimeout(t);
+  }, [delay]);
+
   return (
     <motion.button
       initial={{ opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ 
-        duration: 0.5, 
-        delay,
-        ease: [0.16, 1, 0.3, 1]
-      }}
+      transition={
+        entered
+          ? { duration: 0.12, ease: 'easeOut' }
+          : {
+              duration: 0.5,
+              delay,
+              ease: [0.16, 1, 0.3, 1]
+            }
+      }
       whileHover={{ 
         scale: 1.02,
         y: -4,
-        transition: { duration: 0.2, ease: 'easeOut' }
+        transition: { duration: 0.08, ease: 'easeOut' }
       }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -52,7 +64,7 @@ export default function SelectableCard({
         border-2
         rounded-3xl
         hover:border-white/40
-        transition-all duration-300 
+        transition-[background-color,border-color,box-shadow] duration-300 
         text-left
         group
         shadow-lg hover:shadow-2xl

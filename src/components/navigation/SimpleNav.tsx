@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   HiHome,
   HiChartBar,
@@ -12,6 +13,7 @@ import {
 
 export default function SimpleNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isRouteActive = (href: string) => {
     if (href === '/') {
@@ -75,6 +77,9 @@ export default function SimpleNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={true}
+                onMouseEnter={() => router.prefetch(item.href)}
+                onTouchStart={() => router.prefetch(item.href)}
                 className={`
                   group flex flex-col items-center justify-center 
                   w-16 h-16 md:w-auto md:h-auto md:flex-row md:gap-2 md:px-4 md:py-2
