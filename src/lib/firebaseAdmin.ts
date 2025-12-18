@@ -67,10 +67,11 @@ export function getAdminApp(): App {
         console.error('[Firebase Admin] Chemins testés:', possiblePaths);
         console.error('[Firebase Admin] Répertoire courant:', process.cwd());
       }
-    } catch (error: any) {
-      console.error('[Firebase Admin] ❌ Erreur lors du chargement:', error?.message || error);
-      if (error?.stack) {
-        console.error('[Firebase Admin] Stack:', error.stack);
+    } catch (error: unknown) {
+      const err = error as { message?: string; stack?: string } | null;
+      console.error('[Firebase Admin] ❌ Erreur lors du chargement:', err?.message || error);
+      if (err?.stack) {
+        console.error('[Firebase Admin] Stack:', err.stack);
       }
     }
   } else {
@@ -100,8 +101,9 @@ export function getAdminApp(): App {
       projectId,
     });
     return adminApp;
-  } catch (error: any) {
-    console.error('[Firebase Admin] Erreur lors de l\'initialisation:', error.message);
+  } catch (error: unknown) {
+    const err = error as { message?: string } | null;
+    console.error('[Firebase Admin] Erreur lors de l\'initialisation:', err?.message || error);
     throw new Error(
       'Impossible d\'initialiser Firebase Admin. ' +
       'Configure FIREBASE_SERVICE_ACCOUNT_PATH ou GOOGLE_APPLICATION_CREDENTIALS. ' +

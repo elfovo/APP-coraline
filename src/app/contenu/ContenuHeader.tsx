@@ -9,13 +9,14 @@ export default function ContenuHeader() {
           Ressources pour ton rétablissement
         </h1>
         <p className="text-white/70 mt-3 max-w-3xl">
-          Tout ce qu'il faut pour guider ton quotidien post-commotion et
+          Tout ce qu&apos;il faut pour guider ton quotidien post-commotion et
           impliquer ton entourage : routines, audios, checklists, ainsi
-          qu'un espace dédié aux accompagnants.
+          qu&apos;un espace dédié aux accompagnants.
         </p>
       </div>
     </header>
   );
 }
+
 
 

@@ -35,19 +35,6 @@ export default function OptionCard({
         transition: { duration: 0.2, ease: 'easeOut' }
       }}
       whileTap={{ scale: 0.98 }}
-      transition={{ 
-        duration: 0.5, 
-        delay,
-        ease: [0.16, 1, 0.3, 1],
-        scale: { 
-          duration: 0.15,
-          ease: 'easeOut'
-        },
-        y: { 
-          duration: 0.15,
-          ease: 'easeOut'
-        }
-      }}
       onClick={onClick}
       className={`
         w-full flex-1 min-h-[140px] p-6 
@@ -100,6 +87,7 @@ export default function OptionCard({
     </motion.button>
   );
 }
+
 
 
 

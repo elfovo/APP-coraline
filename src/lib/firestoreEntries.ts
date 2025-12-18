@@ -241,15 +241,16 @@ export async function generateNextPatientId(): Promise<number> {
       
       return nextId;
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erreur lors de la génération de l\'ID patient:', error);
     
     // Message d'erreur plus détaillé
-    if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+    const err = error as { code?: string; message?: string } | null;
+    if (err?.code === 'permission-denied' || err?.message?.includes('permission')) {
       throw new Error('Permissions insuffisantes. Vérifiez que les règles Firestore pour _metadata/patientCounter sont publiées dans Firebase Console.');
     }
     
-    throw new Error(`Impossible de générer l'ID patient: ${error.message || 'Erreur inconnue'}`);
+    throw new Error(`Impossible de générer l'ID patient: ${err?.message || 'Erreur inconnue'}`);
   }
 }
 

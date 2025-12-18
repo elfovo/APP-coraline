@@ -219,7 +219,7 @@ export default function LoginForm({
       
       <div className="text-center mt-4 sm:mt-6">
         <Link href="/register" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
-          Pas de compte ? S'inscrire
+          Pas de compte ? S&apos;inscrire
         </Link>
       </div>
     </div>

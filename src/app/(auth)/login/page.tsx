@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/layouts';
 import { motion, AnimatePresence } from 'motion/react';
 export default function LoginPage() {
-  const { signIn, signInWithGoogle, signInWithApple, user } = useAuth();
+  const { signIn, signInWithGoogle, user } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,22 +24,24 @@ export default function LoginPage() {
       setIsLoading(true);
       await signIn(data.email, data.password);
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Gérer les erreurs Firebase
       let errorMessage = 'Une erreur est survenue lors de la connexion';
       
-      if (err.code === 'auth/user-not-found') {
+      const firebaseError = err as { code?: string; message?: string } | null;
+
+      if (firebaseError?.code === 'auth/user-not-found') {
         errorMessage = 'Aucun compte trouvé avec cet email';
-      } else if (err.code === 'auth/wrong-password') {
+      } else if (firebaseError?.code === 'auth/wrong-password') {
         errorMessage = 'Mot de passe incorrect';
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (firebaseError?.code === 'auth/invalid-email') {
         errorMessage = 'Email invalide';
-      } else if (err.code === 'auth/user-disabled') {
+      } else if (firebaseError?.code === 'auth/user-disabled') {
         errorMessage = 'Ce compte a été désactivé';
-      } else if (err.code === 'auth/too-many-requests') {
+      } else if (firebaseError?.code === 'auth/too-many-requests') {
         errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       }
       
       setError(errorMessage);
@@ -54,12 +56,13 @@ export default function LoginPage() {
       setIsLoading(true);
       await signInWithGoogle();
       router.push('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Une erreur est survenue lors de la connexion avec Google';
-      if (err.code === 'auth/popup-closed-by-user') {
+      const firebaseError = err as { code?: string; message?: string } | null;
+      if (firebaseError?.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Connexion annulée';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       }
       setError(errorMessage);
     } finally {

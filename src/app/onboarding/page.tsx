@@ -372,7 +372,7 @@ export default function OnboardingPage() {
               className="w-full max-w-3xl text-center space-y-6"
             >
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Date de l'accident
+                Date de l&apos;accident
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
                 Quand avez-vous eu votre commotion cérébrale ?
@@ -415,7 +415,7 @@ export default function OnboardingPage() {
                 Quels sont vos symptômes ?
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez tous les symptômes que vous ressentez (vous pourrez en ajouter d'autres plus tard)
+                Sélectionnez tous les symptômes que vous ressentez (vous pourrez en ajouter d&apos;autres plus tard)
               </p>
             </motion.div>
 
@@ -470,7 +470,7 @@ export default function OnboardingPage() {
                 Quels médicaments prenez-vous ?
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez tous les médicaments que vous prenez pour votre commotion (vous pourrez en ajouter d'autres plus tard)
+                Sélectionnez tous les médicaments que vous prenez pour votre commotion (vous pourrez en ajouter d&apos;autres plus tard)
               </p>
             </motion.div>
 
@@ -527,7 +527,7 @@ export default function OnboardingPage() {
                 Quelles activités pratiquez-vous ?
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez toutes les activités que vous pratiquez (vous pourrez en ajouter d'autres plus tard)
+                Sélectionnez toutes les activités que vous pratiquez (vous pourrez en ajouter d&apos;autres plus tard)
               </p>
             </motion.div>
 
@@ -582,7 +582,7 @@ export default function OnboardingPage() {
                 Activités douces et thérapies
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez toutes les activités douces et thérapies que vous pratiquez (vous pourrez en ajouter d'autres plus tard)
+                Sélectionnez toutes les activités douces et thérapies que vous pratiquez (vous pourrez en ajouter d&apos;autres plus tard)
               </p>
             </motion.div>
 

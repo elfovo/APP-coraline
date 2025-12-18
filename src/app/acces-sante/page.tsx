@@ -177,8 +177,8 @@ export default function AccesSantePage() {
         email: result.email || null,
       });
       setIsLoading(false);
-    } catch (error: any) {
-      console.error('Erreur lors de la vérification de l\'ID patient:', error);
+    } catch (error: unknown) {
+      console.error("Erreur lors de la vérification de l'ID patient:", error);
       setErrorMessage('Impossible de vérifier l\'ID patient pour le moment.');
       setIsLoading(false);
     }
@@ -261,7 +261,7 @@ export default function AccesSantePage() {
             <p className="text-sm uppercase tracking-[0.3em] text-white/60">Accès au suivi patient</p>
             <h1 className="text-4xl font-bold text-white">Accès au suivi patient</h1>
             <p className="text-white/70">
-              Entrez l'ID patient de votre patient pour accéder à son suivi et suivre l'évolution de sa commotion cérébrale.
+              Entrez l&apos;ID patient de votre patient pour accéder à son suivi et suivre l&apos;évolution de sa commotion cérébrale.
             </p>
           </div>
 

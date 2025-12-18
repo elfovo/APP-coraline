@@ -5,9 +5,9 @@ export default function GuidanceSection() {
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 space-y-5">
       <div className="space-y-1">
         <p className="text-xs uppercase tracking-[0.3em] text-white/60">Guidance quotidienne</p>
-        <h2 className="text-2xl font-semibold text-white">Plan doux pour aujourd'hui</h2>
+        <h2 className="text-2xl font-semibold text-white">Plan doux pour aujourd&apos;hui</h2>
         <p className="text-white/70 text-sm">
-          Trois suggestions pour garder le rythme sans t'épuiser.
+          Trois suggestions pour garder le rythme sans t&apos;épuiser.
         </p>
       </div>
       <ul className="space-y-3">
@@ -24,5 +24,6 @@ export default function GuidanceSection() {
     </div>
   );
 }
+
 
 

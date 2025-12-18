@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { SignupForm } from '@/components/layouts';
 import { motion, AnimatePresence } from 'motion/react';
 export default function RegisterPage() {
-  const { signUp, signInWithGoogle, signInWithApple, user } = useAuth();
+  const { signUp, signInWithGoogle, user } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,8 +33,8 @@ export default function RegisterPage() {
       await signUp(data.email, data.password);
       console.log('RegisterPage: signUp réussi, redirection vers onboarding...');
       router.push('/onboarding');
-    } catch (err: any) {
-      console.error('RegisterPage: Erreur lors de l\'inscription', err);
+    } catch (err: unknown) {
+      console.error("RegisterPage: Erreur lors de l'inscription", err);
       // Si l'inscription échoue, retirer le flag
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('newAccount');
@@ -42,16 +42,18 @@ export default function RegisterPage() {
       // Gérer les erreurs Firebase
       let errorMessage = 'Une erreur est survenue lors de l\'inscription';
       
-      if (err.code === 'auth/email-already-in-use') {
+      const firebaseError = err as { code?: string; message?: string } | null;
+
+      if (firebaseError?.code === 'auth/email-already-in-use') {
         errorMessage = 'Cet email est déjà utilisé';
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (firebaseError?.code === 'auth/invalid-email') {
         errorMessage = 'Email invalide';
-      } else if (err.code === 'auth/weak-password') {
+      } else if (firebaseError?.code === 'auth/weak-password') {
         errorMessage = 'Le mot de passe est trop faible (minimum 6 caractères)';
-      } else if (err.code === 'auth/operation-not-allowed') {
+      } else if (firebaseError?.code === 'auth/operation-not-allowed') {
         errorMessage = 'Cette opération n\'est pas autorisée';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       }
       
       setError(errorMessage);
@@ -71,16 +73,17 @@ export default function RegisterPage() {
       }
       await signInWithGoogle();
       router.push('/onboarding');
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Si la connexion échoue, retirer le flag
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('newAccount');
       }
       let errorMessage = 'Une erreur est survenue lors de la connexion avec Google';
-      if (err.code === 'auth/popup-closed-by-user') {
+      const firebaseError = err as { code?: string; message?: string } | null;
+      if (firebaseError?.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Connexion annulée';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       }
       setError(errorMessage);
     } finally {

@@ -36,7 +36,7 @@ export async function findUserByPatientId(patientId: string | number): Promise<P
 
     const data: PatientLookupResult = await response.json();
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[PatientAccess] Erreur lors de la recherche:', error);
     throw error;
   }

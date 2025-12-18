@@ -1,5 +1,7 @@
 'use client';
 
+import type { MouseEvent } from 'react';
+
 import { lazy, Suspense } from 'react';
 import SectionWrapper from '@/components/SectionWrapper';
 
@@ -129,12 +131,12 @@ export default function NavigationSection() {
               { label: 'Demo 2', link: '#', ariaLabel: 'Demo 2' },
               { label: 'Demo 3', link: '#', ariaLabel: 'Demo 3' },
               { label: 'Demo 4', link: '#', ariaLabel: 'Demo 4' }
-            ] as any}
+            ]}
             socialItems={[
               { label: 'Twitter', link: 'https://twitter.com' },
               { label: 'GitHub', link: 'https://github.com' },
               { label: 'LinkedIn', link: 'https://linkedin.com' }
-            ] as any}
+            ]}
             displaySocials={true}
             displayItemNumbering={true}
             logoUrl="logo-white.svg"
@@ -167,7 +169,7 @@ export default function NavigationSection() {
                   </svg>
                 ), 
                 href: '#', 
-                onClick: (e: any) => e.preventDefault() 
+                onClick: (e: MouseEvent) => e.preventDefault() 
               },
               { 
                 label: 'Demo 2', 
@@ -177,7 +179,7 @@ export default function NavigationSection() {
                   </svg>
                 ), 
                 href: '#', 
-                onClick: (e: any) => e.preventDefault() 
+                onClick: (e: MouseEvent) => e.preventDefault() 
               },
               { 
                 label: 'Demo 3', 
@@ -188,7 +190,7 @@ export default function NavigationSection() {
                   </svg>
                 ), 
                 href: '#', 
-                onClick: (e: any) => e.preventDefault() 
+                onClick: (e: MouseEvent) => e.preventDefault() 
               },
               { 
                 label: 'Demo 4', 
@@ -200,7 +202,7 @@ export default function NavigationSection() {
                   </svg>
                 ), 
                 href: '#', 
-                onClick: (e: any) => e.preventDefault() 
+                onClick: (e: MouseEvent) => e.preventDefault() 
               },
               { 
                 label: 'Demo 5', 
@@ -212,7 +214,7 @@ export default function NavigationSection() {
                   </svg>
                 ), 
                 href: '#', 
-                onClick: (e: any) => e.preventDefault() 
+                onClick: (e: MouseEvent) => e.preventDefault() 
               }
             ]}
             magnification={80}
@@ -249,7 +251,7 @@ export default function NavigationSection() {
               'Témoignages',
               'FAQ'
             ]}
-            onItemSelect={(item: any, index: any) => {
+            onItemSelect={(item: string, index: number) => {
               console.log(`Sélectionné: ${item} (index: ${index})`);
             }}
             showGradients={true}

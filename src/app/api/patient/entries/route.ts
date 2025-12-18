@@ -40,9 +40,10 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ entries });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Erreur lors de la récupération des entrées:', error);
-    const errorMessage = error?.message || error?.toString() || 'Erreur inconnue';
+    const err = error as { message?: string; toString?: () => string } | null;
+    const errorMessage = err?.message || err?.toString?.() || 'Erreur inconnue';
     return NextResponse.json(
       { 
         error: 'Une erreur est survenue lors de la récupération des entrées',

@@ -55,10 +55,11 @@ export async function GET(request: NextRequest) {
       email: data.email ?? null,
       patientId: data.patientId ?? numericId,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Erreur lors de la recherche du patient:', error);
-    const errorMessage = error?.message || error?.toString() || 'Erreur inconnue';
-    const errorStack = error?.stack || '';
+    const err = error as { message?: string; stack?: string; toString?: () => string } | null;
+    const errorMessage = err?.message || err?.toString?.() || 'Erreur inconnue';
+    const errorStack = err?.stack || '';
     console.error('[API] Détails de l\'erreur:', { message: errorMessage, stack: errorStack });
     
     return NextResponse.json(

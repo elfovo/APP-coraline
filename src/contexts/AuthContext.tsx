@@ -108,9 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Utiliser signInWithPopup, avec fallback sur redirect si nécessaire
     try {
       return await signInWithPopup(auth, provider);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Si popup échoue, essayer avec redirect
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user') {
+      const err = error as { code?: string } | null;
+      if (err?.code === 'auth/popup-blocked' || err?.code === 'auth/popup-closed-by-user') {
         throw error; // Re-lancer l'erreur pour que l'UI puisse la gérer
       }
       // Pour d'autres erreurs, re-lancer aussi
@@ -178,9 +179,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await deleteUserData(userId);
       // Supprimer le compte Firebase Auth
       await deleteUser(currentUser);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Si l'erreur est "requires-recent-login", ré-authentifier puis réessayer
-      if (error.code === 'auth/requires-recent-login') {
+      const err = error as { code?: string } | null;
+      if (err?.code === 'auth/requires-recent-login') {
         // Ré-authentifier l'utilisateur (le mot de passe est requis pour email/password)
         await reauthenticateUser(password);
         

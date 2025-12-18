@@ -15,15 +15,17 @@ export default function ResetPasswordPage() {
       setSuccess(false);
       await resetPassword(data.email);
       setSuccess(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       let errorMessage = 'Une erreur est survenue';
       
-      if (err.code === 'auth/user-not-found') {
+      const firebaseError = err as { code?: string; message?: string } | null;
+
+      if (firebaseError?.code === 'auth/user-not-found') {
         errorMessage = 'Aucun compte trouvé avec cet email';
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (firebaseError?.code === 'auth/invalid-email') {
         errorMessage = 'Email invalide';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (firebaseError?.message) {
+        errorMessage = firebaseError.message;
       }
       
       setError(errorMessage);

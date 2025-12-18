@@ -120,9 +120,10 @@ export default function ProfilPage() {
       setPatientId(newPatientId);
       setToastMessage(`ID patient créé : ${newPatientId}`);
       setToastType('success');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erreur lors de la génération de l\'ID patient:', error);
-      const errorMessage = error.message || 'Erreur lors de la création de l\'ID patient. Veuillez réessayer.';
+      const err = error as { message?: string } | null;
+      const errorMessage = err?.message || 'Erreur lors de la création de l\'ID patient. Veuillez réessayer.';
       setToastMessage(errorMessage);
       setToastType('error');
     } finally {
@@ -250,8 +251,9 @@ export default function ProfilPage() {
       if (!isEmailPassword) {
         try {
           await reauthenticateUser();
-        } catch (reauthError: any) {
-          if (reauthError.code === 'auth/popup-closed-by-user' || reauthError.code === 'auth/popup-blocked') {
+        } catch (reauthError: unknown) {
+          const err = reauthError as { code?: string } | null;
+          if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/popup-blocked') {
             setDeleteError('La ré-authentification a été annulée. Veuillez réessayer.');
             setDeletingAccount(false);
             return;
@@ -263,17 +265,18 @@ export default function ProfilPage() {
       // Supprimer le compte (avec mot de passe si nécessaire)
       await deleteAccount(password);
       router.push('/login');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erreur lors de la suppression du compte:', error);
       
       let errorMessage = 'Impossible de supprimer le compte pour le moment. Veuillez réessayer.';
+      const err = error as { code?: string; message?: string } | null;
       
-      if (error.code === 'auth/requires-recent-login') {
+      if (err?.code === 'auth/requires-recent-login') {
         errorMessage = 'Une ré-authentification est requise. Veuillez réessayer.';
-      } else if (error.code === 'auth/wrong-password') {
+      } else if (err?.code === 'auth/wrong-password') {
         errorMessage = 'Mot de passe incorrect. Veuillez réessayer.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
       }
       
       setDeleteError(errorMessage);
@@ -566,7 +569,7 @@ export default function ProfilPage() {
               </h2>
               <p className="text-white/70 max-w-2xl mt-1">
                 La suppression efface ton journal, les rapports exportés et les codes
-                accompagnants. Contacte le support pour confirmer l'opération.
+                accompagnants. Contacte le support pour confirmer l&apos;opération.
               </p>
             </div>
             <div className="flex flex-wrap gap-3">

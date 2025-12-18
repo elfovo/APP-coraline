@@ -113,15 +113,15 @@ const storageObj = {} as FirebaseStorage;
 export const auth = new Proxy(authObj, {
   get(_target, prop) {
     const instance = getAuthInstance();
-    const value = (instance as any)[prop];
+    const value = (instance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
-      return value.bind(instance);
+      return (value as (...args: unknown[]) => unknown).bind(instance);
     }
     return value;
   },
   set(_target, prop, value) {
     const instance = getAuthInstance();
-    (instance as any)[prop] = value;
+    (instance as unknown as Record<PropertyKey, unknown>)[prop] = value;
     return true;
   },
 }) as Auth;
@@ -129,15 +129,15 @@ export const auth = new Proxy(authObj, {
 export const db = new Proxy(dbObj, {
   get(_target, prop) {
     const instance = getDbInstance();
-    const value = (instance as any)[prop];
+    const value = (instance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
-      return value.bind(instance);
+      return (value as (...args: unknown[]) => unknown).bind(instance);
     }
     return value;
   },
   set(_target, prop, value) {
     const instance = getDbInstance();
-    (instance as any)[prop] = value;
+    (instance as unknown as Record<PropertyKey, unknown>)[prop] = value;
     return true;
   },
 }) as Firestore;
@@ -145,15 +145,15 @@ export const db = new Proxy(dbObj, {
 export const storage = new Proxy(storageObj, {
   get(_target, prop) {
     const instance = getStorageInstance();
-    const value = (instance as any)[prop];
+    const value = (instance as unknown as Record<PropertyKey, unknown>)[prop];
     if (typeof value === 'function') {
-      return value.bind(instance);
+      return (value as (...args: unknown[]) => unknown).bind(instance);
     }
     return value;
   },
   set(_target, prop, value) {
     const instance = getStorageInstance();
-    (instance as any)[prop] = value;
+    (instance as unknown as Record<PropertyKey, unknown>)[prop] = value;
     return true;
   },
 }) as FirebaseStorage;

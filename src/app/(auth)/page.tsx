@@ -42,6 +42,57 @@ export default function LandingPage() {
     }
   }, [user, loading, router]);
 
+  // IMPORTANT: les hooks ne doivent pas être appelés après un early return.
+  // Ce useEffect doit rester avant les `return` conditionnels (loading/user).
+  useEffect(() => {
+    if (infoSequence === null) return;
+
+    const timers: NodeJS.Timeout[] = [];
+
+    // Étape 1 -> Étape 2 après 5 secondes
+    if (infoSequence === 1) {
+      timers.push(setTimeout(() => setInfoSequence(2), 5000));
+    }
+    // Étape 2 -> Étape 3 après 5 secondes
+    else if (infoSequence === 2) {
+      timers.push(setTimeout(() => setInfoSequence(3), 5000));
+    }
+    // Étape 3 -> Étape 4 après 5 secondes
+    else if (infoSequence === 3) {
+      timers.push(setTimeout(() => setInfoSequence(4), 5000));
+    }
+    // Étape 4 -> Fade in du background puis traitement selon le type
+    else if (infoSequence === 4) {
+      setShowVisitorPrompt(false);
+      // Fade in du background après 3 secondes
+      timers.push(
+        setTimeout(() => {
+          if (typeof document !== 'undefined') {
+            document.body.setAttribute('data-aurora-visible', 'true');
+          }
+          setShowAurora(true);
+        }, 3000)
+      );
+
+      // Traitement selon le type d'option
+      timers.push(
+        setTimeout(async () => {
+          if (selectedOptionType === 'patient') {
+            // Pour patient, redirection normale vers register
+            router.push('/register');
+          } else if (selectedOptionType === 'visitor') {
+            // Pour visiteur, afficher l'invite de création de compte démo après la séquence
+            setShowVisitorPrompt(true);
+          }
+        }, 5000)
+      );
+    }
+
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+    };
+  }, [infoSequence, router, selectedOptionType]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-transparent">
@@ -127,51 +178,6 @@ export default function LandingPage() {
     }, { merge: true });
   };
 
-  useEffect(() => {
-    if (infoSequence === null) return;
-
-    const timers: NodeJS.Timeout[] = [];
-
-    // Étape 1 -> Étape 2 après 5 secondes
-    if (infoSequence === 1) {
-      timers.push(setTimeout(() => setInfoSequence(2), 5000));
-    }
-    // Étape 2 -> Étape 3 après 5 secondes
-    else if (infoSequence === 2) {
-      timers.push(setTimeout(() => setInfoSequence(3), 5000));
-    }
-    // Étape 3 -> Étape 4 après 5 secondes
-    else if (infoSequence === 3) {
-      timers.push(setTimeout(() => setInfoSequence(4), 5000));
-    }
-    // Étape 4 -> Fade in du background puis traitement selon le type
-    else if (infoSequence === 4) {
-      setShowVisitorPrompt(false);
-      // Fade in du background après 3 secondes
-      timers.push(setTimeout(() => {
-        if (typeof document !== 'undefined') {
-          document.body.setAttribute('data-aurora-visible', 'true');
-        }
-        setShowAurora(true);
-      }, 3000));
-      
-      // Traitement selon le type d'option
-      timers.push(setTimeout(async () => {
-        if (selectedOptionType === 'patient') {
-          // Pour patient, redirection normale vers register
-          router.push('/register');
-        } else if (selectedOptionType === 'visitor') {
-          // Pour visiteur, afficher l'invite de création de compte démo après la séquence
-          setShowVisitorPrompt(true);
-        }
-      }, 5000));
-    }
-
-    return () => {
-      timers.forEach(timer => clearTimeout(timer));
-    };
-  }, [infoSequence, router, selectedOptionType]);
-
   const handlePatientIdSubmit = async () => {
     const idToCheck = patientId.trim();
     if (!idToCheck) {
@@ -254,8 +260,8 @@ export default function LandingPage() {
       setRedirectUrl(`/acces-sante?patientId=${idToCheck}`);
       setIsLoadingPatient(false); // Le chargement est terminé, mais on garde showLoadingScreen pour afficher "Fini."
       setIsOverlayProcessing(false);
-    } catch (error: any) {
-      console.error('Erreur lors de la vérification de l\'ID patient:', error);
+    } catch (error: unknown) {
+      console.error("Erreur lors de la vérification de l'ID patient:", error);
       setPatientError('Impossible de vérifier l\'ID patient pour le moment.');
       setIsLoadingPatient(false);
       setShowLoadingScreen(false);
@@ -489,7 +495,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
                     className="text-xl md:text-2xl text-white/80"
                   >
-                    encore <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>3 mois après</span> l'accident
+                    encore <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>3 mois après</span> l&apos;accident
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -695,7 +701,7 @@ export default function LandingPage() {
                   Qui êtes-vous ?
                 </h2>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Sélectionnez votre profil pour accéder à l'application adaptée à vos besoins
+                  Sélectionnez votre profil pour accéder à l&apos;application adaptée à vos besoins
                 </p>
               </motion.div>
 
@@ -708,7 +714,7 @@ export default function LandingPage() {
               >
                 <OptionCard
                   title="Visiteur"
-                  description="Je ne suis pas réellement blessé et je souhaite découvrir l'application"
+                  description="Je ne suis pas réellement blessé et je souhaite découvrir l&apos;application"
                   onClick={() => handleOptionClick('visitor')}
                   delay={0.4}
                   icon={
@@ -720,7 +726,7 @@ export default function LandingPage() {
 
                 <OptionCard
                   title="Patient"
-                  description="J'ai une commotion cérébrale et je veux suivre mon rétablissement au quotidien"
+                  description="J&apos;ai une commotion cérébrale et je veux suivre mon rétablissement au quotidien"
                   onClick={() => handleOptionClick('patient')}
                   delay={0.6}
                   icon={
@@ -732,7 +738,7 @@ export default function LandingPage() {
 
                 <OptionCard
                   title="Professionnel de santé"
-                  description="Médecin ou autre professionnel pour suivre l'évolution de la commotion de mon patient"
+                  description="Médecin ou autre professionnel pour suivre l&apos;évolution de la commotion de mon patient"
                   onClick={() => handleOptionClick('doctor')}
                   delay={0.8}
                   icon={
@@ -767,7 +773,7 @@ export default function LandingPage() {
                   Accès au suivi patient
                 </h2>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Entrez l'ID patient de votre patient pour accéder à son suivi et suivre l'évolution de sa commotion cérébrale.
+                  Entrez l&apos;ID patient de votre patient pour accéder à son suivi et suivre l&apos;évolution de sa commotion cérébrale.
                 </p>
               </motion.div>
 

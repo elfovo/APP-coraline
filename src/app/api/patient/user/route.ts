@@ -58,9 +58,10 @@ export async function GET(request: NextRequest) {
       displayName: data?.displayName || null,
       email: email,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[API] Erreur lors de la récupération de l\'utilisateur:', error);
-    const errorMessage = error?.message || error?.toString() || 'Erreur inconnue';
+    const err = error as { message?: string; toString?: () => string } | null;
+    const errorMessage = err?.message || err?.toString?.() || 'Erreur inconnue';
     return NextResponse.json(
       { 
         error: 'Une erreur est survenue lors de la récupération de l\'utilisateur',

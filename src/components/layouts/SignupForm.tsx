@@ -87,7 +87,7 @@ export default function SignupForm({
     <div className={`bg-transparent rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
       <div className="text-center mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Créer un compte</h2>
-        <p className="text-sm sm:text-base text-white opacity-70">Rejoignez-nous dès aujourd'hui</p>
+        <p className="text-sm sm:text-base text-white opacity-70">Rejoignez-nous dès aujourd&apos;hui</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">

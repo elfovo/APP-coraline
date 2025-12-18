@@ -19,8 +19,8 @@ export default function TextAnimationsSection() {
             delay={70}
             duration={2}
             ease="elastic.out(1, 0.3)"
-            from={{ opacity: 0, y: 50 } as any}
-            to={{ opacity: 1, y: 0 } as any}
+            from={{ opacity: 0, y: 50 }}
+            to={{ opacity: 1, y: 0 }}
             threshold={0.1}
             onLetterAnimationComplete={() => {}}
           />

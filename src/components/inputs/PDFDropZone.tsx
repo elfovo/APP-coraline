@@ -189,7 +189,7 @@ const PDFDropZone = ({ onFilesChange, className = '' }: PDFDropZoneProps) => {
           
           {!isFull && (
             <div style={{ textAlign: 'center', color: '#ffffff', opacity: 0.8, fontSize: 'min(2.5vw, 14px)' }}>
-              Cliquez pour ajouter d'autres emplois du temps
+              Cliquez pour ajouter d&apos;autres emplois du temps
             </div>
           )}
         </div>
