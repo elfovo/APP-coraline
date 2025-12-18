@@ -1,14 +1,20 @@
 'use client';
 
+import React from 'react';
 import type { MouseEvent } from 'react';
 
 import { lazy, Suspense } from 'react';
 import SectionWrapper from '@/components/SectionWrapper';
+import type { StaggeredMenuProps } from '@/components/navigation/StaggeredMenu.jsx';
 
 // Lazy loading des composants de navigation
 const BubbleMenu = lazy(() => import('@/components/navigation/BubbleMenu.jsx'));
 const CardNav = lazy(() => import('@/components/navigation/CardNav.jsx'));
-const StaggeredMenu = lazy(() => import('@/components/navigation/StaggeredMenu.jsx'));
+const StaggeredMenu = lazy(() =>
+  import('@/components/navigation/StaggeredMenu.jsx').then((m) => ({
+    default: m.StaggeredMenu,
+  }))
+) as unknown as React.LazyExoticComponent<React.ComponentType<StaggeredMenuProps>>;
 const Dock = lazy(() => import('@/components/navigation/Dock.jsx'));
 const AnimatedList = lazy(() => import('@/components/navigation/AnimatedList.jsx'));
 const GooeyNav = lazy(() => import('@/components/navigation/GooeyNav.jsx'));
@@ -131,12 +137,12 @@ export default function NavigationSection() {
               { label: 'Demo 2', link: '#', ariaLabel: 'Demo 2' },
               { label: 'Demo 3', link: '#', ariaLabel: 'Demo 3' },
               { label: 'Demo 4', link: '#', ariaLabel: 'Demo 4' }
-            ]}
+            ] as unknown as Array<{ label: string; link: string; ariaLabel: string }>}
             socialItems={[
               { label: 'Twitter', link: 'https://twitter.com' },
               { label: 'GitHub', link: 'https://github.com' },
               { label: 'LinkedIn', link: 'https://linkedin.com' }
-            ]}
+            ] as unknown as Array<{ label: string; link: string }>}
             displaySocials={true}
             displayItemNumbering={true}
             logoUrl="logo-white.svg"

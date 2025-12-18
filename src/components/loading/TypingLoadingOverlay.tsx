@@ -113,11 +113,13 @@ export default function TypingLoadingOverlay({
                 initialDelay={200}
                 pauseDuration={600}
                 deletingSpeed={deletingSpeed}
+                variableSpeed={undefined}
                 loop={false}
                 className="text-2xl md:text-3xl font-medium text-white"
                 showCursor={true}
                 cursorCharacter="|"
                 cursorBlinkDuration={0.6}
+                onSentenceComplete={undefined}
               />
             </motion.div>
           ) : (
@@ -133,11 +135,13 @@ export default function TypingLoadingOverlay({
                 typingSpeed={typingSpeed}
                 initialDelay={200}
                 pauseDuration={1000}
+                variableSpeed={undefined}
                 loop={false}
                 className="text-2xl md:text-3xl font-medium text-white"
                 showCursor={true}
                 cursorCharacter="|"
                 cursorBlinkDuration={0.6}
+                onSentenceComplete={undefined}
               />
             </motion.div>
           )}
