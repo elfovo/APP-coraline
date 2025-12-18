@@ -76,9 +76,10 @@ export default function AuthAurora() {
         lineCount={5}
         lineDistance={0.7}
         // Plus lent
-        animationSpeed={0.28}
-        // Moins lumineux (réduit l'intensité du shader)
-        intensity={0.22}
+        animationSpeed={0.34}
+        // Plus visible (le shader est conçu autour d'une intensity ~1)
+        intensity={0.7}
+        opacity={1}
         interactive={true}
         bendRadius={9}
         bendStrength={0}
