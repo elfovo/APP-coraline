@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // mais on fixe quand même une racine de tracing stable (répertoire courant du projet)
   // pour éviter des comportements bizarres quand Next détecte plusieurs lockfiles.
   outputFileTracingRoot: process.cwd(),
+  // Requis pour que Netlify (plugin Next) puisse publier `.next/standalone`
+  output: 'standalone',
   // output: 'export', // Désactivé pour permettre les routes API
   trailingSlash: true,
   // On active l'optimisation d'images par défaut (next/image).
