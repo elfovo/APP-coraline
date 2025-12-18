@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ReactNode, useEffect, useState } from 'react';
+import { memo, ReactNode, useEffect, useState } from 'react';
 
 interface SelectableCardProps {
   title: string;
@@ -15,7 +15,7 @@ interface SelectableCardProps {
   showInfoButton?: boolean;
 }
 
-export default function SelectableCard({
+function SelectableCard({
   title,
   description,
   onClick,
@@ -48,9 +48,9 @@ export default function SelectableCard({
             }
       }
       whileHover={{ 
-        scale: 1.02,
-        y: -4,
-        transition: { duration: 0.08, ease: 'easeOut' }
+        scale: 1.01,
+        y: -2,
+        transition: { duration: 0.1, ease: 'easeOut' }
       }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
@@ -124,4 +124,6 @@ export default function SelectableCard({
     </motion.button>
   );
 }
+
+export default memo(SelectableCard);
 
