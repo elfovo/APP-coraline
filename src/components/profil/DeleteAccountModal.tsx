@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SimpleButton } from '@/components/buttons';
+import { TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
 
 const WarningIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
@@ -117,21 +117,20 @@ export default function DeleteAccountModal({
           </div>
         )}
         <div className="flex flex-col sm:flex-row gap-3">
-          <SimpleButton
-            variant="outline"
-            className="flex-1 bg-transparent text-white border-white/30 hover:bg-white/10"
+          <TransparentButton
+            className="flex-1 text-white border-white/30 hover:bg-white/10"
             onClick={onClose}
             disabled={isDeleting}
           >
             Annuler
-          </SimpleButton>
-          <SimpleButton
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white border-red-500"
+          </TransparentButton>
+          <TransparentButton
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-lg hover:shadow-xl"
             onClick={handleConfirm}
             disabled={isDeleting || (requiresPassword && !password.trim())}
           >
             {isDeleting ? 'Suppression...' : 'Confirmer la suppression'}
-          </SimpleButton>
+          </TransparentButton>
         </div>
       </div>
     </div>
