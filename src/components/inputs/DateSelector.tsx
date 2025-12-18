@@ -55,10 +55,11 @@ export default function DateSelector({
     lg: 'px-4 py-3 text-sm sm:px-6 sm:py-3 sm:text-base md:px-8 md:text-lg'
   };
   
+  const successClasses = success && !error ? 'border-emerald-400 focus:ring-emerald-400' : '';
   const variantClasses = {
-    white: `border-2 border-white text-white placeholder-white placeholder-opacity-70 focus:ring-white ${error ? 'border-red-500 focus:ring-red-500' : ''}`,
-    gray: `border-2 border-gray-300 text-gray-700 placeholder-gray-500 focus:ring-gray-500 ${error ? 'border-red-500 focus:ring-red-500' : ''}`,
-    blue: `border-2 border-blue-500 text-blue-500 placeholder-blue-400 focus:ring-blue-500 ${error ? 'border-red-500 focus:ring-red-500' : ''}`
+    white: `border-2 border-white text-white placeholder-white placeholder-opacity-70 focus:ring-white ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`,
+    gray: `border-2 border-gray-300 text-gray-700 placeholder-gray-500 focus:ring-gray-500 ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`,
+    blue: `border-2 border-blue-500 text-blue-500 placeholder-blue-400 focus:ring-blue-500 ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`
   };
   
   const disabledClasses = disabled 
@@ -132,7 +133,7 @@ export default function DateSelector({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" aria-describedby={ariaDescribedBy}>
       {leftIcon && (
         <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none z-10">
           {leftIcon}
@@ -148,9 +149,12 @@ export default function DateSelector({
           onFocus={onFocus}
           disabled={disabled}
           required={required}
+          id={id ? `${id}-day` : undefined}
+          name={name ? `${name}-day` : undefined}
+          autoComplete={autoComplete}
           aria-label={ariaLabel ? `${ariaLabel} - Jour` : 'Jour'}
         >
-          <option value="">Jour</option>
+          <option value="">{placeholder || 'Jour'}</option>
           {days.map(d => (
             <option key={d} value={d}>{d}</option>
           ))}
@@ -167,6 +171,9 @@ export default function DateSelector({
           onFocus={onFocus}
           disabled={disabled}
           required={required}
+          id={id ? `${id}-month` : undefined}
+          name={name ? `${name}-month` : undefined}
+          autoComplete={autoComplete}
           aria-label={ariaLabel ? `${ariaLabel} - Mois` : 'Mois'}
         >
           <option value="">Mois</option>
@@ -186,6 +193,9 @@ export default function DateSelector({
           onFocus={onFocus}
           disabled={disabled}
           required={required}
+          id={id ? `${id}-year` : undefined}
+          name={name ? `${name}-year` : undefined}
+          autoComplete={autoComplete}
           aria-label={ariaLabel ? `${ariaLabel} - Année` : 'Année'}
         >
           <option value="">Année</option>

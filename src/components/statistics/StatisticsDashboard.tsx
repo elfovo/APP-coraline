@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import MonthlyCalendar from '@/components/dashboard/MonthlyCalendar';
 import TrendChart, {
   type TrendChartDataPoint,
@@ -321,7 +321,7 @@ export default function StatisticsDashboard({
     };
   }, [selectedEntry]);
 
-  const getDateLabel = (date: Date, period: number): string => {
+  const getDateLabel = useCallback((date: Date, period: number): string => {
     if (period <= 7) {
       return new Intl.DateTimeFormat('fr-FR', {
         weekday: 'short',
@@ -333,9 +333,9 @@ export default function StatisticsDashboard({
       day: 'numeric',
       month: 'short',
     }).format(date);
-  };
+  }, []);
 
-  const generateChartData = (
+  const generateChartData = useCallback((
     period: number,
     valueExtractor: (entry: DailyEntry | undefined) => number,
   ): TrendChartDataPoint[] => {
@@ -357,32 +357,32 @@ export default function StatisticsDashboard({
     }
 
     return data;
-  };
+  }, [entries, getDateLabel]);
 
   const symptomChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.symptom, (entry) =>
       entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0,
     ),
-    [entries, chartPeriods.symptom],
+    [chartPeriods.symptom, generateChartData],
   );
 
   const activityChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.activity, (entry) =>
       entry?.activities?.reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
     ),
-    [entries, chartPeriods.activity],
+    [chartPeriods.activity, generateChartData],
   );
 
   const medicationChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.medication, (entry) =>
       entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0,
     ),
-    [entries, chartPeriods.medication],
+    [chartPeriods.medication, generateChartData],
   );
 
   const perturbateurChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.perturbateur, (entry) => entry?.perturbateurs?.length ?? 0),
-    [entries, chartPeriods.perturbateur],
+    [chartPeriods.perturbateur, generateChartData],
   );
 
   const gentleActivityChartData = useMemo<TrendChartDataPoint[]>(
@@ -391,7 +391,7 @@ export default function StatisticsDashboard({
         ?.filter((a) => isGentleActivityId(a.id))
         .reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
     ),
-    [entries, chartPeriods.gentleActivity],
+    [chartPeriods.gentleActivity, generateChartData],
   );
 
   const SymptomDetailSection = () => {

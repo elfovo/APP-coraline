@@ -12,7 +12,6 @@ interface SocialLoginButtonsProps {
 
 export default function SocialLoginButtons({
   onGoogleClick,
-  onAppleClick,
   isLoading = false,
   className = ''
 }: SocialLoginButtonsProps) {

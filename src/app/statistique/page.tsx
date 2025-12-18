@@ -2,7 +2,6 @@
 
 import LoadingSpinner from '@/components/LoadingSpinner';
 import StatisticsDashboard from '@/components/statistics/StatisticsDashboard';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';

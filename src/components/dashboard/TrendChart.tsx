@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState, useEffect } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export interface TrendChartDataPoint {
@@ -58,19 +58,6 @@ export default function TrendChart({
 
   const [hoveredPoint, setHoveredPoint] = useState<HoveredPoint>(null);
   const [mousePosition, setMousePosition] = useState<MousePosition>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [prevPeriod, setPrevPeriod] = useState(period);
-
-  // Détecter le changement de période pour déclencher l'animation
-  useEffect(() => {
-    if (prevPeriod !== period) {
-      setIsAnimating(true);
-      setPrevPeriod(period);
-      // Réinitialiser l'animation après un court délai
-      const timer = setTimeout(() => setIsAnimating(false), 600);
-      return () => clearTimeout(timer);
-    }
-  }, [period, prevPeriod]);
 
   const chartState = useMemo(() => {
     if (!data.length) {
@@ -141,14 +128,7 @@ export default function TrendChart({
 
     return {
       points,
-      yLabels,
       visibleYLabels,
-      maxValue,
-      minValue,
-      valueRange,
-      chartWidth,
-      chartHeight,
-      step,
     };
   }, [data, period]);
 
@@ -194,8 +174,7 @@ export default function TrendChart({
     );
   }
 
-  const { points, visibleYLabels, yLabels, maxValue, chartWidth, chartHeight, step } =
-    chartState;
+  const { points, visibleYLabels } = chartState;
 
   const pathData = createSmoothPath(points);
   const areaPath = `${pathData} L ${points[points.length - 1].x} 200 L ${points[0].x} 200 Z`;

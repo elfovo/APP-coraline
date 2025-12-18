@@ -2,8 +2,6 @@
 
 import BubbleMenu from '@/components/navigation/BubbleMenu.jsx';
 import { getMenuConfig } from '@/config/menu';
-import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { colors } from '@/lib/colors';
 
 export default function Layout({
@@ -11,9 +9,7 @@ export default function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const { t } = useLanguage();
-  const { theme } = useTheme();
-  const menuConfig = getMenuConfig(t);
+  const menuConfig = getMenuConfig();
   
   // Couleur de fond du thème sombre uniquement
   const backgroundColor = colors.background.main;

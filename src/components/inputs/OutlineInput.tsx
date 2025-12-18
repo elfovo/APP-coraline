@@ -65,10 +65,11 @@ export default function OutlineInput({
     lg: 'px-4 py-3 text-sm sm:px-6 sm:py-3 sm:text-base md:px-8 md:text-lg'
   };
   
+  const successClasses = success && !error ? 'border-emerald-400 focus:ring-emerald-400' : '';
   const variantClasses = {
-    white: `border-2 border-white text-white placeholder-white placeholder-opacity-70 focus:ring-white ${error ? 'border-red-500 focus:ring-red-500' : ''}`,
-    gray: `border-2 border-gray-300 text-gray-700 placeholder-gray-500 focus:ring-gray-500 ${error ? 'border-red-500 focus:ring-red-500' : ''}`,
-    blue: `border-2 border-blue-500 text-blue-500 placeholder-blue-400 focus:ring-blue-500 ${error ? 'border-red-500 focus:ring-red-500' : ''}`
+    white: `border-2 border-white text-white placeholder-white placeholder-opacity-70 focus:ring-white ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`,
+    gray: `border-2 border-gray-300 text-gray-700 placeholder-gray-500 focus:ring-gray-500 ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`,
+    blue: `border-2 border-blue-500 text-blue-500 placeholder-blue-400 focus:ring-blue-500 ${error ? 'border-red-500 focus:ring-red-500' : ''} ${successClasses}`
   };
   
   const disabledClasses = disabled 

@@ -1,7 +1,6 @@
 import { colors } from '@/lib/colors';
-import { TranslationKey } from '@/lib/translations';
 
-export const getMenuConfig = (t: (key: TranslationKey) => string) => {
+export const getMenuConfig = () => {
   return {
     items: [
       {

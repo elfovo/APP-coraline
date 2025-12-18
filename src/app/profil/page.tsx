@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { SimpleButton, TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
 import SwitchButton from '@/components/buttons/SwitchButton';
@@ -18,16 +18,12 @@ import {
   CalendarIcon,
   ChartIcon,
   UsersIcon,
-  ClockIcon,
-  SparklesIcon,
-  KeyIcon,
   UserIcon,
   MailIcon,
   IdCardIcon,
   SaveIcon,
   LockIcon,
 } from '@/components/profil/icons';
-import { formatDate } from '@/lib/dateUtils';
 
 type NotificationPrefs = {
   dailyReminder: boolean;
@@ -83,7 +79,6 @@ export default function ProfilPage() {
     weeklySummary: true,
     caregiverUpdates: false,
   });
-  const [prefsSaving, setPrefsSaving] = useState(false);
   const [prefsMessage, setPrefsMessage] = useState<string | null>(null);
   
   const [patientId, setPatientId] = useState<number | null>(null);
@@ -93,23 +88,37 @@ export default function ProfilPage() {
   useEffect(() => {
     if (!user) return;
     setDisplayName(user.displayName ?? user.email?.split('@')[0] ?? '');
-    loadAccidentDate();
-    loadPatientId();
+
+    // Charger les infos dépendantes de l'utilisateur (évite un warning deps hooks)
+    void (async () => {
+      try {
+        setLoadingPatientId(true);
+        const id = await getPatientId(user.uid);
+        setPatientId(id);
+      } catch (error) {
+        console.error("Erreur lors du chargement de l'ID patient:", error);
+      } finally {
+        setLoadingPatientId(false);
+      }
+
+      try {
+        const db = getDbInstance();
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          if (data.accidentDates && Array.isArray(data.accidentDates)) {
+            setAccidentDates(data.accidentDates);
+          } else if (data.accidentDate) {
+            // Migration depuis l'ancien format (une seule date)
+            setAccidentDates([data.accidentDate]);
+          }
+        }
+      } catch (error) {
+        console.warn("Impossible de charger les dates d'accident:", error);
+      }
+    })();
   }, [user]);
-  
-  const loadPatientId = async () => {
-    if (!user) return;
-    try {
-      setLoadingPatientId(true);
-      const id = await getPatientId(user.uid);
-      setPatientId(id);
-    } catch (error) {
-      console.error('Erreur lors du chargement de l\'ID patient:', error);
-    } finally {
-      setLoadingPatientId(false);
-    }
-  };
-  
+
   const handleGeneratePatientId = async () => {
     if (!user) return;
     try {
@@ -128,25 +137,6 @@ export default function ProfilPage() {
       setToastType('error');
     } finally {
       setGeneratingPatientId(false);
-    }
-  };
-
-  const loadAccidentDate = async () => {
-    if (!user) return;
-    try {
-      const db = getDbInstance();
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        if (data.accidentDates && Array.isArray(data.accidentDates)) {
-          setAccidentDates(data.accidentDates);
-        } else if (data.accidentDate) {
-          // Migration depuis l'ancien format (une seule date)
-          setAccidentDates([data.accidentDate]);
-        }
-      }
-    } catch (error) {
-      console.warn('Impossible de charger les dates d\'accident:', error);
     }
   };
 
@@ -226,16 +216,6 @@ export default function ProfilPage() {
     setPrefsMessage(null);
   };
 
-  const handlePreferencesSave = () => {
-    setPrefsSaving(true);
-    setPrefsMessage(null);
-    setTimeout(() => {
-      setPrefsSaving(false);
-      setPrefsMessage('Préférences synchronisées.');
-      setTimeout(() => setPrefsMessage(null), 3000);
-    }, 500);
-  };
-
   const handleDeleteAccount = async (password?: string) => {
     if (!user) return;
     
@@ -284,23 +264,7 @@ export default function ProfilPage() {
     }
   };
 
-  const accountMetadata = useMemo(() => {
-    if (!user) {
-      return [];
-    }
-    return [
-      {
-        label: 'Dernière connexion',
-        value: formatDate(user.metadata?.lastSignInTime),
-        icon: <ClockIcon className="w-5 h-5 text-white/70" />,
-      },
-      {
-        label: 'Création du compte',
-        value: formatDate(user.metadata?.creationTime),
-        icon: <SparklesIcon className="w-5 h-5 text-white/70" />,
-      },
-    ];
-  }, [user]);
+  // accountMetadata supprimé: n'était pas utilisé dans le rendu.
 
   if (authLoading) {
     return <LoadingSpinner />;

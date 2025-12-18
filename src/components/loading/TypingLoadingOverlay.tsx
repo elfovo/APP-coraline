@@ -33,14 +33,14 @@ export default function TypingLoadingOverlay({
   const [showSecond, setShowSecond] = useState(false);
   const [canRedirect, setCanRedirect] = useState(false);
 
-  const resetTimers = () => {
-    if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
-    if (secondTimerRef.current) clearTimeout(secondTimerRef.current);
-    if (firstTimerRef.current) clearTimeout(firstTimerRef.current);
-  };
-
   // Réinitialiser quand un nouveau chargement commence
   useEffect(() => {
+    const resetTimers = () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+      if (secondTimerRef.current) clearTimeout(secondTimerRef.current);
+      if (firstTimerRef.current) clearTimeout(firstTimerRef.current);
+    };
+
     if (isLoading) {
       resetTimers();
       startTimeRef.current = Date.now();
@@ -48,7 +48,6 @@ export default function TypingLoadingOverlay({
       setCanRedirect(false);
     }
     return () => resetTimers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, firstMessage, secondMessage]);
 
   // Quand le chargement est terminé, supprimer la première phrase puis afficher la deuxième
