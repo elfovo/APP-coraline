@@ -70,17 +70,22 @@ export default function AuthAurora() {
       transition={{ duration: 0.8, ease: 'easeInOut' }}
     >
       <FloatingLines
+        // Visible mais moins agressif que du blanc pur
         linesGradient={['#ffffff']}
         enabledWaves={['top', 'bottom']}
         lineCount={20}
-        lineDistance={1}
-        animationSpeed={1}
+        lineDistance={0.7}
+        // Plus lent
+        animationSpeed={0.28}
+        // Moins lumineux (réduit l'intensité du shader)
+        intensity={0.22}
         interactive={true}
         bendRadius={9}
         bendStrength={0}
         mouseDamping={0.05}
         parallax={true}
         parallaxStrength={0.18}
+        // "screen" reste le plus lisible; l'intensité fait le boulot pour la luminosité
         mixBlendMode="screen"
       />
     </motion.div>

@@ -87,3 +87,5 @@ Vérifiez dans Firebase Console → Authentication → Users que cet ID existe b
 
 Dans la console du navigateur, après avoir cliqué sur "Publier" dans Firebase Console, vérifiez s'il y a des erreurs réseau supplémentaires ou des messages d'avertissement.
 
+
+

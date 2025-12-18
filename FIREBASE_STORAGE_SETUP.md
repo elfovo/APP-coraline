@@ -57,3 +57,5 @@ Ces règles permettent uniquement :
 - À chaque utilisateur d'uploader/modifier/supprimer uniquement sa propre photo de profil
 - Aucun accès public aux fichiers
 
+
+

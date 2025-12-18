@@ -44,3 +44,5 @@ export interface WeeklyTotals {
 export interface WeeklySnapshot extends WeeklyTotals {
   weekLabel: string;
 }
+
+

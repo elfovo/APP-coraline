@@ -81,3 +81,5 @@ export const mockWeeklyHistory: WeeklySnapshot[] = [
     perturbateurs: 2,
   },
 ];
+
+

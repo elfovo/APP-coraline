@@ -53,3 +53,5 @@ export default function HighlightCard({ card }: HighlightCardProps) {
     </article>
   );
 }
+
+

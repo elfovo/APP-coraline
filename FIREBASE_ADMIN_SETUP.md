@@ -57,3 +57,5 @@ Une fois configuré, la route API `/api/patient/lookup` devrait fonctionner sans
 - ✅ Le fichier de service account doit rester côté serveur uniquement
 - ✅ Ajoute `firebase-service-account.json` à `.gitignore`
 
+
+

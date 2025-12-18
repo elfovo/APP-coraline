@@ -12,3 +12,5 @@ export default function QuickTipCard({ tip }: QuickTipCardProps) {
     </div>
   );
 }
+
+

@@ -111,3 +111,5 @@ export const QUICK_TIPS: QuickTip[] = [
     description: "Comment configurer le rappel quotidien et en informer le thérapeute.",
   },
 ];
+
+

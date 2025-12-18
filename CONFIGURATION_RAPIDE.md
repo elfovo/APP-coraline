@@ -56,3 +56,5 @@ Si tu as une erreur, vérifie :
 - ✅ Tu as redémarré le serveur après avoir ajouté la variable
 - ✅ Le `projectId` dans le JSON correspond à `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 
+
+

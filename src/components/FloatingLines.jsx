@@ -29,6 +29,7 @@ precision highp float;
 uniform float iTime;
 uniform vec3  iResolution;
 uniform float animationSpeed;
+uniform float intensity;
 
 uniform bool enableTop;
 uniform bool enableMiddle;
@@ -201,7 +202,7 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord) {
 void main() {
   vec4 color = vec4(0.0);
   mainImage(color, gl_FragCoord.xy);
-  gl_FragColor = color;
+  gl_FragColor = vec4(color.rgb * intensity, color.a);
 }
 `;
 
@@ -240,13 +241,15 @@ export default function FloatingLines({
   middleWavePosition,
   bottomWavePosition = { x: 2.0, y: -0.7, rotate: -1 },
   animationSpeed = 1,
+  intensity = 1,
   interactive = true,
   bendRadius = 5.0,
   bendStrength = -0.5,
   mouseDamping = 0.05,
   parallax = true,
   parallaxStrength = 0.2,
-  mixBlendMode = 'screen'
+  mixBlendMode = 'screen',
+  opacity = 1
 }) {
   const containerRef = useRef(null);
   const targetMouseRef = useRef(new Vector2(-1000, -1000));
@@ -296,6 +299,7 @@ export default function FloatingLines({
       iTime: { value: 0 },
       iResolution: { value: new Vector3(1, 1, 1) },
       animationSpeed: { value: animationSpeed },
+      intensity: { value: intensity },
 
       enableTop: { value: enabledWaves.includes('top') },
       enableMiddle: { value: enabledWaves.includes('middle') },
@@ -365,8 +369,12 @@ export default function FloatingLines({
 
     const clock = new Clock();
 
+    let disposed = false;
+
     const setSize = () => {
+      if (disposed) return;
       const el = containerRef.current;
+      if (!el) return;
       const width = el.clientWidth || 1;
       const height = el.clientHeight || 1;
 
@@ -414,6 +422,7 @@ export default function FloatingLines({
 
     let raf = 0;
     const renderLoop = () => {
+      if (disposed) return;
       uniforms.iTime.value = clock.getElapsedTime();
 
       if (interactive) {
@@ -435,6 +444,7 @@ export default function FloatingLines({
     renderLoop();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(raf);
       // eslint-disable-next-line react-hooks/exhaustive-deps
       if (ro && containerRef.current) {
@@ -463,6 +473,7 @@ export default function FloatingLines({
     middleWavePosition,
     bottomWavePosition,
     animationSpeed,
+    intensity,
     interactive,
     bendRadius,
     bendStrength,
@@ -476,7 +487,8 @@ export default function FloatingLines({
       ref={containerRef}
       className="floating-lines-container"
       style={{
-        mixBlendMode: mixBlendMode
+        mixBlendMode: mixBlendMode,
+        opacity
       }}
     />
   );

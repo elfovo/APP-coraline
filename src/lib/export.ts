@@ -75,3 +75,5 @@ export async function generateWeeklyReportPdf({
   );
   doc.save(`CommoCare-${weekLabel.replace(/\s+/g, '-')}.pdf`);
 }
+
+
