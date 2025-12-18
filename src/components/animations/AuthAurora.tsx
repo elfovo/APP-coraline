@@ -73,7 +73,7 @@ export default function AuthAurora() {
         // Visible mais moins agressif que du blanc pur
         linesGradient={['#ffffff']}
         enabledWaves={['top', 'bottom']}
-        lineCount={20}
+        lineCount={5}
         lineDistance={0.7}
         // Plus lent
         animationSpeed={0.28}
