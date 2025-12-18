@@ -27,6 +27,34 @@ export function getAdminApp(): App {
     throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID n\'est pas défini dans les variables d\'environnement');
   }
 
+  // Option 0 (recommandée en prod / Netlify): credentials via variable d'environnement
+  // - FIREBASE_SERVICE_ACCOUNT_JSON: JSON complet (string)
+  // - FIREBASE_SERVICE_ACCOUNT_BASE64: JSON complet encodé en base64
+  const serviceAccountJsonFromEnv =
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+    (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
+      ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')
+      : null);
+
+  if (serviceAccountJsonFromEnv) {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountJsonFromEnv);
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        projectId,
+      });
+      console.log('[Firebase Admin] ✅ Initialisation via env (service account JSON) réussie!');
+      return adminApp;
+    } catch (error: unknown) {
+      const err = error as { message?: string; stack?: string } | null;
+      console.error('[Firebase Admin] ❌ Erreur parsing FIREBASE_SERVICE_ACCOUNT_*:', err?.message || error);
+      if (err?.stack) {
+        console.error('[Firebase Admin] Stack:', err.stack);
+      }
+      // On continue sur les autres options (path / ADC) si parsing échoue
+    }
+  }
+
   // Option 1: Utiliser les credentials JSON si disponibles (chemin relatif ou absolu)
   const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
   if (serviceAccountPath) {
@@ -106,7 +134,7 @@ export function getAdminApp(): App {
     console.error('[Firebase Admin] Erreur lors de l\'initialisation:', err?.message || error);
     throw new Error(
       'Impossible d\'initialiser Firebase Admin. ' +
-      'Configure FIREBASE_SERVICE_ACCOUNT_PATH ou GOOGLE_APPLICATION_CREDENTIALS. ' +
+      'Configure FIREBASE_SERVICE_ACCOUNT_JSON (recommandé), FIREBASE_SERVICE_ACCOUNT_BASE64, FIREBASE_SERVICE_ACCOUNT_PATH ou GOOGLE_APPLICATION_CREDENTIALS. ' +
       'Voir FIREBASE_ADMIN_SETUP.md pour plus d\'informations.'
     );
   }

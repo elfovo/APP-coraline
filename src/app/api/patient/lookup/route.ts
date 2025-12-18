@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       { 
         error: 'Une erreur est survenue lors de la recherche du patient',
+        code: 'PATIENT_LOOKUP_FAILED',
         details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
       },
       { status: 500 }
