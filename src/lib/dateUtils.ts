@@ -20,32 +20,24 @@ export const formatLongDate = (dateString: string): string => {
   }).format(dateObj);
 };
 
-/**
- * Déplace une date ISO d'un certain nombre de jours
- */
-export function shiftDate(isoDate: string, deltaDays: number): string {
-  const [year, month, day] = isoDate.split('-').map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCDate(date.getUTCDate() + deltaDays);
-  return date.toISOString().split('T')[0];
-}
+export const getTodayISO = (): string => {
+  return new Date().toISOString().split('T')[0];
+};
 
-/**
- * Formate une date ISO en label français
- */
-export function formatDateLabel(dateISO: string): string {
-  const formatter = new Intl.DateTimeFormat('fr-FR', {
+export const shiftDate = (dateISO: string, offset: number): string => {
+  const date = new Date(`${dateISO}T00:00:00`);
+  date.setDate(date.getDate() + offset);
+  return date.toISOString().split('T')[0];
+};
+
+export const formatDateLabel = (dateISO: string): string => {
+  if (!dateISO) return '';
+  const date = new Date(`${dateISO}T00:00:00`);
+  return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
-  });
-  return formatter.format(new Date(`${dateISO}T00:00:00`));
-}
+  }).format(date);
+};
 
-/**
- * Obtient la date ISO d'aujourd'hui
- */
-export function getTodayISO(): string {
-  return new Date().toISOString().split('T')[0];
-}
 

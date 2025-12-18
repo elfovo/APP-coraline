@@ -21,6 +21,9 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == userId;
       allow create: if true; // ou mieux : condition sur le code temporaire
     }
+    match /users/{userId}/preferences/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
     
     // Règle pour le compteur d'ID patient (utilisé lors de la création de compte)
     match /_metadata/patientCounter {
@@ -28,4 +31,5 @@ service cloud.firestore {
     }
   }
 }
+
 

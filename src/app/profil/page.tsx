@@ -197,11 +197,15 @@ export default function ProfilPage() {
       setProfileError(null);
       setProfileMessage(null);
       setSavingProfile(true);
-      await updateUserProfile(displayName.trim());
+      const trimmedDisplayName = displayName.trim();
       
-      // Sauvegarder les dates d'accident dans Firestore
+      // Mettre à jour le displayName dans Firebase Auth
+      await updateUserProfile(trimmedDisplayName);
+      
+      // Sauvegarder aussi le displayName dans Firestore pour que les professionnels de santé puissent y accéder
       const db = getDbInstance();
       await setDoc(doc(db, 'users', user.uid), {
+        displayName: trimmedDisplayName,
         accidentDates: accidentDates.filter(date => date.trim() !== ''),
       }, { merge: true });
       

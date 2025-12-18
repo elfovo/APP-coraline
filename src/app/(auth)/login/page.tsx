@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/layouts';
+import { motion, AnimatePresence } from 'motion/react';
 export default function LoginPage() {
   const { signIn, signInWithGoogle, signInWithApple, user } = useAuth();
   const router = useRouter();
@@ -97,11 +98,20 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-transparent">
       <div className="relative z-10 w-full max-w-md px-4 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-sm">
-            <p className="text-sm text-red-400 text-center">{error}</p>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-sm"
+            >
+              <p className="text-sm text-red-400 text-center">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <LoginForm 
           onSubmit={handleSubmit}

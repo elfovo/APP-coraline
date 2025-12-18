@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { SignupForm } from '@/components/layouts';
+import { motion, AnimatePresence } from 'motion/react';
 export default function RegisterPage() {
   const { signUp, signInWithGoogle, signInWithApple, user } = useAuth();
   const router = useRouter();
@@ -11,9 +12,11 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Si déjà connecté, rediriger vers la page d'accueil
+    // Si l'utilisateur est déjà connecté, décider où le rediriger
     if (user) {
-      router.push('/');
+      const isNewAccount =
+        typeof window !== 'undefined' && sessionStorage.getItem('newAccount') === 'true';
+      router.push(isNewAccount ? '/onboarding' : '/');
     }
   }, [user, router]);
 
@@ -23,11 +26,19 @@ export default function RegisterPage() {
       setError('');
       setIsLoading(true);
       console.log('RegisterPage: Appel à signUp...');
+      // IMPORTANT: poser le flag AVANT l'inscription pour éviter une redirection prématurée
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('newAccount', 'true');
+      }
       await signUp(data.email, data.password);
-      console.log('RegisterPage: signUp réussi, redirection...');
-      router.push('/');
+      console.log('RegisterPage: signUp réussi, redirection vers onboarding...');
+      router.push('/onboarding');
     } catch (err: any) {
       console.error('RegisterPage: Erreur lors de l\'inscription', err);
+      // Si l'inscription échoue, retirer le flag
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('newAccount');
+      }
       // Gérer les erreurs Firebase
       let errorMessage = 'Une erreur est survenue lors de l\'inscription';
       
@@ -54,9 +65,17 @@ export default function RegisterPage() {
     try {
       setError('');
       setIsLoading(true);
+      // IMPORTANT: poser le flag AVANT la connexion pour éviter une redirection prématurée
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('newAccount', 'true');
+      }
       await signInWithGoogle();
-      router.push('/');
+      router.push('/onboarding');
     } catch (err: any) {
+      // Si la connexion échoue, retirer le flag
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('newAccount');
+      }
       let errorMessage = 'Une erreur est survenue lors de la connexion avec Google';
       if (err.code === 'auth/popup-closed-by-user') {
         errorMessage = 'Connexion annulée';
@@ -100,11 +119,20 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-transparent">
       <div className="relative z-10 w-full max-w-md px-4 py-8">
-        {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-sm">
-            <p className="text-sm text-red-400 text-center">{error}</p>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          {error && (
+            <motion.div
+              key="error"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl backdrop-blur-sm"
+            >
+              <p className="text-sm text-red-400 text-center">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <SignupForm 
           onSubmit={handleSubmit}

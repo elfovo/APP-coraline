@@ -181,8 +181,6 @@ const DEFAULT_VISIBLE_PERTURBATEURS = new Set<string>([
   'Stress',
   'Manque de sommeil',
   'Sur-stimulation',
-  'Odeurs fortes',
-  'Changements météo',
   'Repas sauté',
   'Déshydratation',
   'Écrans prolongés',
@@ -493,54 +491,66 @@ export default function DailyEntryForm({
             }
           }
         } else {
-          // Fallback : charger depuis localStorage
+          // Aucun document de préférences pour cet utilisateur :
+          // on applique STRICTEMENT les valeurs par défaut (et on met à jour le cache localStorage).
+          // Ça évite qu'un nouvel utilisateur (ou un compte démo) hérite des préférences d'un autre via localStorage.
+          const defaultHiddenSliders = {
+            symptomes: new Set(
+              SYMPTOM_OPTIONS.filter((option) => !DEFAULT_VISIBLE_SYMPTOMS.has(option.id)).map(
+                (option) => option.id,
+              ),
+            ),
+            medicaments: new Set(
+              MEDICATION_OPTIONS.filter((option) => !DEFAULT_VISIBLE_MEDICATIONS.has(option.id)).map(
+                (option) => option.id,
+              ),
+            ),
+          };
+          const defaultHiddenActivities = {
+            activites: new Set(
+              ACTIVITY_OPTIONS.filter((option) => !DEFAULT_VISIBLE_ACTIVITIES.has(option.id)).map(
+                (option) => option.id,
+              ),
+            ),
+            activitesDouces: new Set(
+              GENTLE_ACTIVITY_OPTIONS.filter((option) => !DEFAULT_VISIBLE_GENTLE_ACTIVITIES.has(option.id)).map(
+                (option) => option.id,
+              ),
+            ),
+          };
+          const defaultHiddenPerturbateurs = new Set(
+            PERTURBATEUR_OPTIONS.filter((item) => !DEFAULT_VISIBLE_PERTURBATEURS.has(item)),
+          );
+
+          setHiddenSliders(defaultHiddenSliders);
+          setHiddenActivities(defaultHiddenActivities);
+          setHiddenPerturbateurs(defaultHiddenPerturbateurs);
+          setCustomActivities([]);
+          setCustomGentleActivities([]);
+          setCustomPerturbateurs([]);
+
           if (typeof window !== 'undefined') {
-            try {
-              const rawSliders = window.localStorage.getItem(SLIDER_VISIBILITY_STORAGE);
-              if (rawSliders) {
-                const parsed = JSON.parse(rawSliders) as Partial<Record<SliderGroup, string[]>>;
-                setHiddenSliders({
-                  symptomes: new Set(parsed.symptomes ?? []),
-                  medicaments: new Set(parsed.medicaments ?? []),
-                });
-              }
-              
-              const rawActivities = window.localStorage.getItem(ACTIVITY_VISIBILITY_STORAGE);
-              if (rawActivities) {
-                const parsed = JSON.parse(rawActivities) as Partial<Record<ActivityGroup, string[]>>;
-                setHiddenActivities({
-                  activites: new Set(parsed.activites ?? []),
-                  activitesDouces: new Set(parsed.activitesDouces ?? []),
-                });
-              }
-              
-              const rawPerturbateurs = window.localStorage.getItem(PERTURBATEUR_VISIBILITY_STORAGE);
-              if (rawPerturbateurs) {
-                const parsed = JSON.parse(rawPerturbateurs) as string[];
-                setHiddenPerturbateurs(new Set(parsed));
-              }
-              
-              // Charger les éléments personnalisés depuis localStorage
-              const rawCustomActivities = window.localStorage.getItem(CUSTOM_ACTIVITIES_STORAGE);
-              if (rawCustomActivities) {
-                const parsed = JSON.parse(rawCustomActivities) as Array<{ id: string; label: string; duration: number }>;
-                setCustomActivities(parsed);
-              }
-              
-              const rawCustomGentleActivities = window.localStorage.getItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE);
-              if (rawCustomGentleActivities) {
-                const parsed = JSON.parse(rawCustomGentleActivities) as Array<{ id: string; label: string; duration: number }>;
-                setCustomGentleActivities(parsed);
-              }
-              
-              const rawCustomPerturbateurs = window.localStorage.getItem(CUSTOM_PERTURBATEURS_STORAGE);
-              if (rawCustomPerturbateurs) {
-                const parsed = JSON.parse(rawCustomPerturbateurs) as string[];
-                setCustomPerturbateurs(parsed);
-              }
-            } catch (error) {
-              console.warn('Impossible de charger les préférences locales', error);
-            }
+            window.localStorage.setItem(
+              SLIDER_VISIBILITY_STORAGE,
+              JSON.stringify({
+                symptomes: Array.from(defaultHiddenSliders.symptomes),
+                medicaments: Array.from(defaultHiddenSliders.medicaments),
+              }),
+            );
+            window.localStorage.setItem(
+              ACTIVITY_VISIBILITY_STORAGE,
+              JSON.stringify({
+                activites: Array.from(defaultHiddenActivities.activites),
+                activitesDouces: Array.from(defaultHiddenActivities.activitesDouces),
+              }),
+            );
+            window.localStorage.setItem(
+              PERTURBATEUR_VISIBILITY_STORAGE,
+              JSON.stringify(Array.from(defaultHiddenPerturbateurs)),
+            );
+            window.localStorage.setItem(CUSTOM_ACTIVITIES_STORAGE, JSON.stringify([]));
+            window.localStorage.setItem(CUSTOM_GENTLE_ACTIVITIES_STORAGE, JSON.stringify([]));
+            window.localStorage.setItem(CUSTOM_PERTURBATEURS_STORAGE, JSON.stringify([]));
           }
         }
       } catch (error) {

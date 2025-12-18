@@ -9,5 +9,8 @@ export { default as MetallicPaint } from './MetallicPaint';
 export { default as ShapeBlur } from './ShapeBlur';
 export { default as MetaBalls } from './MetaBalls';
 export { default as AuthMetaBalls } from './AuthMetaBalls';
+export { default as Antigravity } from './Antigravity';
+export { default as Aurora } from './Aurora';
+export { default as AuthAurora } from './AuthAurora';
 export { default as CircularText } from './CircularText';
 export { default as FuzzyText } from './FuzzyText';

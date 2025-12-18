@@ -57,3 +57,4 @@ Après avoir publié les règles, vous devriez pouvoir créer un ID patient sans
 
 ## Note importante
 ⚠️ La règle pour `_metadata/patientCounter` permet à **tous les utilisateurs authentifiés** de lire et écrire ce document. C'est nécessaire pour que chaque utilisateur puisse générer son propre ID patient de manière séquentielle.
+

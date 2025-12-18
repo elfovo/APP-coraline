@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTodayEntry } from '@/hooks/useTodayEntry';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import { getHighlightCards } from './home/constants';
@@ -10,9 +10,10 @@ import HighlightCard from './home/HighlightCard';
 import GuidanceSection from './home/GuidanceSection';
 import ShortcutsSection from './home/ShortcutsSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import LandingPage from './(auth)/page';
 
 export default function HomePage() {
-  const { user, loading } = useRequireAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const todayEntry = useTodayEntry(user?.uid ?? null);
   const { greeting, heroMessage } = useTimeOfDay(user);
@@ -21,8 +22,9 @@ export default function HomePage() {
     return <LoadingSpinner />;
   }
 
+  // Si l'utilisateur n'est pas connecté, afficher la landing page
   if (!user) {
-    return null; // Redirection en cours
+    return <LandingPage />;
   }
 
   const isTodayComplete = todayEntry?.status === 'complete';

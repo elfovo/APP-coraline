@@ -1,4 +1,5 @@
 export { default as SimpleButton } from './SimpleButton';
+export { default as OptionCard } from './OptionCard';
 export { default as TransparentButton } from './TransparentButton';
 export { default as GradientButton } from './GradientButton';
 export { default as OutlineButton } from './OutlineButton';

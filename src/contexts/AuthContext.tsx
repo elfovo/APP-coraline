@@ -16,7 +16,8 @@ import {
   deleteUser,
   reauthenticateWithCredential,
   reauthenticateWithPopup,
-  EmailAuthProvider
+  EmailAuthProvider,
+  signInAnonymously
 } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { deleteUserData } from '@/lib/firestoreEntries';
@@ -28,6 +29,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName?: string) => Promise<UserCredential>;
   signInWithGoogle: () => Promise<UserCredential>;
   signInWithApple: () => Promise<UserCredential>;
+  signInAnonymously: () => Promise<UserCredential>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (displayName: string) => Promise<void>;
@@ -116,6 +118,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAnonymouslyAuth = async () => {
+    const auth = getAuthInstance();
+    return await signInAnonymously(auth);
+  };
+
   /**
    * Ré-authentifie l'utilisateur selon son provider
    * @param password - Mot de passe requis pour les comptes email/password
@@ -194,6 +201,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signInWithGoogle,
     signInWithApple,
+    signInAnonymously: signInAnonymouslyAuth,
     logout,
     resetPassword,
     updateUserProfile,

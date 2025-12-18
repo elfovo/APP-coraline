@@ -77,11 +77,25 @@ export default function TrendChart({
       return null;
     }
 
-    const dataMax = Math.max(...data.map((d) => d.value), 0);
+    const dataValues = data.map((d) => d.value);
+    const dataMax = Math.max(...dataValues, 0);
+    const dataMin = dataValues.length ? Math.min(...dataValues) : 0;
+    
+    // On conserve un léger décalage visuel même si la plus petite valeur est 0
+    const hasOnlyPositiveValues = dataMin >= 0;
+    const baselinePadding =
+      dataMax > 0 ? Math.max(1, Math.round(dataMax * 0.03)) : 1;
+    const minValue = hasOnlyPositiveValues
+      ? -baselinePadding
+      : Math.min(dataMin - baselinePadding, 0);
     const maxValue = dataMax > 0 ? Math.ceil(dataMax * 1.1) : 10;
-    const padding = 20;
+    
+    const valueRange = maxValue - minValue;
+    
+    const chartTop = 40;
+    const chartBottom = 200;
+    const chartHeight = chartBottom - chartTop;
     const chartWidth = 520;
-    const chartHeight = 160;
     const dataLength = data.length;
     const step = dataLength > 1 ? chartWidth / (dataLength - 1) : 0;
     const labelInterval =
@@ -89,7 +103,10 @@ export default function TrendChart({
 
     const points = data.map((d, index) => {
       const x = 40 + index * step;
-      const y = 200 - padding - (d.value / maxValue) * chartHeight;
+      // Normaliser la valeur par rapport à la plage minValue-maxValue
+      const normalizedValueRaw = valueRange > 0 ? (d.value - minValue) / valueRange : 0;
+      const normalizedValue = Math.min(1, Math.max(0, normalizedValueRaw));
+      const y = chartBottom - normalizedValue * chartHeight;
 
       return {
         x,
@@ -100,18 +117,36 @@ export default function TrendChart({
       };
     });
 
-    const yLabels = Array.from({ length: 6 }, (_, idx) => {
-      const value = Math.round((maxValue / 5) * (5 - idx));
-      const y = 40 + (idx * chartHeight) / 5;
-      return { value, y };
+    let yLabels = Array.from({ length: 6 }, (_, idx) => {
+      const value = minValue + (valueRange / 5) * (5 - idx);
+      const y = chartTop + (idx * chartHeight) / 5;
+      return { value: Math.round(value), y };
     });
+    
+    if (minValue < 0 && maxValue >= 0) {
+      const zeroNormalized = valueRange > 0 ? (0 - minValue) / valueRange : 0;
+      const zeroY = chartBottom - zeroNormalized * chartHeight;
+      const hasZeroLabel = yLabels.some((label) => label.value === 0);
+      if (hasZeroLabel) {
+        yLabels = yLabels.map((label) =>
+          label.value === 0 ? { ...label, y: zeroY } : label
+        );
+      } else {
+        yLabels.push({ value: 0, y: zeroY });
+      }
+      yLabels = yLabels.sort((a, b) => a.y - b.y);
+    }
+
+    const visibleYLabels = yLabels.filter((label) => label.value >= 0);
 
     return {
       points,
       yLabels,
+      visibleYLabels,
       maxValue,
+      minValue,
+      valueRange,
       chartWidth,
-      padding,
       chartHeight,
       step,
     };
@@ -159,7 +194,7 @@ export default function TrendChart({
     );
   }
 
-  const { points, yLabels, maxValue, chartWidth, padding, chartHeight, step } =
+  const { points, visibleYLabels, yLabels, maxValue, chartWidth, chartHeight, step } =
     chartState;
 
   const pathData = createSmoothPath(points);
@@ -302,7 +337,7 @@ export default function TrendChart({
             strokeWidth="2"
           />
 
-          {yLabels.map((label, index) => (
+          {visibleYLabels.map((label, index) => (
             <text
               key={`y-label-${index}`}
               x="35"

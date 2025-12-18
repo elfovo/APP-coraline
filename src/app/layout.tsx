@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { AuthMetaBalls } from "@/components/animations";
+import { AuthAurora } from "@/components/animations";
 import { ConditionalNav } from "@/components/navigation";
 
 const inter = Inter({
@@ -22,18 +22,18 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.className} min-h-screen bg-black text-white`}>
-        <div className="relative min-h-screen">
-          <div className="fixed inset-0 -z-10">
-            <div className="absolute inset-0 bg-black" />
-            <AuthMetaBalls />
-          </div>
-          <AuthProvider>
+        <AuthProvider>
+          <div className="relative min-h-screen">
+            <div className="fixed inset-0 -z-10">
+              <div className="absolute inset-0 bg-black" />
+              <AuthAurora />
+            </div>
             <div className="relative z-10 min-h-screen">
               <ConditionalNav />
               {children}
             </div>
-          </AuthProvider>
-        </div>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );

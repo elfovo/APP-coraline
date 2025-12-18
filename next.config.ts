@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  output: 'export',
+  // output: 'export', // Désactivé pour permettre les routes API
   trailingSlash: true,
   images: {
     unoptimized: true

@@ -5,12 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import DailyEntryForm, { SectionKey } from '@/components/journal/DailyEntryForm';
-import { fetchDailyEntry, saveDailyEntry, deleteAllEntries } from '@/lib/firestoreEntries';
+import { fetchDailyEntry, saveDailyEntry } from '@/lib/firestoreEntries';
 import type { DailyEntry } from '@/types/journal';
-import { SimpleButton } from '@/components/buttons';
-import { getDbInstance } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
-import { buildSeedEntry } from '@/lib/seedEntries';
 import { shiftDate, formatDateLabel, getTodayISO } from '@/lib/dateUtils';
 import { useToast } from '@/hooks/useToast';
 
@@ -33,8 +29,6 @@ function JournalContent() {
   const [entryLoading, setEntryLoading] = useState(true);
   const [initialEntry, setInitialEntry] = useState<DailyEntry | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [seedLoading, setSeedLoading] = useState(false);
-  const [clearLoading, setClearLoading] = useState(false);
   const { toasts, showToast } = useToast();
 
   useEffect(() => {
@@ -83,65 +77,6 @@ function JournalContent() {
     }
   };
 
-  const handleSeedEntries = async () => {
-    if (!user || seedLoading) return;
-    setSeedLoading(true);
-    try {
-      const today = new Date();
-      
-      // Créer les entrées pour 120 jours
-      let oldestDateISO = '';
-      for (let i = 0; i < 120; i++) {
-        const target = new Date(today);
-        target.setDate(today.getDate() - i);
-        const entry = buildSeedEntry(target, i);
-        await saveDailyEntry(user.uid, entry);
-        if (entry.dateISO === dateISO) {
-          setInitialEntry(entry);
-        }
-        // Garder la date la plus ancienne (dernière itération)
-        if (i === 119) {
-          oldestDateISO = entry.dateISO;
-        }
-      }
-      
-      // Sauvegarder la date d'accident dans Firestore (date de la première donnée)
-      const db = getDbInstance();
-      await setDoc(doc(db, 'users', user.uid), {
-        accidentDates: [oldestDateISO],
-      }, { merge: true });
-      
-      showToast('4 mois de données de démonstration ajoutées avec progression réaliste.', 'success');
-    } catch (error) {
-      console.error(error);
-      showToast('Impossible de générer les données démo.', 'error');
-    } finally {
-      setSeedLoading(false);
-    }
-  };
-
-  const handleClearEntries = async () => {
-    if (!user || clearLoading) return;
-    if (typeof window !== 'undefined') {
-      const confirmed = window.confirm(
-        'Cela supprimera définitivement toutes tes entrées. Continuer ?',
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-    setClearLoading(true);
-    try {
-      await deleteAllEntries(user.uid);
-      setInitialEntry(null);
-      showToast('Toutes les données ont été supprimées.', 'success');
-    } catch (error) {
-      console.error(error);
-      showToast('Impossible de supprimer les données.', 'error');
-    } finally {
-      setClearLoading(false);
-    }
-  };
 
   if (loading || entryLoading) {
     return (
@@ -179,25 +114,6 @@ function JournalContent() {
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
-      <div className="container mx-auto px-4 pt-6 flex flex-wrap gap-3 justify-end">
-        <SimpleButton
-          size="sm"
-          className="bg-white/90 text-gray-900 border-white/60 px-4 py-2 rounded-xl"
-          onClick={handleSeedEntries}
-          disabled={seedLoading || clearLoading}
-        >
-          {seedLoading ? 'Génération…' : 'Créer des données de démo'}
-        </SimpleButton>
-        <SimpleButton
-          size="sm"
-          variant="outline"
-          className="text-white border-red-300/60 hover:bg-red-500/10 px-4 py-2 rounded-xl"
-          onClick={handleClearEntries}
-          disabled={clearLoading || seedLoading}
-        >
-          {clearLoading ? 'Suppression…' : 'Supprimer toutes les données'}
-        </SimpleButton>
       </div>
       <div className="container mx-auto px-4 py-8 space-y-6">
         <DailyEntryForm
