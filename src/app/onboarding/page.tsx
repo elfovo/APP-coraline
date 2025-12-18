@@ -423,12 +423,15 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col"
+              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
             >
               {(() => {
                 const { rows, globalIndexMap } = organizeInRows(SYMPTOM_OPTIONS);
                 return rows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-3 justify-center">
+                  <div
+                    key={rowIndex}
+                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
+                  >
                     {row.map((symptom) => (
                       <SelectableCard
                         key={symptom.id}
@@ -478,12 +481,15 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col"
+              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
             >
               {(() => {
                 const { rows, globalIndexMap } = organizeInRows(MEDICATION_OPTIONS);
                 return rows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-3 justify-center">
+                  <div
+                    key={rowIndex}
+                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
+                  >
                     {row.map((medication) => (
                       <SelectableCard
                         key={medication.id}
@@ -535,12 +541,15 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col"
+              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
             >
               {(() => {
                 const { rows, globalIndexMap } = organizeInRows(ACTIVITY_OPTIONS);
                 return rows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-3 justify-center">
+                  <div
+                    key={rowIndex}
+                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
+                  >
                     {row.map((activity) => (
                       <SelectableCard
                         key={activity.id}
@@ -590,12 +599,15 @@ export default function OnboardingPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col"
+              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
             >
               {(() => {
                 const { rows, globalIndexMap } = organizeInRows(GENTLE_ACTIVITY_OPTIONS);
                 return rows.map((row, rowIndex) => (
-                  <div key={rowIndex} className="flex gap-3 justify-center">
+                  <div
+                    key={rowIndex}
+                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
+                  >
                     {row.map((activity) => (
                       <SelectableCard
                         key={activity.id}

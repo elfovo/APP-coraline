@@ -55,7 +55,7 @@ function SelectableCard({
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
       className={`
-        w-[280px] min-h-[100px] p-6 
+        w-full sm:w-[280px] min-h-[100px] p-5 sm:p-6 
         ${isSelected 
           ? 'bg-gradient-to-br from-white/20 via-white/15 to-white/10 border-white/50' 
           : 'bg-gradient-to-br from-white/10 via-white/5 to-white/0 border-white/20'
