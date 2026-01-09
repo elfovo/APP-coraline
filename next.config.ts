@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb',
     },
   },
+  // Configuration pour éviter les problèmes avec client-reference-manifest
+  output: 'standalone',
 };
 
 export default nextConfig;
