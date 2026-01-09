@@ -72,6 +72,27 @@ npm install
 npm run dev
 ```
 
+## ☁️ Déploiement Netlify & variables d'environnement
+
+1. **Version de Node**  
+   Dans `netlify.toml`, la section `[build.environment]` force `NODE_VERSION = "20"` afin que Netlify utilise la même version que celle requise par le projet. Si tu changes de version Node localement, pense à mettre à jour cette valeur pour éviter les écarts.
+
+2. **Variables Firebase côté client (`NEXT_PUBLIC_*`)**
+   - `NEXT_PUBLIC_FIREBASE_API_KEY`
+   - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+   - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+   - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+   - `NEXT_PUBLIC_FIREBASE_APP_ID`
+   - `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
+
+3. **Variables sensibles côté serveur**
+   - `FIREBASE_SERVICE_ACCOUNT_JSON` **ou** `FIREBASE_SERVICE_ACCOUNT_BASE64` (l'une des deux suffit)
+   - `FIREBASE_SERVICE_ACCOUNT_PATH` (optionnel, si tu fournis un chemin vers un fichier JSON uploadé comme asset)
+   - `GOOGLE_APPLICATION_CREDENTIALS` (optionnel, utilisé par certains outils/fonctions Google)
+
+Déclare ces variables dans **Netlify → Site configuration → Build & deploy → Environment** (ou via `netlify env:set`). Pour les clés sensibles, préfère les champs non `NEXT_PUBLIC_` qui restent côté serveur. Les variables publiques doivent correspondre à celles que tu utilises localement afin d'éviter les surprises entre dev et prod.
+
 ## 📝 Notes
 
 - Tous les composants sont conçus pour être facilement réutilisables
