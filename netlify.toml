@@ -1,7 +1,7 @@
 [build]
   command = "npm run build"
-  # Laisse le plugin Next gérer la sortie et publie le répertoire de build Next standard.
-  publish = ".next"
+  # Le plugin Next.js gère automatiquement le répertoire de publication
+  publish = ".netlify"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
