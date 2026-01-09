@@ -748,7 +748,6 @@ export const translations = {
     gentleActivitiesHelper: 'Soothing minutes',
     disruptorsLabel: 'Disruptors',
     disruptorsHelper: 'Trigger elements',
-    symptomsTitle: 'Symptoms (1-6)',
     symptomsSubtitle: 'Intensity felt for each symptom (0 = not felt)',
     medicationsSubtitle: 'Total number of intakes for each medication',
     activitiesSubtitle: 'Duration (min) for active activities',
@@ -879,7 +878,6 @@ export const translations = {
     // Signup
     signupTitle: 'Create an account',
     signupSubtitle: 'Join us today',
-    creating: 'Creating...',
     createAccount: 'Create my account',
     alreadyHaveAccount: 'Already have an account? Sign in',
     signupError: 'An error occurred during registration',
@@ -915,7 +913,6 @@ export const translations = {
     patientIdRequired: 'Please enter a valid patient ID.',
     patientNotFound: 'No patient found for this ID. Check the number entered.',
     patientIdCheckError: 'Unable to verify patient ID at this time.',
-    loading: 'Loading ...',
     done: 'Done.',
     creatingDemo: 'Creating...',
     createDemo: 'Create demo',
@@ -924,7 +921,6 @@ export const translations = {
     dailyRecoveryTracking: 'Daily post-concussion recovery tracking',
     dailyJournal: 'Daily journal',
     dailyJournalDescription: 'Track your symptoms and progress day by day',
-    statisticsDescription: 'View your evolution with detailed charts',
     resources: 'Resources',
     resourcesDescription: 'Access guides and advice for your recovery',
     // Landing page info sequences
