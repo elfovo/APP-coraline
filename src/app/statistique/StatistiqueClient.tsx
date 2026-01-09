@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { findUserByPatientId } from '@/lib/patientAccess';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const StatisticsDashboard = dynamic(() => import('@/components/statistics/StatisticsDashboard'), {
   ssr: false,
@@ -21,6 +22,7 @@ export default function StatistiqueClient() {
   const router = useRouter();
   const patientId = searchParams.get('patientId');
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
 
   const [targetUserId, setTargetUserId] = useState<string | null>(null);
   const [loadingPatient, setLoadingPatient] = useState(false);
@@ -64,12 +66,13 @@ export default function StatistiqueClient() {
   if (!targetUserId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
-        <p className="text-white/70">Utilisateur introuvable.</p>
+        <p className="text-white/70">{t('userNotFound')}</p>
       </div>
     );
   }
 
   return <StatisticsDashboard userId={targetUserId} />;
 }
+
 
 

@@ -2,28 +2,28 @@ import type { DailyEntry, ActivityEntry } from '@/types/journal';
 
 // Constantes pour la génération de seed
 const SEED_SYMPTOMS = [
-  { id: 'cephalee', label: 'Céphalée' },
-  { id: 'vision', label: 'Troubles visuels' },
-  { id: 'fatigue', label: 'Fatigue' },
-  { id: 'humeur', label: 'Saut d\'humeur' },
-  { id: 'anxiete', label: 'Anxiété' },
-  { id: 'nausees', label: 'Nausées' },
+  { id: 'cephalee', label: 'Céphalées' },
+  { id: 'nePasSeSentirNormal', label: 'Ne pas se sentir normal(e)' },
+  { id: 'pressionCrane', label: 'Pression dans le crâne' },
+  { id: 'concentration', label: 'Problèmes de concentration' },
+  { id: 'douleursCervicales', label: 'Douleurs cervicales' },
+  { id: 'problemesMemoire', label: 'Problèmes de mémoire' },
+  { id: 'nausees', label: 'Nausée ou vomissement' },
+  { id: 'fatigue', label: 'Fatigue ou manque d\'énergie' },
   { id: 'vertiges', label: 'Vertiges' },
-  { id: 'etourdissements', label: 'Étourdissements' },
+  { id: 'confusion', label: 'Confusion' },
+  { id: 'vision', label: 'Vision trouble' },
+  { id: 'somnolence', label: 'Somnolence' },
+  { id: 'equilibre', label: 'Problèmes d\'équilibre' },
+  { id: 'hypersensibilite', label: 'Hypersensibilité' },
   { id: 'photophobie', label: 'Sensibilité à la lumière' },
-  { id: 'phonophobie', label: 'Sensibilité au bruit' },
-  { id: 'acouphenes', label: 'Acouphènes' },
-  { id: 'raideurNuque', label: 'Raideur de la nuque' },
-  { id: 'douleurOculaire', label: 'Douleur oculaire' },
-  { id: 'confusion', label: 'Confusion mentale' },
-  { id: 'concentration', label: 'Difficultés de concentration' },
   { id: 'irritabilite', label: 'Irritabilité' },
-  { id: 'pressionTete', label: 'Sensation de pression dans la tête' },
-  { id: 'douleurFaciale', label: 'Douleur faciale' },
-  { id: 'equilibre', label: 'Troubles de l\'équilibre' },
-  { id: 'teteLourde', label: 'Sensation de tête lourde' },
-  { id: 'brouillardMental', label: 'Brouillard mental' },
-  { id: 'sensibiliteMouvement', label: 'Sensibilité au mouvement' },
+  { id: 'phonophobie', label: 'Sensibilité au bruit' },
+  { id: 'tristesse', label: 'Tristesse' },
+  { id: 'sensationRalenti', label: 'Sensation d\'être ralenti' },
+  { id: 'anxiete', label: 'Nervosité ou anxiété' },
+  { id: 'brouillardMental', label: 'Sensation d\'être "dans le brouillard"' },
+  { id: 'difficultesEndormir', label: 'Difficultés à s\'endormir' },
 ] as const;
 
 const SEED_MEDICATIONS = [
@@ -99,9 +99,9 @@ export function buildSeedEntry(targetDate: Date, daysAgo: number): DailyEntry {
   const baseSymptomCount = Math.max(2, Math.floor(13 * progressRatio + 2));
   const symptomIntensityBase = Math.max(1, Math.floor(5 * progressRatio + 1));
   
-  const commonEarlySymptoms = ['cephalee', 'fatigue', 'nausees', 'vertiges', 'photophobie', 'phonophobie', 'concentration', 'brouillardMental', 'vision', 'humeur', 'anxiete', 'etourdissements', 'raideurNuque', 'douleurOculaire', 'confusion', 'irritabilite'];
-  const commonMidSymptoms = ['cephalee', 'fatigue', 'vision', 'humeur', 'concentration', 'irritabilite', 'photophobie', 'phonophobie', 'brouillardMental'];
-  const commonLateSymptoms = ['cephalee', 'fatigue', 'concentration', 'humeur'];
+  const commonEarlySymptoms = ['cephalee', 'fatigue', 'nausees', 'vertiges', 'photophobie', 'phonophobie', 'concentration', 'brouillardMental', 'vision', 'nePasSeSentirNormal', 'anxiete', 'douleursCervicales', 'problemesMemoire', 'confusion', 'irritabilite', 'pressionCrane'];
+  const commonMidSymptoms = ['cephalee', 'fatigue', 'vision', 'nePasSeSentirNormal', 'concentration', 'irritabilite', 'photophobie', 'phonophobie', 'brouillardMental'];
+  const commonLateSymptoms = ['cephalee', 'fatigue', 'concentration', 'nePasSeSentirNormal'];
   
   const symptomPool = daysAgo > 80 ? commonEarlySymptoms : daysAgo > 40 ? commonMidSymptoms : commonLateSymptoms;
   const selectedSymptomIds = new Set<string>();
@@ -261,6 +261,10 @@ export function buildSeedEntry(targetDate: Date, daysAgo: number): DailyEntry {
 
   return entry;
 }
+
+
+
+
 
 
 

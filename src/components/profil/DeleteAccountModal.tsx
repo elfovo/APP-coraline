@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { TransparentButton } from '@/components/buttons';
 import { OutlineInput } from '@/components/inputs';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const WarningIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,6 +28,7 @@ export default function DeleteAccountModal({
   error,
   requiresPassword = false,
 }: DeleteAccountModalProps) {
+  const { t } = useLanguage();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -50,41 +52,41 @@ export default function DeleteAccountModal({
           <div className="flex items-center gap-3">
             <WarningIcon className="w-8 h-8 text-red-400" />
             <h2 className="text-2xl font-semibold text-white">
-              Confirmer la suppression
+              {t('deleteAccountConfirmTitle')}
             </h2>
           </div>
           <p className="text-white/70">
-            Cette action est irréversible. Toutes tes données seront définitivement supprimées :
+            {t('deleteAccountWarning')}
           </p>
           <ul className="text-white/60 text-sm space-y-2 ml-4">
             <li className="flex items-start gap-2">
               <span className="text-red-400">•</span>
-              <span>Ton journal et toutes tes entrées</span>
+              <span>{t('deleteAccountJournal')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-400">•</span>
-              <span>Tes statistiques et rapports</span>
+              <span>{t('deleteAccountStats')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-400">•</span>
-              <span>Les codes accompagnants</span>
+              <span>{t('deleteAccountCodes')}</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-red-400">•</span>
-              <span>Ton compte et tes préférences</span>
+              <span>{t('deleteAccountAccount')}</span>
             </li>
           </ul>
         </div>
         {requiresPassword && (
           <div className="space-y-2">
             <label htmlFor="delete-password" className="block text-sm font-medium text-white/90">
-              Confirme ton mot de passe pour continuer
+              {t('deleteAccountPasswordLabel')}
             </label>
             <div className="relative">
               <OutlineInput
                 id="delete-password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Ton mot de passe"
+                placeholder={t('deleteAccountPasswordPlaceholder')}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 variant="white"
@@ -122,14 +124,14 @@ export default function DeleteAccountModal({
             onClick={onClose}
             disabled={isDeleting}
           >
-            Annuler
+            {t('cancel')}
           </TransparentButton>
           <TransparentButton
             className="flex-1 bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-lg hover:shadow-xl"
             onClick={handleConfirm}
             disabled={isDeleting || (requiresPassword && !password.trim())}
           >
-            {isDeleting ? 'Suppression...' : 'Confirmer la suppression'}
+            {isDeleting ? t('deleteAccountDeleting') : t('deleteAccountConfirmButton')}
           </TransparentButton>
         </div>
       </div>

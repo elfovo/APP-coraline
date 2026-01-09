@@ -60,3 +60,6 @@ Après avoir publié les règles, vous devriez pouvoir créer un ID patient sans
 
 
 
+
+
+

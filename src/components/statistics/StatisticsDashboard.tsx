@@ -5,11 +5,12 @@ import MonthlyCalendar from '@/components/dashboard/MonthlyCalendar';
 import TrendChart, {
   type TrendChartDataPoint,
 } from '@/components/dashboard/TrendChart';
-import type { DailyEntry } from '@/types/journal';
+import type { DailyEntry, MedicationEntry, ActivityEntry } from '@/types/journal';
 import { listenRecentEntries } from '@/lib/firestoreEntries';
 import { getDbInstance } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const GENTLE_ACTIVITY_IDS = new Set([
   'meditation',
@@ -26,28 +27,28 @@ const GENTLE_ACTIVITY_IDS = new Set([
 ]);
 
 const SYMPTOM_OPTIONS = [
-  { id: 'cephalee', label: 'Céphalée' },
-  { id: 'vision', label: 'Troubles visuels' },
-  { id: 'fatigue', label: 'Fatigue' },
-  { id: 'humeur', label: 'Saut d\'humeur' },
-  { id: 'anxiete', label: 'Anxiété' },
-  { id: 'nausees', label: 'Nausées' },
+  { id: 'cephalee', label: 'Céphalées' },
+  { id: 'nePasSeSentirNormal', label: 'Ne pas se sentir normal(e)' },
+  { id: 'pressionCrane', label: 'Pression dans le crâne' },
+  { id: 'concentration', label: 'Problèmes de concentration' },
+  { id: 'douleursCervicales', label: 'Douleurs cervicales' },
+  { id: 'problemesMemoire', label: 'Problèmes de mémoire' },
+  { id: 'nausees', label: 'Nausée ou vomissement' },
+  { id: 'fatigue', label: 'Fatigue ou manque d\'énergie' },
   { id: 'vertiges', label: 'Vertiges' },
-  { id: 'etourdissements', label: 'Étourdissements' },
+  { id: 'confusion', label: 'Confusion' },
+  { id: 'vision', label: 'Vision trouble' },
+  { id: 'somnolence', label: 'Somnolence' },
+  { id: 'equilibre', label: 'Problèmes d\'équilibre' },
+  { id: 'hypersensibilite', label: 'Hypersensibilité' },
   { id: 'photophobie', label: 'Sensibilité à la lumière' },
-  { id: 'phonophobie', label: 'Sensibilité au bruit' },
-  { id: 'acouphenes', label: 'Acouphènes' },
-  { id: 'raideurNuque', label: 'Raideur de la nuque' },
-  { id: 'douleurOculaire', label: 'Douleur oculaire' },
-  { id: 'confusion', label: 'Confusion mentale' },
-  { id: 'concentration', label: 'Difficultés de concentration' },
   { id: 'irritabilite', label: 'Irritabilité' },
-  { id: 'pressionTete', label: 'Sensation de pression dans la tête' },
-  { id: 'douleurFaciale', label: 'Douleur faciale' },
-  { id: 'equilibre', label: 'Troubles de l\'équilibre' },
-  { id: 'teteLourde', label: 'Sensation de tête lourde' },
-  { id: 'brouillardMental', label: 'Brouillard mental' },
-  { id: 'sensibiliteMouvement', label: 'Sensibilité au mouvement' },
+  { id: 'phonophobie', label: 'Sensibilité au bruit' },
+  { id: 'tristesse', label: 'Tristesse' },
+  { id: 'sensationRalenti', label: 'Sensation d\'être ralenti' },
+  { id: 'anxiete', label: 'Nervosité ou anxiété' },
+  { id: 'brouillardMental', label: 'Sensation d\'être "dans le brouillard"' },
+  { id: 'difficultesEndormir', label: 'Difficultés à s\'endormir' },
 ];
 
 type DetailCategory = 'symptomScore' | 'medications' | 'activities' | 'gentleActivities' | 'perturbateurs';
@@ -73,10 +74,75 @@ interface StatisticsDashboardProps {
 
 export default function StatisticsDashboard({
   userId,
-  headerTitle = 'Historique complet',
+  headerTitle,
 }: StatisticsDashboardProps) {
   const { user: currentUser } = useAuth();
+  const { t, language } = useLanguage();
   const isExternalUser = currentUser?.uid !== userId;
+  
+  const displayHeaderTitle = headerTitle || t('completeHistory');
+  
+  // Options traduites pour les symptômes
+  const translatedSymptomOptions = useMemo(() => SYMPTOM_OPTIONS.map(option => ({
+    ...option,
+    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+  })), [t]);
+  
+  // Mapping pour traduire les perturbateurs
+  const getTranslatedPerturbateur = useCallback((item: string): string => {
+    const mapping: Record<string, string> = {
+      'Lumière forte': 'disruptorLumiereForte',
+      'Bruit élevé': 'disruptorBruitEleve',
+      'Stress': 'disruptorStress',
+      'Manque de sommeil': 'disruptorManqueSommeil',
+      'Sur-stimulation': 'disruptorSurStimulation',
+      'Odeurs fortes': 'disruptorOdeursFortes',
+      'Changements météo': 'disruptorChangementsMeteo',
+      'Repas sauté': 'disruptorRepasSaute',
+      'Déshydratation': 'disruptorDeshydratation',
+      'Écrans prolongés': 'disruptorEcransProlonges',
+      'Conduite longue': 'disruptorConduiteLongue',
+      'Changements hormonaux': 'disruptorChangementsHormonaux',
+      'Alcool': 'disruptorAlcool',
+      'Caféine excessive': 'disruptorCafeineExcessive',
+      'Exercice intense': 'disruptorExerciceIntense',
+      'Chaleur excessive': 'disruptorChaleurExcessive',
+      'Froid intense': 'disruptorFroidIntense',
+      'Position prolongée': 'disruptorPositionProlongee',
+    };
+    const key = mapping[item];
+    return key ? t(key as any) : item;
+  }, [t]);
+  
+  // Fonction pour traduire les médicaments
+  const getTranslatedMedication = useCallback((med: MedicationEntry): string => {
+    if (med.id) {
+      const translated = t(`medication${med.id.charAt(0).toUpperCase() + med.id.slice(1)}` as any);
+      if (translated && translated !== `medication${med.id.charAt(0).toUpperCase() + med.id.slice(1)}`) {
+        return translated;
+      }
+    }
+    return med.label || med.id;
+  }, [t]);
+  
+  // Fonction pour traduire les activités
+  const getTranslatedActivity = useCallback((activity: ActivityEntry): string => {
+    if (activity.id && !activity.custom) {
+      const normalizedId = activity.id.replace(/^gentle_/, '');
+      if (isGentleActivityId(normalizedId)) {
+        const translated = t(`gentleActivity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as any);
+        if (translated && translated !== `gentleActivity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}`) {
+          return translated;
+        }
+      } else {
+        const translated = t(`activity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as any);
+        if (translated && translated !== `activity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}`) {
+          return translated;
+        }
+      }
+    }
+    return activity.label || activity.id;
+  }, [t]);
   
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(true);
@@ -279,13 +345,14 @@ export default function StatisticsDashboard({
 
   const selectedDateLabel = useMemo(() => {
     if (!selectedDate) return '';
-    const formatter = new Intl.DateTimeFormat('fr-FR', {
+    const locale = language === 'en' ? 'en-US' : 'fr-FR';
+    const formatter = new Intl.DateTimeFormat(locale, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
     });
     return formatter.format(new Date(`${selectedDate}T00:00:00`));
-  }, [selectedDate]);
+  }, [selectedDate, language]);
 
   const daySummary = useMemo(() => {
     const entry = selectedEntry;
@@ -322,18 +389,19 @@ export default function StatisticsDashboard({
   }, [selectedEntry]);
 
   const getDateLabel = useCallback((date: Date, period: number): string => {
+    const locale = language === 'en' ? 'en-US' : 'fr-FR';
     if (period <= 7) {
-      return new Intl.DateTimeFormat('fr-FR', {
+      return new Intl.DateTimeFormat(locale, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
       }).format(date);
     }
-    return new Intl.DateTimeFormat('fr-FR', {
+    return new Intl.DateTimeFormat(locale, {
       day: 'numeric',
       month: 'short',
     }).format(date);
-  }, []);
+  }, [language]);
 
   const generateChartData = useCallback((
     period: number,
@@ -395,15 +463,15 @@ export default function StatisticsDashboard({
   );
 
   const SymptomDetailSection = () => {
-    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    if (!selectedEntry) return <p className="text-white/60 text-sm">{t('noDataForDay')}</p>;
     const symptoms = selectedEntry.symptoms ?? [];
-    if (!symptoms.length) return <p className="text-white/60 text-sm">Aucun symptôme enregistré.</p>;
+    if (!symptoms.length) return <p className="text-white/60 text-sm">{t('noSymptomsRecorded')}</p>;
 
     return (
       <>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {symptoms.map((symptom) => {
-            const option = SYMPTOM_OPTIONS.find((opt) => opt.id === symptom.id);
+            const option = translatedSymptomOptions.find((opt) => opt.id === symptom.id);
             const label = option?.label ?? symptom.label ?? symptom.id;
             const intensity = symptom.intensity ?? 0;
             return (
@@ -423,23 +491,23 @@ export default function StatisticsDashboard({
           })}
         </div>
         <p className="text-white/70 text-sm">
-          Total du jour : <span className="text-white">{daySummary.symptomScore}/132</span>
+          {t('totalDay')} <span className="text-white">{daySummary.symptomScore}/132</span>
         </p>
       </>
     );
   };
 
   const MedicationDetailSection = () => {
-    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    if (!selectedEntry) return <p className="text-white/60 text-sm">{t('noDataForDay')}</p>;
     const meds = selectedEntry.medications?.filter((med) => (med.intensity ?? 0) > 0) ?? [];
-    if (!meds.length) return <p className="text-white/60 text-sm">Aucune prise enregistrée.</p>;
+    if (!meds.length) return <p className="text-white/60 text-sm">{t('noMedicationsRecorded')}</p>;
 
     return (
       <div className="space-y-3">
         {meds.map((med) => (
           <div key={med.id} className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <p className="text-white font-medium text-sm">{med.label}</p>
+              <p className="text-white font-medium text-sm">{getTranslatedMedication(med)}</p>
               {med.dosage && <p className="text-white/60 text-xs">{med.dosage}</p>}
             </div>
             <span className="text-white text-lg font-semibold">{med.intensity}</span>
@@ -450,22 +518,22 @@ export default function StatisticsDashboard({
   };
 
   const ActivityDetailSection = ({ isGentle = false }: { isGentle?: boolean }) => {
-    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    if (!selectedEntry) return <p className="text-white/60 text-sm">{t('noDataForDay')}</p>;
     const activities =
       selectedEntry.activities?.filter((activity) => {
         const normalizedId = activity.id.replace(/^gentle_/, '');
         return isGentle ? isGentleActivityId(normalizedId) : !isGentleActivityId(normalizedId);
       }) ?? [];
     if (!activities.length) {
-      return <p className="text-white/60 text-sm">{isGentle ? 'Aucune activité douce enregistrée.' : 'Aucune activité enregistrée.'}</p>;
+      return <p className="text-white/60 text-sm">{isGentle ? t('noGentleActivitiesRecorded') : t('noActivitiesRecorded')}</p>;
     }
 
     return (
       <div className="space-y-3">
         {activities.map((activity) => (
           <div key={activity.id} className="bg-black/30 border border-white/5 rounded-2xl p-4 flex items-center justify-between">
-            <p className="text-white font-medium text-sm">{activity.label}</p>
-            <span className="text-white text-lg font-semibold">{activity.duration ?? 0} min</span>
+            <p className="text-white font-medium text-sm">{getTranslatedActivity(activity)}</p>
+            <span className="text-white text-lg font-semibold">{activity.duration ?? 0} {t('minutes')}</span>
           </div>
         ))}
       </div>
@@ -473,15 +541,15 @@ export default function StatisticsDashboard({
   };
 
   const PerturbateurDetailSection = () => {
-    if (!selectedEntry) return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+    if (!selectedEntry) return <p className="text-white/60 text-sm">{t('noDataForDay')}</p>;
     const perturbateurs = selectedEntry.perturbateurs ?? [];
-    if (!perturbateurs.length) return <p className="text-white/60 text-sm">Aucun élément perturbateur enregistré.</p>;
+    if (!perturbateurs.length) return <p className="text-white/60 text-sm">{t('noDisruptorsRecorded')}</p>;
 
     return (
       <div className="flex flex-wrap gap-3">
         {perturbateurs.map((item) => (
           <span key={item} className="px-4 py-2 rounded-full border border-white/20 text-white/80 bg-black/30 text-sm">
-            {item}
+            {getTranslatedPerturbateur(item)}
           </span>
         ))}
       </div>
@@ -501,7 +569,7 @@ export default function StatisticsDashboard({
       case 'perturbateurs':
         return <PerturbateurDetailSection />;
       default:
-        return <p className="text-white/60 text-sm">Aucune donnée pour cette journée.</p>;
+        return <p className="text-white/60 text-sm">{t('noDataForDay')}</p>;
     }
   };
 
@@ -509,40 +577,40 @@ export default function StatisticsDashboard({
     const baseSegments: SummarySegment[] = [
       {
         key: 'symptomScore',
-        label: 'Symptômes',
+        label: t('symptomsLabel'),
         value: daySummary.symptomScore,
-        helper: 'Score total /132',
+        helper: t('symptomsHelper'),
         color: '#C084FC',
       },
       {
         key: 'medications',
-        label: 'Médicaments',
+        label: t('medicationsLabel'),
         value: daySummary.medicationTakes,
-        helper: 'Prises validées',
+        helper: t('medicationsHelper'),
         color: '#38BDF8',
         weight: 5,
       },
       {
         key: 'activities',
-        label: 'Activités',
+        label: t('activitiesLabel'),
         value: daySummary.activityMinutes,
-        helper: 'Minutes actives',
+        helper: t('activitiesHelper'),
         color: '#F97316',
         weight: 0.1,
       },
       {
         key: 'gentleActivities',
-        label: 'Activités douces / thérapies',
+        label: t('gentleActivitiesLabel'),
         value: daySummary.gentleMinutes,
-        helper: 'Minutes apaisantes',
+        helper: t('gentleActivitiesHelper'),
         color: '#34D399',
         weight: 0.1,
       },
       {
         key: 'perturbateurs',
-        label: 'Perturbateurs',
+        label: t('disruptorsLabel'),
         value: daySummary.perturbateurs,
-        helper: 'Éléments déclenchants',
+        helper: t('disruptorsHelper'),
         color: '#F43F5E',
         weight: 5,
       },
@@ -637,11 +705,11 @@ export default function StatisticsDashboard({
     },
   };
 
-  const getChartDescription = (period: number, sinceAccident: number | null, baseLabel: string): string => {
+  const getChartDescription = (period: number, sinceAccident: number | null, baseLabelKey: string, sinceAccidentKey: string): string => {
     if (sinceAccident && period === sinceAccident) {
-      return baseLabel.replace('sur les X derniers jours', 'depuis l\'accident');
+      return t(sinceAccidentKey as any);
     }
-    return baseLabel.replace('X', period.toString());
+    return t(baseLabelKey as any, { days: period });
   };
 
   const chartRadius = 90;
@@ -652,7 +720,7 @@ export default function StatisticsDashboard({
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/70">Chargement du calendrier...</p>
+          <p className="text-white/70">{t('statisticsLoading')}</p>
         </div>
       </div>
     );
@@ -661,7 +729,7 @@ export default function StatisticsDashboard({
   if (!userId) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white/70">
-        ID patient introuvable.
+        {t('patientIdNotFound')}
       </div>
     );
   }
@@ -671,11 +739,10 @@ export default function StatisticsDashboard({
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col gap-8">
           <header className="space-y-2">
-            <p className="text-sm uppercase tracking-[0.3em] text-white/60">Calendrier</p>
-            <h1 className="text-4xl font-bold text-white">{headerTitle}</h1>
+            <p className="text-sm uppercase tracking-[0.3em] text-white/60">{t('calendar')}</p>
+            <h1 className="text-4xl font-bold text-white">{displayHeaderTitle}</h1>
             <p className="text-white/70 max-w-2xl">
-              Visualise rapidement tes journées passées, repère les jours complétés,
-              brouillons ou à remplir et ouvre le journal associé en un clic.
+              {t('calendarDescription')}
             </p>
           </header>
 
@@ -692,7 +759,7 @@ export default function StatisticsDashboard({
           <section className="bg-transparent rounded-3xl p-6">
             <div className="mb-4">
               <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
-                Résumé de la journée
+                {t('daySummary')}
               </p>
               {selectedDate && (
                 <p className="text-lg font-semibold text-white">
@@ -701,7 +768,7 @@ export default function StatisticsDashboard({
               )}
               {!selectedDate && (
                 <p className="text-white/50 text-sm">
-                  Sélectionne un jour dans le calendrier pour voir le résumé
+                  {t('selectDayForSummary')}
                 </p>
               )}
             </div>
@@ -855,7 +922,7 @@ export default function StatisticsDashboard({
                           {activeSummarySegment.helper}
                         </p>
                         <p className="mt-2 text-white/80 text-sm">
-                          {summaryChart.total > 0 ? `${activeSummarySegment.percentage.toFixed(0)}% de la journée` : 'Aucune donnée'}
+                          {summaryChart.total > 0 ? t('percentOfDay', { percent: activeSummarySegment.percentage.toFixed(0) }) : t('noData')}
                         </p>
                       </div>
                     )}
@@ -864,7 +931,7 @@ export default function StatisticsDashboard({
               </div>
             ) : (
               <div className="text-center py-8 text-white/50">
-                <p>Sélectionne un jour dans le calendrier pour voir le résumé.</p>
+                <p>{t('selectDayForSummary')}.</p>
               </div>
             )}
           </section>
@@ -873,18 +940,18 @@ export default function StatisticsDashboard({
             <section className="bg-transparent rounded-3xl p-6 space-y-6">
               <div>
                 <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
-                  {detailCategory === 'symptomScore' && 'Symptômes (1-6)'}
-                  {detailCategory === 'medications' && 'Médicaments / thérapies'}
-                  {detailCategory === 'activities' && 'Activités & temps effectué'}
-                  {detailCategory === 'gentleActivities' && 'Activités douces & thérapies'}
-                  {detailCategory === 'perturbateurs' && 'Éléments perturbateurs'}
+                  {detailCategory === 'symptomScore' && t('symptomsTitle')}
+                  {detailCategory === 'medications' && t('medicationsTitle')}
+                  {detailCategory === 'activities' && t('activitiesTitle')}
+                  {detailCategory === 'gentleActivities' && t('gentleActivitiesTitle')}
+                  {detailCategory === 'perturbateurs' && t('disruptorsTitle')}
                 </p>
                 <p className="text-white/80 text-sm">
-                  {detailCategory === 'symptomScore' && 'Intensité ressentie pour chaque symptôme (0 = non ressenti)'}
-                  {detailCategory === 'medications' && 'Nombre total de prises pour chaque médicament'}
-                  {detailCategory === 'activities' && 'Durée (min) pour les activités actives'}
-                  {detailCategory === 'gentleActivities' && 'Durée (min) pour les activités douces et thérapies'}
-                  {detailCategory === 'perturbateurs' && 'Facteurs déclencheurs enregistrés'}
+                  {detailCategory === 'symptomScore' && t('symptomsSubtitle')}
+                  {detailCategory === 'medications' && t('medicationsSubtitle')}
+                  {detailCategory === 'activities' && t('activitiesSubtitle')}
+                  {detailCategory === 'gentleActivities' && t('gentleActivitiesSubtitle')}
+                  {detailCategory === 'perturbateurs' && t('disruptorsSubtitle')}
                 </p>
               </div>
               {renderDetailSection()}
@@ -895,10 +962,10 @@ export default function StatisticsDashboard({
             <section className="bg-transparent rounded-3xl p-6">
               <div className="mb-4">
                 <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
-                  Notes complémentaires
+                  {t('additionalNotesTitle')}
                 </p>
                 <p className="text-white/80 text-sm">
-                  Informations supplémentaires pour cette journée
+                  {t('additionalNotesSubtitle')}
                 </p>
               </div>
               {selectedEntry?.notes ? (
@@ -910,7 +977,7 @@ export default function StatisticsDashboard({
               ) : (
                 <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
                   <p className="text-white/60 text-sm italic">
-                    Aucune note complémentaire pour ce jour
+                    {t('noAdditionalNotes')}
                   </p>
                 </div>
               )}
@@ -920,71 +987,71 @@ export default function StatisticsDashboard({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
             <div className="w-full min-w-0 flex">
               <TrendChart
-                title="Évolution des symptômes"
-                description={getChartDescription(chartPeriods.symptom, daysSinceAccident, 'Nombre total de symptômes sur les X derniers jours')}
+                title={t('symptomsEvolution')}
+                description={getChartDescription(chartPeriods.symptom, daysSinceAccident, 'symptomsChartDescription', 'symptomsChartDescriptionSinceAccident')}
                 data={symptomChartData}
                 period={chartPeriods.symptom}
                 onPeriodChange={(period) => setChartPeriod('symptom', period)}
                 lineColor="#C084FC"
-                valueFormatter={(value) => `Symptômes: ${value}/132`}
+                valueFormatter={(value) => t('symptomsValueFormatter', { value })}
                 daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
+                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
-                title="Évolution des activités"
-                description={getChartDescription(chartPeriods.activity, daysSinceAccident, 'Temps total d\'activités sur les X derniers jours')}
+                title={t('activitiesEvolution')}
+                description={getChartDescription(chartPeriods.activity, daysSinceAccident, 'activitiesChartDescription', 'activitiesChartDescriptionSinceAccident')}
                 data={activityChartData}
                 period={chartPeriods.activity}
                 onPeriodChange={(period) => setChartPeriod('activity', period)}
                 lineColor="#F97316"
-                valueFormatter={(value) => `${value} min`}
+                valueFormatter={(value) => `${value} ${t('minutes')}`}
                 daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
+                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
-                title="Évolution des médicaments"
-                description={getChartDescription(chartPeriods.medication, daysSinceAccident, 'Nombre total de prises sur les X derniers jours')}
+                title={t('medicationsEvolution')}
+                description={getChartDescription(chartPeriods.medication, daysSinceAccident, 'medicationsChartDescription', 'medicationsChartDescriptionSinceAccident')}
                 data={medicationChartData}
                 period={chartPeriods.medication}
                 onPeriodChange={(period) => setChartPeriod('medication', period)}
                 lineColor="#38BDF8"
-                valueFormatter={(value) => `${value} prise${value > 1 ? 's' : ''}`}
+                valueFormatter={(value) => value > 1 ? t('medicationValueFormatterPlural', { value }) : t('medicationValueFormatter', { value })}
                 daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
+                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
-                title="Évolution des éléments perturbateurs"
-                description={getChartDescription(chartPeriods.perturbateur, daysSinceAccident, 'Nombre d\'éléments perturbateurs sur les X derniers jours')}
+                title={t('disruptorsEvolution')}
+                description={getChartDescription(chartPeriods.perturbateur, daysSinceAccident, 'disruptorsChartDescription', 'disruptorsChartDescriptionSinceAccident')}
                 data={perturbateurChartData}
                 period={chartPeriods.perturbateur}
                 onPeriodChange={(period) => setChartPeriod('perturbateur', period)}
                 lineColor="#F43F5E"
-                valueFormatter={(value) => `${value} élément${value > 1 ? 's' : ''}`}
+                valueFormatter={(value) => value > 1 ? t('disruptorValueFormatterPlural', { value }) : t('disruptorValueFormatter', { value })}
                 daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
+                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />
             </div>
 
             <div className="w-full min-w-0 flex">
               <TrendChart
-                title="Évolution des activités douces & thérapies"
-                description={getChartDescription(chartPeriods.gentleActivity, daysSinceAccident, 'Temps total d\'activités douces sur les X derniers jours')}
+                title={t('gentleActivitiesEvolution')}
+                description={getChartDescription(chartPeriods.gentleActivity, daysSinceAccident, 'gentleActivitiesChartDescription', 'gentleActivitiesChartDescriptionSinceAccident')}
                 data={gentleActivityChartData}
                 period={chartPeriods.gentleActivity}
                 onPeriodChange={(period) => setChartPeriod('gentleActivity', period)}
                 lineColor="#34D399"
-                valueFormatter={(value) => `${value} min`}
+                valueFormatter={(value) => `${value} ${t('minutes')}`}
                 daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? "Depuis l'accident" : undefined}
+                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />
             </div>
           </div>

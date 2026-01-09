@@ -16,6 +16,7 @@ import { getDbInstance } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { findUserByPatientId } from '@/lib/patientAccess';
 import TypingLoadingOverlay from '@/components/loading/TypingLoadingOverlay';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LandingPage() {
   const { user, loading, signInAnonymously } = useAuth();
@@ -31,10 +32,19 @@ export default function LandingPage() {
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [patientError, setPatientError] = useState<string | null>(null);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
+  const { t } = useLanguage();
   const [overlayMessages, setOverlayMessages] = useState({
-    first: 'Chargement ...',
-    second: 'Fini.'
+    first: '',
+    second: ''
   });
+  
+  // Initialiser les messages après le hook
+  useEffect(() => {
+    setOverlayMessages({
+      first: t('loading'),
+      second: t('done')
+    });
+  }, [t]);
   const [isOverlayProcessing, setIsOverlayProcessing] = useState(false);
   const [showVisitorPrompt, setShowVisitorPrompt] = useState(false);
   const [isCreatingVisitorDemo, setIsCreatingVisitorDemo] = useState(false);
@@ -185,15 +195,15 @@ export default function LandingPage() {
   const handlePatientIdSubmit = async () => {
     const idToCheck = patientId.trim();
     if (!idToCheck) {
-      setPatientError('Merci d\'indiquer un ID patient valide.');
+      setPatientError(t('patientIdRequired'));
       return;
     }
 
     setIsLoadingPatient(true);
     setShowLoadingScreen(true);
     setOverlayMessages({
-      first: 'Chargement ...',
-      second: 'Fini.'
+      first: t('loading'),
+      second: t('done')
     });
     setIsOverlayProcessing(true);
     setPatientError(null);
@@ -206,7 +216,7 @@ export default function LandingPage() {
       const result = await findUserByPatientId(idToCheck);
       
       if (!result) {
-        setPatientError('Aucun patient trouvé pour cet ID. Vérifie le numéro saisi.');
+        setPatientError(t('patientNotFound'));
         setIsLoadingPatient(false);
         setShowLoadingScreen(false);
         setIsOverlayProcessing(false);
@@ -266,7 +276,7 @@ export default function LandingPage() {
       setIsOverlayProcessing(false);
     } catch (error: unknown) {
       console.error("Erreur lors de la vérification de l'ID patient:", error);
-      setPatientError('Impossible de vérifier l\'ID patient pour le moment.');
+      setPatientError(t('patientIdCheckError'));
       setIsLoadingPatient(false);
       setShowLoadingScreen(false);
       setIsOverlayProcessing(false);
@@ -354,7 +364,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
                     className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-relaxed"
                   >
-                    Chaque année,
+                    {t('infoSequence1Part1')}
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 30 }}
@@ -362,7 +372,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.8, delay: 0.8, ease: 'easeOut' }}
                     className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-relaxed"
                   >
-                    <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>155 000 personnes</span>
+                    <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>{t('infoSequence1Part2')}</span>
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 30 }}
@@ -370,7 +380,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.8, delay: 1.4, ease: 'easeOut' }}
                     className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-relaxed"
                   >
-                    se rendent aux urgences en France pour une commotion cérébrale.
+                    {t('infoSequence1Part3')}
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -378,7 +388,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.6, delay: 2.2, ease: 'easeOut' }}
                     className="text-sm md:text-base text-white/60 mt-4"
                   >
-                    Source : Ministère des Sports - INSEP
+                    {t('infoSequence1Source')}
                   </motion.p>
                 </motion.div>
               )}
@@ -394,7 +404,7 @@ export default function LandingPage() {
                 >
                   <div className="bg-transparent rounded-3xl p-8">
                     <h3 className="text-2xl font-bold text-white mb-8 text-center">
-                      Origine des commotions cérébrales
+                      {t('infoSequence2Title')}
                     </h3>
                     
                     <div className="space-y-6">
@@ -411,7 +421,7 @@ export default function LandingPage() {
                             transition={{ duration: 0.5, delay: 0.4 }}
                             className="text-white/90 font-medium"
                           >
-                            Accident sportif
+                            {t('infoSequence2Sport')}
                           </motion.span>
                           <motion.span
                             initial={{ opacity: 0, scale: 0.8 }}
@@ -448,7 +458,7 @@ export default function LandingPage() {
                             transition={{ duration: 0.5, delay: 1.3 }}
                             className="text-white/90 font-medium"
                           >
-                            Accident du quotidien
+                            {t('infoSequence2Daily')}
                           </motion.span>
                           <motion.span
                             initial={{ opacity: 0, scale: 0.8 }}
@@ -491,7 +501,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
                     className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-relaxed"
                   >
-                    <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>30%</span> des personnes gardent des séquelles
+                    {t('infoSequence3Part1')}
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -499,7 +509,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.6, delay: 0.6, ease: 'easeOut' }}
                     className="text-xl md:text-2xl text-white/80"
                   >
-                    encore <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>3 mois après</span> l&apos;accident
+                    {t('infoSequence3Part2')}
                   </motion.p>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -507,7 +517,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.6, delay: 1, ease: 'easeOut' }}
                     className="text-sm md:text-base text-white/60 mt-4"
                   >
-                    Source : Santé publique France 2016
+                    {t('infoSequence3Source')}
                   </motion.p>
                 </motion.div>
               )}
@@ -522,7 +532,7 @@ export default function LandingPage() {
                   className="text-center space-y-6 w-full max-w-3xl mx-auto"
                 >
                   <p className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-relaxed">
-                    La commotion cérébrale est <span className="font-extrabold" style={{ textShadow: '0 0 5px rgba(255, 255, 255, 0.5), 0 0 10px rgba(255, 255, 255, 0.3)' }}>sérieuse</span>, mais un suivi adapté fait toute la différence.
+                    {t('infoSequence4Part1')}
                   </p>
                   <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -530,7 +540,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
                     className="text-lg md:text-xl text-white/80 mt-4"
                   >
-                    CommoCare vous accompagne dans votre rétablissement au quotidien.
+                    {t('infoSequence4Part2')}
                   </motion.p>
 
                   <div className="mt-10 w-full min-h-[180px] flex items-center justify-center">
@@ -545,14 +555,14 @@ export default function LandingPage() {
                           className="space-y-4 text-center max-w-2xl"
                         >
                           <p className="text-base md:text-lg text-white/80">
-                            Lancez la création d&apos;un compte démo pour explorer l&apos;interface complète avec 120 jours de données générées automatiquement.
+                            {t('demoPrompt')}
                           </p>
                           <SimpleButton
                             onClick={handleVisitorDemoCreation}
                             disabled={isCreatingVisitorDemo || showLoadingScreen}
                             className="px-6 py-3 text-base min-w-[220px]"
                           >
-                            {isCreatingVisitorDemo ? 'Création en cours...' : 'Créer la démo'}
+                            {isCreatingVisitorDemo ? t('creatingDemo') : t('createDemo')}
                           </SimpleButton>
                         </motion.div>
                       )}
@@ -579,7 +589,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
                 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4"
               >
-                CommoCare
+                {t('commoCare')}
               </motion.h1>
 
               <motion.p
@@ -588,7 +598,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
                 className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto"
               >
-                Suivi quotidien du rétablissement post-commotion
+                {t('dailyRecoveryTracking')}
               </motion.p>
 
               {/* Fonctionnalités principales */}
@@ -612,9 +622,9 @@ export default function LandingPage() {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">Journal quotidien</h3>
+                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">{t('dailyJournal')}</h3>
                   <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-                    Suivez vos symptômes et votre progression jour après jour
+                    {t('dailyJournalDescription')}
                   </p>
                 </motion.div>
 
@@ -632,9 +642,9 @@ export default function LandingPage() {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">Statistiques</h3>
+                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">{t('statistics')}</h3>
                   <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-                    Visualisez votre évolution avec des graphiques détaillés
+                    {t('statisticsDescription')}
                   </p>
                 </motion.div>
 
@@ -652,9 +662,9 @@ export default function LandingPage() {
                       </svg>
                     </div>
                   </div>
-                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">Ressources</h3>
+                  <h3 className="text-sm md:text-base font-semibold text-white mb-2">{t('resources')}</h3>
                   <p className="text-xs md:text-sm text-white/70 leading-relaxed">
-                    Accédez à des guides et conseils pour votre rétablissement
+                    {t('resourcesDescription')}
                   </p>
                 </motion.div>
               </motion.div>
@@ -669,7 +679,7 @@ export default function LandingPage() {
                   onClick={handleContinue}
                   className="px-8 py-4 text-lg min-w-[200px]"
                 >
-                  Continuer
+                  {t('continueButton')}
                 </SimpleButton>
               </motion.div>
 
@@ -679,7 +689,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.9 }}
                 className="text-sm text-white/60 mt-8"
               >
-                Gérez votre rétablissement au quotidien avec un suivi personnalisé
+                {t('manageRecovery')}
               </motion.p>
             </motion.div>
           )}
@@ -702,10 +712,10 @@ export default function LandingPage() {
                 className="w-full max-w-3xl text-center space-y-6"
               >
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Qui êtes-vous ?
+                  {t('whoAreYou')}
                 </h2>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Sélectionnez votre profil pour accéder à l&apos;application adaptée à vos besoins
+                  {t('selectProfile')}
                 </p>
               </motion.div>
 
@@ -717,8 +727,8 @@ export default function LandingPage() {
                 className="w-full max-w-2xl gap-4 flex flex-col"
               >
                 <OptionCard
-                  title="Visiteur"
-                  description="Je ne suis pas réellement blessé et je souhaite découvrir l&apos;application"
+                  title={t('visitor')}
+                  description={t('visitorDescription')}
                   onClick={() => handleOptionClick('visitor')}
                   delay={0.4}
                   icon={
@@ -729,8 +739,8 @@ export default function LandingPage() {
                 />
 
                 <OptionCard
-                  title="Patient"
-                  description="J&apos;ai une commotion cérébrale et je veux suivre mon rétablissement au quotidien"
+                  title={t('patient')}
+                  description={t('patientDescription')}
                   onClick={() => handleOptionClick('patient')}
                   delay={0.6}
                   icon={
@@ -741,8 +751,8 @@ export default function LandingPage() {
                 />
 
                 <OptionCard
-                  title="Professionnel de santé"
-                  description="Médecin ou autre professionnel pour suivre l&apos;évolution de la commotion de mon patient"
+                  title={t('healthcareProfessional')}
+                  description={t('healthcareProfessionalDescription')}
                   onClick={() => handleOptionClick('doctor')}
                   delay={0.8}
                   icon={
@@ -774,10 +784,10 @@ export default function LandingPage() {
                 className="w-full max-w-2xl text-center space-y-6"
               >
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  Accès au suivi patient
+                  {t('patientAccessTitle')}
                 </h2>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  Entrez l&apos;ID patient de votre patient pour accéder à son suivi et suivre l&apos;évolution de sa commotion cérébrale.
+                  {t('patientAccessDescription')}
                 </p>
               </motion.div>
 

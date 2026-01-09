@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface DayInfo {
   status: 'complete' | 'draft' | 'missing';
@@ -15,23 +16,11 @@ interface MonthlyCalendarProps {
   accidentDates?: string[];
 }
 
-const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-const STATUS_LABELS: Record<DayInfo['status'], string> = {
-  complete: 'Complet',
-  draft: 'Brouillon',
-  missing: 'À remplir',
-};
-
 const statusAccent: Record<DayInfo['status'], string> = {
   complete: 'bg-emerald-500/5 text-white',
   draft: 'bg-amber-400/5 text-white',
   missing: 'bg-white/0 text-white/60',
 };
-
-const monthFormatter = new Intl.DateTimeFormat('fr-FR', {
-  month: 'long',
-  year: 'numeric',
-});
 
 const padNumber = (value: number) => value.toString().padStart(2, '0');
 
@@ -56,7 +45,29 @@ export default function MonthlyCalendar({
   isLoading = false,
   accidentDates = [],
 }: MonthlyCalendarProps) {
+  const { t, language } = useLanguage();
   const todayISO = useMemo(() => toISODate(normalizeDate(new Date())), []);
+  
+  const WEEKDAY_LABELS = [
+    t('monday'),
+    t('tuesday'),
+    t('wednesday'),
+    t('thursday'),
+    t('friday'),
+    t('saturday'),
+    t('sunday'),
+  ];
+  
+  const STATUS_LABELS: Record<DayInfo['status'], string> = {
+    complete: t('statusComplete'),
+    draft: t('statusDraft'),
+    missing: t('statusMissing'),
+  };
+  
+  const monthFormatter = useMemo(() => new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'fr-FR', {
+    month: 'long',
+    year: 'numeric',
+  }), [language]);
   const [viewDate, setViewDate] = useState(() => {
     if (selectedDate) {
       return createDateFromISO(selectedDate);
@@ -132,7 +143,7 @@ export default function MonthlyCalendar({
     <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md w-full overflow-visible">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.4em] text-white/50">Calendrier</p>
+          <p className="text-[10px] uppercase tracking-[0.4em] text-white/50">{t('calendarLabel')}</p>
           <h3 className="text-xl md:text-3xl font-semibold text-white capitalize">
             {monthFormatter.format(viewDate)}
           </h3>
@@ -185,7 +196,7 @@ export default function MonthlyCalendar({
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                         </svg>
                       )}
-                      {cell.isToday && <span className="text-emerald-300 text-[9px]">Aujourd&apos;hui</span>}
+                      {cell.isToday && <span className="text-emerald-300 text-[9px]">{t('today')}</span>}
                     </div>
                   </div>
                   <div className="mt-1 text-lg font-semibold text-white text-center drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
@@ -194,7 +205,7 @@ export default function MonthlyCalendar({
                   <div className={`mt-auto uppercase tracking-[0.3em] ${
                     cell.status === 'missing' ? 'text-[8px]' : 'text-[9px]'
                   } ${cell.isAccidentDate ? 'text-red-300' : ''}`}>
-                    {cell.isAccidentDate ? 'Accident' : STATUS_LABELS[cell.status]}
+                    {cell.isAccidentDate ? t('accident') : STATUS_LABELS[cell.status]}
                   </div>
                 </button>
               );

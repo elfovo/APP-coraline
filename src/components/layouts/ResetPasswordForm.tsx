@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { OutlineInput } from '@/components/inputs';
 import { SimpleButton } from '@/components/buttons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface ResetPasswordFormProps {
   onSubmit?: (data: {
@@ -26,6 +27,7 @@ export default function ResetPasswordForm({
     email: false
   });
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,9 +38,9 @@ export default function ResetPasswordForm({
     } = {};
 
     if (!email) {
-      newErrors.email = 'Email requis';
+      newErrors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('emailInvalid');
     }
 
     setErrors(newErrors);
@@ -56,8 +58,8 @@ export default function ResetPasswordForm({
   return (
     <div className={`bg-transparent rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
       <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Réinitialiser le mot de passe</h2>
-        <p className="text-sm sm:text-base text-white opacity-70">Entrez votre email pour recevoir un lien de réinitialisation</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t('resetPasswordTitle')}</h2>
+        <p className="text-sm sm:text-base text-white opacity-70">{t('resetPasswordSubtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -65,7 +67,7 @@ export default function ResetPasswordForm({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="email" className="block text-sm font-medium text-white">
-              Email
+              {t('emailLabel')}
             </label>
             <div className={`bg-white text-black text-xs px-1 py-1 rounded-full flex items-center justify-center shadow-lg w-5 h-5 transition-opacity duration-300 ${showValidation.email ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <span className="text-xs">✓</span>
@@ -86,9 +88,9 @@ export default function ResetPasswordForm({
                 } else {
                   setShowValidation(prev => ({ ...prev, email: false }));
                   if (email.trim() === '') {
-                    setErrors(prev => ({ ...prev, email: 'Email requis' }));
+                    setErrors(prev => ({ ...prev, email: t('emailRequired') }));
                   } else if (!/\S+@\S+\.\S+/.test(email)) {
-                    setErrors(prev => ({ ...prev, email: 'Email invalide' }));
+                    setErrors(prev => ({ ...prev, email: t('emailInvalid') }));
                   }
                 }
               }}
@@ -114,17 +116,17 @@ export default function ResetPasswordForm({
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mr-2"></div>
-              Réinitialisation...
+              {t('resetting')}
             </div>
           ) : (
-            'Réinitialiser le mot de passe'
+            t('resetPasswordButton')
           )}
         </SimpleButton>
       </form>
 
       <div className="text-center mt-4 sm:mt-6">
         <Link href="/login" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
-          Retour à la connexion
+          {t('backToLogin')}
         </Link>
       </div>
     </div>

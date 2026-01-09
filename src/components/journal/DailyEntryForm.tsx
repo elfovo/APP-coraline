@@ -12,6 +12,7 @@ import {
   loadJournalPreferences,
   type JournalPreferences,
 } from '@/lib/firestoreEntries';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'activitesDouces' | 'perturbateurs';
 type SliderGroup = 'symptomes' | 'medicaments';
@@ -38,28 +39,28 @@ interface DailyEntryFormProps {
 }
 
 const SYMPTOM_OPTIONS = [
-  { id: 'cephalee', label: 'Céphalée' },
-  { id: 'vision', label: 'Troubles visuels' },
-  { id: 'fatigue', label: 'Fatigue' },
-  { id: 'humeur', label: 'Saut d’humeur' },
-  { id: 'anxiete', label: 'Anxiété' },
-  { id: 'nausees', label: 'Nausées' },
+  { id: 'cephalee', label: 'Céphalées' },
+  { id: 'nePasSeSentirNormal', label: 'Ne pas se sentir normal(e)' },
+  { id: 'pressionCrane', label: 'Pression dans le crâne' },
+  { id: 'concentration', label: 'Problèmes de concentration' },
+  { id: 'douleursCervicales', label: 'Douleurs cervicales' },
+  { id: 'problemesMemoire', label: 'Problèmes de mémoire' },
+  { id: 'nausees', label: 'Nausée ou vomissement' },
+  { id: 'fatigue', label: 'Fatigue ou manque d\'énergie' },
   { id: 'vertiges', label: 'Vertiges' },
-  { id: 'etourdissements', label: 'Étourdissements' },
+  { id: 'confusion', label: 'Confusion' },
+  { id: 'vision', label: 'Vision trouble' },
+  { id: 'somnolence', label: 'Somnolence' },
+  { id: 'equilibre', label: 'Problèmes d\'équilibre' },
+  { id: 'hypersensibilite', label: 'Hypersensibilité' },
   { id: 'photophobie', label: 'Sensibilité à la lumière' },
-  { id: 'phonophobie', label: 'Sensibilité au bruit' },
-  { id: 'acouphenes', label: 'Acouphènes' },
-  { id: 'raideurNuque', label: 'Raideur de la nuque' },
-  { id: 'douleurOculaire', label: 'Douleur oculaire' },
-  { id: 'confusion', label: 'Confusion mentale' },
-  { id: 'concentration', label: 'Difficultés de concentration' },
   { id: 'irritabilite', label: 'Irritabilité' },
-  { id: 'pressionTete', label: 'Sensation de pression dans la tête' },
-  { id: 'douleurFaciale', label: 'Douleur faciale' },
-  { id: 'equilibre', label: 'Troubles de l\'équilibre' },
-  { id: 'teteLourde', label: 'Sensation de tête lourde' },
-  { id: 'brouillardMental', label: 'Brouillard mental' },
-  { id: 'sensibiliteMouvement', label: 'Sensibilité au mouvement' },
+  { id: 'phonophobie', label: 'Sensibilité au bruit' },
+  { id: 'tristesse', label: 'Tristesse' },
+  { id: 'sensationRalenti', label: 'Sensation d\'être ralenti' },
+  { id: 'anxiete', label: 'Nervosité ou anxiété' },
+  { id: 'brouillardMental', label: 'Sensation d\'être "dans le brouillard"' },
+  { id: 'difficultesEndormir', label: 'Difficultés à s\'endormir' },
 ];
 
 const DEFAULT_VISIBLE_SYMPTOMS = new Set<string>([
@@ -241,14 +242,69 @@ export default function DailyEntryForm({
   onGoNextDay,
 }: DailyEntryFormProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
+  
+  // Options traduites
+  const translatedSymptomOptions = useMemo(() => SYMPTOM_OPTIONS.map(option => ({
+    ...option,
+    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+  })), [t]);
+  
+  const translatedMedicationOptions = useMemo(() => MEDICATION_OPTIONS.map(option => ({
+    ...option,
+    label: t(`medication${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+  })), [t]);
+  
+  const translatedActivityOptions = useMemo(() => ACTIVITY_OPTIONS.map(option => ({
+    ...option,
+    label: t(`activity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+  })), [t]);
+  
+  const translatedGentleActivityOptions = useMemo(() => GENTLE_ACTIVITY_OPTIONS.map(option => ({
+    ...option,
+    label: t(`gentleActivity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+  })), [t]);
+  
+  const translatedPerturbateurOptions = useMemo(() => {
+    const mapping: Record<string, string> = {
+      'Lumière forte': 'disruptorLumiereForte',
+      'Bruit élevé': 'disruptorBruitEleve',
+      'Stress': 'disruptorStress',
+      'Manque de sommeil': 'disruptorManqueSommeil',
+      'Sur-stimulation': 'disruptorSurStimulation',
+      'Odeurs fortes': 'disruptorOdeursFortes',
+      'Changements météo': 'disruptorChangementsMeteo',
+      'Repas sauté': 'disruptorRepasSaute',
+      'Déshydratation': 'disruptorDeshydratation',
+      'Écrans prolongés': 'disruptorEcransProlonges',
+      'Conduite longue': 'disruptorConduiteLongue',
+      'Changements hormonaux': 'disruptorChangementsHormonaux',
+      'Alcool': 'disruptorAlcool',
+      'Caféine excessive': 'disruptorCafeineExcessive',
+      'Exercice intense': 'disruptorExerciceIntense',
+      'Chaleur excessive': 'disruptorChaleurExcessive',
+      'Froid intense': 'disruptorFroidIntense',
+      'Position prolongée': 'disruptorPositionProlongee',
+    };
+    return PERTURBATEUR_OPTIONS.map(item => t(mapping[item] as any));
+  }, [t]);
+  
+  const translatedMedicationInfo = useMemo(() => {
+    const info: Record<string, string> = {};
+    Object.keys(MEDICATION_INFO).forEach(key => {
+      info[key] = t(`medicationInfo${key.charAt(0).toUpperCase() + key.slice(1)}` as any);
+    });
+    return info;
+  }, [t]);
+  
   const [symptoms, setSymptoms] = useState<Record<string, number>>(() =>
-    buildBaseState(SYMPTOM_OPTIONS),
+    buildBaseState(translatedSymptomOptions),
   );
   const [medications, setMedications] = useState<Record<string, number>>(() =>
-    buildBaseState(MEDICATION_OPTIONS),
+    buildBaseState(translatedMedicationOptions),
   );
   const [activityMinutes, setActivityMinutes] = useState<Record<string, number>>(
-    () => buildBaseState(ACTIVITY_OPTIONS),
+    () => buildBaseState(translatedActivityOptions),
   );
   const [customActivities, setCustomActivities] = useState<
     { id: string; label: string; duration: number }[]
@@ -256,7 +312,7 @@ export default function DailyEntryForm({
   const [newActivityName, setNewActivityName] = useState('');
   const [newActivityDuration, setNewActivityDuration] = useState('');
   const [gentleActivityMinutes, setGentleActivityMinutes] = useState<Record<string, number>>(
-    () => buildBaseState(GENTLE_ACTIVITY_OPTIONS),
+    () => buildBaseState(translatedGentleActivityOptions),
   );
   const [customGentleActivities, setCustomGentleActivities] = useState<
     { id: string; label: string; duration: number }[]
@@ -657,7 +713,7 @@ export default function DailyEntryForm({
     const wasEditing = editingSymptomes;
     setEditingSymptomes((prev) => !prev);
     if (wasEditing) {
-      onSuccess?.('Préférences des symptômes mises à jour');
+      onSuccess?.(t('symptomsPreferencesUpdated'));
     }
   };
 
@@ -665,7 +721,7 @@ export default function DailyEntryForm({
     const wasEditing = editingMedicaments;
     setEditingMedicaments((prev) => !prev);
     if (wasEditing) {
-      onSuccess?.('Préférences des médicaments mises à jour');
+      onSuccess?.(t('medicationsPreferencesUpdated'));
     }
   };
 
@@ -673,7 +729,7 @@ export default function DailyEntryForm({
     const wasEditing = editingActivites;
     setEditingActivites((prev) => !prev);
     if (wasEditing) {
-      onSuccess?.('Préférences des activités mises à jour');
+      onSuccess?.(t('activitiesPreferencesUpdated'));
     }
   };
 
@@ -681,7 +737,7 @@ export default function DailyEntryForm({
     const wasEditing = editingActivitesDouces;
     setEditingActivitesDouces((prev) => !prev);
     if (wasEditing) {
-      onSuccess?.('Préférences des activités douces mises à jour');
+      onSuccess?.(t('gentleActivitiesPreferencesUpdated'));
     }
   };
 
@@ -689,7 +745,7 @@ export default function DailyEntryForm({
     const wasEditing = editingPerturbateurs;
     setEditingPerturbateurs((prev) => !prev);
     if (wasEditing) {
-      onSuccess?.('Préférences des éléments perturbateurs mises à jour');
+      onSuccess?.(t('disruptorsPreferencesUpdated'));
     }
   };
 
@@ -929,7 +985,7 @@ export default function DailyEntryForm({
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm uppercase tracking-[0.3em] text-white/60">
-              Journal du
+              {t('journalOf')}
             </p>
             {(onGoPreviousDay || onGoNextDay) && (
               <div className="flex flex-wrap gap-2">
@@ -939,7 +995,7 @@ export default function DailyEntryForm({
                     size="sm"
                     className="bg-white/10 text-white border border-white/30 px-3 py-2 rounded-xl hover:bg-white/20"
                     onClick={onGoPreviousDay}
-                    aria-label="Jour précédent"
+                    aria-label={t('previousDay')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -962,7 +1018,7 @@ export default function DailyEntryForm({
                     size="sm"
                     className="bg-white/10 text-white border border-white/30 px-3 py-2 rounded-xl hover:bg-white/20"
                     onClick={onGoNextDay}
-                    aria-label="Jour suivant"
+                    aria-label={t('nextDay')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -984,8 +1040,7 @@ export default function DailyEntryForm({
           </div>
           <h1 className="text-3xl font-semibold text-white">{dateLabel}</h1>
           <p className="text-white/70">
-            Sélectionne les éléments qui te concernent aujourd’hui. Les curseurs
-            non modifiés restent à 0 (aucun symptôme / aucune prise).
+            {t('journalDescription')}
           </p>
         </div>
       </div>
@@ -993,8 +1048,8 @@ export default function DailyEntryForm({
 
       <SectionCard
         id="symptomes"
-        title="Symptômes (1-6)"
-        description="Indique l’intensité ressentie pour chaque symptôme (0 = non ressenti)."
+        title={t('symptomsTitle')}
+        description={t('symptomsDescription')}
         highlight={initialSection === 'symptomes'}
         actionButton={
           <button
@@ -1006,7 +1061,7 @@ export default function DailyEntryForm({
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingSymptomes ? 'Terminer le mode édition' : 'Mode édition des symptômes'}
+            title={editingSymptomes ? t('finishEditMode') : t('editSymptomsMode')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1026,7 +1081,7 @@ export default function DailyEntryForm({
         }
       >
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {SYMPTOM_OPTIONS.map((option) => {
+          {translatedSymptomOptions.map((option) => {
             const isHidden = hiddenSliders.symptomes.has(option.id);
             if (!editingSymptomes && isHidden) {
               return null;
@@ -1057,7 +1112,7 @@ export default function DailyEntryForm({
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
-                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
+                        title={isHidden ? t('show') : t('hide')}
                       >
                         {isHidden ? (
                           <svg
@@ -1116,14 +1171,14 @@ export default function DailyEntryForm({
           })}
         </div>
         <p className="text-white/70 text-sm mt-4">
-          Total du jour : <span className="text-white">{symptomTotal}/132</span>
+          {t('totalDay')} <span className="text-white">{symptomTotal}/132</span>
         </p>
       </SectionCard>
 
       <SectionCard
         id="medicaments"
-        title="Médicaments (1-10)"
-        description="Valide ce que tu as pris et ajuste (0 = aucune prise)."
+        title={t('medicationsTitle')}
+        description={t('medicationsDescription')}
         highlight={initialSection === 'medicaments'}
         actionButton={
           <button
@@ -1135,7 +1190,7 @@ export default function DailyEntryForm({
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingMedicaments ? 'Terminer le mode édition' : 'Mode édition des médicaments'}
+            title={editingMedicaments ? t('finishEditMode') : t('editMedicationsMode')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1155,7 +1210,7 @@ export default function DailyEntryForm({
         }
       >
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {MEDICATION_OPTIONS.map((option) => {
+          {translatedMedicationOptions.map((option) => {
             const isHidden = hiddenSliders.medicaments.has(option.id);
             if (!editingMedicaments && isHidden) {
               return null;
@@ -1180,7 +1235,7 @@ export default function DailyEntryForm({
                           type="button"
                           onClick={() => setMedicationInfoId(option.id)}
                           className="flex-shrink-0 w-4 h-4 rounded-full bg-white/10 hover:bg-white/20 border border-white/30 flex items-center justify-center text-white/70 hover:text-white transition-all duration-200 text-[10px] font-semibold"
-                          title="Information"
+                          title={t('information')}
                         >
                           i
                         </button>
@@ -1196,7 +1251,7 @@ export default function DailyEntryForm({
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
-                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
+                        title={isHidden ? t('show') : t('hide')}
                       >
                         {isHidden ? (
                           <svg
@@ -1258,8 +1313,8 @@ export default function DailyEntryForm({
 
       <SectionCard
         id="activites"
-        title="Activités & temps effectué"
-        description="Note la durée (en minutes) pour chaque activité."
+        title={t('activitiesTitle')}
+        description={t('activitiesDescription')}
         highlight={initialSection === 'activites'}
         actionButton={
           <button
@@ -1271,7 +1326,7 @@ export default function DailyEntryForm({
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingActivites ? 'Terminer le mode édition' : 'Mode édition des activités'}
+            title={editingActivites ? t('finishEditMode') : t('editActivitiesMode')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1291,7 +1346,7 @@ export default function DailyEntryForm({
         }
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {ACTIVITY_OPTIONS.map((option) => {
+          {translatedActivityOptions.map((option) => {
             const isHidden = hiddenActivities.activites.has(option.id);
             if (!editingActivites && isHidden) {
               return null;
@@ -1309,7 +1364,7 @@ export default function DailyEntryForm({
                   <div className="flex items-center gap-2">
                     {!editingActivites && (
                       <span className="text-white/70 text-sm">
-                        {activityMinutes[option.id]} min
+                        {activityMinutes[option.id]} {t('minutes')}
                       </span>
                     )}
                     {editingActivites && (
@@ -1322,7 +1377,7 @@ export default function DailyEntryForm({
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
-                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
+                        title={isHidden ? t('show') : t('hide')}
                       >
                         {isHidden ? (
                           <svg
@@ -1361,7 +1416,7 @@ export default function DailyEntryForm({
                 <OutlineInput
                   type="number"
                   min={0}
-                  placeholder="Durée en minutes"
+                  placeholder={t('durationMinutes')}
                   value={activityMinutes[option.id] ? String(activityMinutes[option.id]) : ''}
                   onChange={(event) =>
                     setActivityMinutes((prev) => ({
@@ -1387,13 +1442,13 @@ export default function DailyEntryForm({
                 <p className="text-white font-medium">{activity.label}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-white/70 text-sm">
-                    {activity.duration} min
+                    {activity.duration} {t('minutes')}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomActivity(activity.id)}
                     className="text-white/60 hover:text-white transition-colors"
-                    title="Supprimer"
+                    title={t('remove')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1436,10 +1491,10 @@ export default function DailyEntryForm({
 
           {editingActivites && (
             <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
-              <p className="text-white font-medium">Ajouter une activité perso</p>
+              <p className="text-white font-medium">{t('addCustomActivity')}</p>
             <div className="flex flex-col md:flex-row gap-3">
               <OutlineInput
-                placeholder="Nom de l’activité"
+                placeholder={t('activityNamePlaceholder')}
                 value={newActivityName}
                 onChange={(event) => setNewActivityName(event.target.value)}
                 variant="white"
@@ -1447,7 +1502,7 @@ export default function DailyEntryForm({
                 className="flex-1"
               />
               <OutlineInput
-                placeholder="Durée (min)"
+                placeholder={t('durationPlaceholder')}
                 type="number"
                 value={newActivityDuration}
                 onChange={(event) => setNewActivityDuration(event.target.value)}
@@ -1456,22 +1511,22 @@ export default function DailyEntryForm({
                 className="flex-1"
               />
               <SimpleButton type="button" onClick={handleAddCustomActivity}>
-                Ajouter
+                {t('add')}
               </SimpleButton>
             </div>
             </div>
           )}
         </div>
         <p className="text-white/70 text-sm mt-4">
-          Total temps actif :{' '}
-          <span className="text-white font-semibold">{activityTotal} min</span>
+          {t('totalActiveTime')}{' '}
+          <span className="text-white font-semibold">{activityTotal} {t('minutes')}</span>
         </p>
       </SectionCard>
 
       <SectionCard
         id="activitesDouces"
-        title="Activités douces & thérapies"
-        description="Note la durée (en minutes) pour chaque activité douce ou séance de thérapie."
+        title={t('gentleActivitiesTitle')}
+        description={t('gentleActivitiesDescription')}
         highlight={initialSection === 'activitesDouces'}
         actionButton={
           <button
@@ -1483,7 +1538,7 @@ export default function DailyEntryForm({
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingActivitesDouces ? 'Terminer le mode édition' : 'Mode édition des activités douces'}
+            title={editingActivitesDouces ? t('finishEditMode') : t('editGentleActivitiesMode')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1503,7 +1558,7 @@ export default function DailyEntryForm({
         }
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {GENTLE_ACTIVITY_OPTIONS.map((option) => {
+          {translatedGentleActivityOptions.map((option) => {
             const isHidden = hiddenActivities.activitesDouces.has(option.id);
             if (!editingActivitesDouces && isHidden) {
               return null;
@@ -1521,7 +1576,7 @@ export default function DailyEntryForm({
                   <div className="flex items-center gap-2">
                     {!editingActivitesDouces && (
                       <span className="text-white/70 text-sm">
-                        {gentleActivityMinutes[option.id]} min
+                        {gentleActivityMinutes[option.id]} {t('minutes')}
                       </span>
                     )}
                     {editingActivitesDouces && (
@@ -1534,7 +1589,7 @@ export default function DailyEntryForm({
                             ? 'border-emerald-300/60 text-emerald-200 hover:bg-emerald-300/10'
                             : 'border-white/30 text-white/80 hover:bg-white/10',
                         ].join(' ')}
-                        title={isHidden ? 'Ré-afficher' : 'Masquer'}
+                        title={isHidden ? t('show') : t('hide')}
                       >
                         {isHidden ? (
                           <svg
@@ -1573,7 +1628,7 @@ export default function DailyEntryForm({
                 <OutlineInput
                   type="number"
                   min={0}
-                  placeholder="Durée en minutes"
+                  placeholder={t('durationMinutes')}
                   value={gentleActivityMinutes[option.id] ? String(gentleActivityMinutes[option.id]) : ''}
                   onChange={(event) =>
                     setGentleActivityMinutes((prev) => ({
@@ -1599,13 +1654,13 @@ export default function DailyEntryForm({
                 <p className="text-white font-medium">{activity.label}</p>
                 <div className="flex items-center gap-2">
                   <span className="text-white/70 text-sm">
-                    {activity.duration} min
+                    {activity.duration} {t('minutes')}
                   </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomGentleActivity(activity.id)}
                     className="text-white/60 hover:text-white transition-colors"
-                    title="Supprimer"
+                    title={t('remove')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1648,7 +1703,7 @@ export default function DailyEntryForm({
 
           {editingActivitesDouces && (
             <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 md:col-span-2">
-              <p className="text-white font-medium">Ajouter une activité douce / thérapie perso</p>
+              <p className="text-white font-medium">{t('addCustomGentleActivity')}</p>
             <div className="flex flex-col md:flex-row gap-3">
               <OutlineInput
                 placeholder="Nom de l'activité"
@@ -1675,15 +1730,15 @@ export default function DailyEntryForm({
           )}
         </div>
         <p className="text-white/70 text-sm mt-4">
-          Total temps activités douces :{' '}
-          <span className="text-white font-semibold">{gentleActivityTotal} min</span>
+          {t('totalGentleActivities')}{' '}
+          <span className="text-white font-semibold">{gentleActivityTotal} {t('minutes')}</span>
         </p>
       </SectionCard>
 
       <SectionCard
         id="perturbateurs"
-        title="Éléments perturbateurs"
-        description="Sélectionne les facteurs déclencheurs identifiés."
+        title={t('disruptorsTitle')}
+        description={t('disruptorsDescription')}
         highlight={initialSection === 'perturbateurs'}
         actionButton={
           <button
@@ -1695,7 +1750,7 @@ export default function DailyEntryForm({
                 ? 'bg-white/20 border-2 border-white/50 text-white'
                 : 'bg-white/10 hover:bg-white/20 border border-white/30 text-white/70 hover:text-white',
             ].join(' ')}
-            title={editingPerturbateurs ? 'Terminer le mode édition' : 'Mode édition des perturbateurs'}
+            title={editingPerturbateurs ? t('finishEditMode') : t('editDisruptorsMode')}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -1715,7 +1770,8 @@ export default function DailyEntryForm({
         }
       >
         <div className="flex flex-wrap gap-3">
-          {PERTURBATEUR_OPTIONS.map((item) => {
+          {PERTURBATEUR_OPTIONS.map((item, index) => {
+            const translatedItem = translatedPerturbateurOptions[index];
             const isHidden = hiddenPerturbateurs.has(item);
             if (!editingPerturbateurs && isHidden) {
               return null;
@@ -1737,7 +1793,7 @@ export default function DailyEntryForm({
                     editingPerturbateurs && !isHidden ? 'opacity-60 pointer-events-none' : '',
                   ].join(' ')}
                 >
-                  {item}
+                  {translatedItem}
                 </button>
                 {editingPerturbateurs && (
                   <button
@@ -1809,7 +1865,7 @@ export default function DailyEntryForm({
                     type="button"
                     onClick={() => handleRemoveCustomPerturbateur(item)}
                     className="absolute -top-2 -right-2 p-1 rounded-full border transition-colors duration-200 bg-black/80 backdrop-blur-sm border-red-300/60 text-red-200 hover:bg-red-300/10 flex items-center justify-center"
-                    title="Supprimer"
+                    title={t('remove')}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -1836,10 +1892,10 @@ export default function DailyEntryForm({
         </div>
         {editingPerturbateurs && (
           <div className="bg-white/5 border border-dashed border-white/20 rounded-2xl p-4 space-y-3 mt-4">
-            <p className="text-white font-medium">Ajouter un élément perturbateur perso</p>
+            <p className="text-white font-medium">{t('addCustomDisruptor')}</p>
             <div className="flex flex-col md:flex-row gap-3">
               <OutlineInput
-                placeholder="Nom de l'élément perturbateur"
+                placeholder={t('disruptorNamePlaceholder')}
                 value={newPerturbateurName}
                 onChange={(event) => setNewPerturbateurName(event.target.value)}
                 variant="white"
@@ -1847,7 +1903,7 @@ export default function DailyEntryForm({
                 className="flex-1"
               />
               <SimpleButton type="button" onClick={handleAddCustomPerturbateur}>
-                Ajouter
+                {t('add')}
               </SimpleButton>
             </div>
           </div>
@@ -1856,11 +1912,11 @@ export default function DailyEntryForm({
 
       <div>
         <label className="text-white font-medium block mb-2">
-          Notes complémentaires
+          {t('additionalNotes')}
         </label>
         <textarea
           className="w-full min-h-[120px] rounded-2xl bg-black/40 border border-white/10 text-white p-4 placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/30"
-          placeholder="Ex : bon début de journée mais fatigue après l’activité."
+          placeholder={t('notesPlaceholder')}
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
         />
@@ -1869,7 +1925,7 @@ export default function DailyEntryForm({
       <div className="sticky bottom-6 z-20 flex justify-center md:justify-end pointer-events-none">
         <div className="pointer-events-auto w-full max-w-lg flex flex-col gap-4 bg-black/70 border border-white/10 rounded-2xl p-4 backdrop-blur-xl shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
           <SimpleButton type="submit" size="lg" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Enregistrement...' : 'Enregistrer la journée'}
+            {isSubmitting ? t('saving') : t('saveDay')}
           </SimpleButton>
         </div>
       </div>
@@ -1892,7 +1948,7 @@ export default function DailyEntryForm({
             >
               <div className="flex items-start justify-between mb-4">
                 <h3 className="text-xl font-semibold text-white">
-                  {MEDICATION_OPTIONS.find((m) => m.id === medicationInfoId)?.label}
+                  {translatedMedicationOptions.find((m) => m.id === medicationInfoId)?.label}
                 </h3>
                 <button
                   type="button"
@@ -1903,7 +1959,7 @@ export default function DailyEntryForm({
                 </button>
               </div>
               <p className="text-white/80 text-sm leading-relaxed">
-                {MEDICATION_INFO[medicationInfoId] || 'Information non disponible.'}
+                {translatedMedicationInfo[medicationInfoId] || t('informationNotAvailable')}
               </p>
             </motion.div>
           </motion.div>

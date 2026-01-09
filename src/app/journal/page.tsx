@@ -9,10 +9,12 @@ import { fetchDailyEntry, saveDailyEntry } from '@/lib/firestoreEntries';
 import type { DailyEntry } from '@/types/journal';
 import { shiftDate, formatDateLabel, getTodayISO } from '@/lib/dateUtils';
 import { useToast } from '@/hooks/useToast';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 function JournalContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const searchParamsStore = useSearchParams();
   const searchParams = useMemo(
     () => new URLSearchParams(searchParamsStore.toString()),
@@ -23,8 +25,9 @@ function JournalContent() {
 
   const todayISO = useMemo(() => getTodayISO(), []);
   const dateISO = dateParam ?? todayISO;
+  const { language } = useLanguage();
 
-  const dateLabel = useMemo(() => formatDateLabel(dateISO), [dateISO]);
+  const dateLabel = useMemo(() => formatDateLabel(dateISO, language), [dateISO, language]);
 
   const [entryLoading, setEntryLoading] = useState(true);
   const [initialEntry, setInitialEntry] = useState<DailyEntry | null>(null);
@@ -65,13 +68,13 @@ function JournalContent() {
       setInitialEntry(entry);
       showToast(
         entry.status === 'draft'
-          ? 'Brouillon sauvegardé'
-          : 'Journée enregistrée avec succès',
+          ? t('draftSaved')
+          : t('daySaved'),
         'success',
       );
     } catch (error) {
       console.error(error);
-      showToast("Impossible d'enregistrer cette journée. Vérifie ta connexion.", 'error');
+      showToast(t('daySaveError'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -83,7 +86,7 @@ function JournalContent() {
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/70">Chargement du journal...</p>
+          <p className="text-white/70">{t('journalLoading')}</p>
         </div>
       </div>
     );
@@ -134,13 +137,14 @@ function JournalContent() {
 }
 
 export default function JournalPage() {
+  const { t } = useLanguage();
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-transparent">
           <div className="text-center">
             <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-            <p className="text-white/70">Chargement du journal...</p>
+            <p className="text-white/70">{t('journalLoading')}</p>
           </div>
         </div>
       }

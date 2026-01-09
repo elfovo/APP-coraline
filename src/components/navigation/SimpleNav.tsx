@@ -10,10 +10,12 @@ import {
   HiClipboardList,
   HiBookOpen,
 } from 'react-icons/hi';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function SimpleNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const isRouteActive = (href: string) => {
     if (href === '/') {
@@ -26,27 +28,27 @@ export default function SimpleNav() {
     {
       href: '/',
       icon: HiHome,
-      label: 'Accueil',
+      labelKey: 'home' as const,
     },
     {
       href: '/statistique',
       icon: HiChartBar,
-      label: 'Statistique',
+      labelKey: 'statistics' as const,
     },
     {
       href: '/journal',
       icon: HiClipboardList,
-      label: 'Journal',
+      labelKey: 'journal' as const,
     },
     {
       href: '/contenu',
       icon: HiBookOpen,
-      label: 'Contenu',
+      labelKey: 'content' as const,
     },
     {
       href: '/profil',
       icon: HiUser,
-      label: 'Profil',
+      labelKey: 'profile' as const,
     },
   ];
 
@@ -89,7 +91,7 @@ export default function SimpleNav() {
                     : 'text-white/60 hover:text-white'
                   }
                 `}
-                aria-label={item.label}
+                aria-label={t(item.labelKey)}
               >
                 <Icon
                   className={`
@@ -105,7 +107,7 @@ export default function SimpleNav() {
                     group-hover:translate-x-1 group-hover:scale-110
                   `}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
               </Link>
             );

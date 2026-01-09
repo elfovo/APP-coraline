@@ -1,0 +1,58 @@
+.popper :global(.react-datepicker) {
+  background: rgba(5, 5, 10, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  color: white;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.calendar :global(.react-datepicker__header) {
+  background: rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 20px !important;
+  padding-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar :global(.react-datepicker__current-month) {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.calendar :global(.react-datepicker__navigation) {
+  top: 20px !important;
+  margin-top: 0;
+}
+
+.calendar :global(.react-datepicker__current-month),
+.calendar :global(.react-datepicker__day-name) {
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: capitalize;
+}
+
+.calendar :global(.react-datepicker__day) {
+  color: rgba(255, 255, 255, 0.8);
+  border-radius: 12px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+
+.calendar :global(.react-datepicker__day:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.calendar :global(.react-datepicker__day--selected),
+.calendar :global(.react-datepicker__day--keyboard-selected) {
+  background: linear-gradient(120deg, #a855f7, #ec4899);
+  color: #fff;
+}
+
+.calendar :global(.react-datepicker__triangle) {
+  fill: rgba(5, 5, 10, 0.95);
+  color: rgba(5, 5, 10, 0.95);
+}

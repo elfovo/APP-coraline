@@ -1,5 +1,6 @@
 import React, { useId, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface TrendChartDataPoint {
   dateISO: string;
@@ -42,10 +43,13 @@ export default function TrendChart({
   onPeriodChange,
   lineColor = '#C084FC',
   valueFormatter = (value) => `${value}`,
-  emptyStateText = 'Aucune donnée à afficher pour cette période.',
+  emptyStateText,
   customPeriodLabel,
   daysSinceAccident,
 }: TrendChartProps) {
+  const { t } = useLanguage();
+  const defaultEmptyStateText = emptyStateText || t('noDataForPeriod');
+  
   // Options de période par défaut
   const defaultPeriods = [7, 30, 90];
   const allPeriods = daysSinceAccident && daysSinceAccident > 90 
@@ -169,7 +173,7 @@ export default function TrendChart({
             {description && <p className="text-white/80 text-sm">{description}</p>}
           </div>
         </div>
-        <p className="text-white/60 text-sm">{emptyStateText}</p>
+        <p className="text-white/60 text-sm">{defaultEmptyStateText}</p>
       </section>
     );
   }
@@ -194,7 +198,7 @@ export default function TrendChart({
               const isCustomPeriod = daysSinceAccident && option === daysSinceAccident;
               const label = isCustomPeriod && customPeriodLabel 
                 ? customPeriodLabel 
-                : `${option}j`;
+                : t('daysLabel', { days: option });
               return (
                 <button
                   key={option}

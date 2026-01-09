@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { OutlineInput } from '@/components/inputs';
 import { SimpleButton, SocialLoginButtons } from '@/components/buttons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface LoginFormProps {
   onSubmit?: (data: { email: string; password: string }) => void;
@@ -29,6 +30,7 @@ export default function LoginForm({
     password: false
   });
   const [internalIsLoading, setInternalIsLoading] = useState(false);
+  const { t } = useLanguage();
   
   const isLoading = externalIsLoading || internalIsLoading;
 
@@ -39,15 +41,15 @@ export default function LoginForm({
     const newErrors: { email?: string; password?: string } = {};
     
     if (!email) {
-      newErrors.email = 'Email requis';
+      newErrors.email = t('emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = 'Email invalide';
+      newErrors.email = t('emailInvalid');
     }
     
     if (!password) {
-      newErrors.password = 'Mot de passe requis';
+      newErrors.password = t('passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Minimum 6 caractères';
+      newErrors.password = t('passwordMinLength');
     }
     
     setErrors(newErrors);
@@ -65,15 +67,15 @@ export default function LoginForm({
   return (
     <div className={`bg-transparent rounded-[2rem] p-4 sm:p-6 md:p-8 max-w-sm sm:max-w-md w-full ${className}`}>
       <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Connexion</h2>
-        <p className="text-sm sm:text-base text-white opacity-70">Connectez-vous à votre compte</p>
+        <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t('loginTitle')}</h2>
+        <p className="text-sm sm:text-base text-white opacity-70">{t('loginSubtitle')}</p>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div>
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="email" className="block text-sm font-medium text-white">
-              Email
+              {t('emailLabel')}
             </label>
             <div className={`bg-white text-black text-xs px-1 py-1 rounded-full flex items-center justify-center shadow-lg w-5 h-5 transition-opacity duration-300 ${showValidation.email ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <span className="text-xs">✓</span>
@@ -94,9 +96,9 @@ export default function LoginForm({
                 } else {
                   setShowValidation(prev => ({ ...prev, email: false }));
                   if (email.trim() === '') {
-                    setErrors(prev => ({ ...prev, email: 'Email requis' }));
+                    setErrors(prev => ({ ...prev, email: t('emailRequired') }));
                   } else if (!/\S+@\S+\.\S+/.test(email)) {
-                    setErrors(prev => ({ ...prev, email: 'Email invalide' }));
+                    setErrors(prev => ({ ...prev, email: t('emailInvalid') }));
                   }
                 }
               }}
@@ -116,7 +118,7 @@ export default function LoginForm({
         <div>
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="password" className="block text-sm font-medium text-white">
-              Mot de passe
+              {t('passwordLabel')}
             </label>
             <div className={`bg-white text-black text-xs px-1 py-1 rounded-full flex items-center justify-center shadow-lg w-5 h-5 transition-opacity duration-300 ${showValidation.password ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
               <span className="text-xs">✓</span>
@@ -138,9 +140,9 @@ export default function LoginForm({
                   } else {
                     setShowValidation(prev => ({ ...prev, password: false }));
                     if (password.trim() === '') {
-                      setErrors(prev => ({ ...prev, password: 'Mot de passe requis' }));
+                      setErrors(prev => ({ ...prev, password: t('passwordRequired') }));
                     } else if (password.length < 6) {
-                      setErrors(prev => ({ ...prev, password: 'Minimum 6 caractères' }));
+                      setErrors(prev => ({ ...prev, password: t('passwordMinLength') }));
                     }
                   }
                 }}
@@ -180,7 +182,7 @@ export default function LoginForm({
         
         <div className="flex items-center justify-end">
           <Link href="/reset-password" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all">
-            Mot de passe oublié ?
+            {t('forgotPassword')}
           </Link>
         </div>
         
@@ -193,10 +195,10 @@ export default function LoginForm({
           {isLoading ? (
             <div className="flex items-center justify-center">
               <div className="w-5 h-5 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mr-2"></div>
-              Connexion...
+              {t('loggingIn')}
             </div>
           ) : (
-            'Se connecter'
+            t('loginButton')
           )}
         </SimpleButton>
       </form>
@@ -206,7 +208,7 @@ export default function LoginForm({
           <div className="w-full border-t border-white/20"></div>
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-transparent text-white/70">ou</span>
+          <span className="px-2 bg-transparent text-white/70">{t('or')}</span>
         </div>
       </div>
 
@@ -219,7 +221,7 @@ export default function LoginForm({
       
       <div className="text-center mt-4 sm:mt-6">
         <Link href="/register" className="text-white opacity-70 hover:text-white hover:opacity-100 transition-all font-medium">
-          Pas de compte ? S&apos;inscrire
+          {t('noAccount')}
         </Link>
       </div>
     </div>

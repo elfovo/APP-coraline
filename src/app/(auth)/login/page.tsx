@@ -5,9 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { LoginForm } from '@/components/layouts';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
 export default function LoginPage() {
   const { signIn, signInWithGoogle, user } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,20 +29,20 @@ export default function LoginPage() {
       router.push('/');
     } catch (err: unknown) {
       // Gérer les erreurs Firebase
-      let errorMessage = 'Une erreur est survenue lors de la connexion';
+      let errorMessage = t('loginError');
       
       const firebaseError = err as { code?: string; message?: string } | null;
 
       if (firebaseError?.code === 'auth/user-not-found') {
-        errorMessage = 'Aucun compte trouvé avec cet email';
+        errorMessage = t('loginErrorUserNotFound');
       } else if (firebaseError?.code === 'auth/wrong-password') {
-        errorMessage = 'Mot de passe incorrect';
+        errorMessage = t('loginErrorWrongPassword');
       } else if (firebaseError?.code === 'auth/invalid-email') {
-        errorMessage = 'Email invalide';
+        errorMessage = t('loginErrorInvalidEmail');
       } else if (firebaseError?.code === 'auth/user-disabled') {
-        errorMessage = 'Ce compte a été désactivé';
+        errorMessage = t('loginErrorUserDisabled');
       } else if (firebaseError?.code === 'auth/too-many-requests') {
-        errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard';
+        errorMessage = t('loginErrorTooManyRequests');
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
       }
@@ -57,10 +60,10 @@ export default function LoginPage() {
       await signInWithGoogle();
       router.push('/');
     } catch (err: unknown) {
-      let errorMessage = 'Une erreur est survenue lors de la connexion avec Google';
+      let errorMessage = t('loginErrorGoogle');
       const firebaseError = err as { code?: string; message?: string } | null;
       if (firebaseError?.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Connexion annulée';
+        errorMessage = t('loginCancelled');
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
       }

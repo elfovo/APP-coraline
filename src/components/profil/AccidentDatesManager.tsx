@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { formatLongDate } from '@/lib/dateUtils';
+import { useLanguage } from '@/contexts/LanguageContext';
+import LocalizedDatePicker from '@/components/inputs/LocalizedDatePicker';
 
 const CalendarDateIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,6 +21,8 @@ export default function AccidentDatesManager({
   onDatesChange,
   onToast,
 }: AccidentDatesManagerProps) {
+  const { t, language } = useLanguage();
+  const dateInputLang = language === 'en' ? 'en-US' : 'fr-FR';
   const [newDate, setNewDate] = useState('');
   const [dateToDelete, setDateToDelete] = useState<number | null>(null);
 
@@ -27,19 +30,19 @@ export default function AccidentDatesManager({
     if (!newDate.trim()) return;
     
     if (dates.includes(newDate)) {
-      onToast('Cette date est déjà ajoutée.', 'error');
+      onToast(t('dateAlreadyAdded'), 'error');
       return;
     }
     
     onDatesChange([...dates, newDate]);
     setNewDate('');
-    onToast('Date d\'accident ajoutée avec succès.', 'success');
+    onToast(t('accidentDateAdded'), 'success');
   };
 
   const handleRemoveDate = (index: number) => {
     const newDates = dates.filter((_, i) => i !== index);
     onDatesChange(newDates);
-    onToast('Date d\'accident supprimée avec succès.', 'success');
+    onToast(t('accidentDateRemoved'), 'success');
     setDateToDelete(null);
   };
 
@@ -58,10 +61,10 @@ export default function AccidentDatesManager({
   return (
     <div className="space-y-3 md:col-span-2">
       <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-        <CalendarDateIcon className="w-5 h-5" /> Dates des accidents
+        <CalendarDateIcon className="w-5 h-5" /> {t('accidentDates')}
       </label>
       <p className="text-white/60 text-xs">
-        Ajoutez les dates de vos accidents ou traumatismes. Elles seront visibles dans le calendrier.
+        {t('accidentDatesDesc')}
       </p>
       
       <div className="space-y-3">
@@ -69,25 +72,32 @@ export default function AccidentDatesManager({
           <div className="space-y-2">
             {dates.map((date, index) => (
               <div
-                key={index}
+                key={`${language}-${index}-${date}`}
                 className="group relative p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <CalendarDateIcon className="w-4 h-4 text-white/70" />
-                  <span className="text-white/90 font-medium text-sm">{formatLongDate(date)}</span>
+                  <span className="text-white/90 font-medium text-sm">
+                    {new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'fr-FR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric'
+                    }).format(new Date(date))}
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <input
-                    type="date"
+                  <LocalizedDatePicker
+                    key={`${language}-picker-${index}`}
                     value={date}
-                    onChange={(e) => handleUpdateDate(index, e.target.value)}
-                    className="flex-1 px-3 py-2 rounded-xl bg-black/30 border border-white/20 text-white text-xs focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300"
+                    onChange={(value) => handleUpdateDate(index, value)}
+                    size="sm"
                   />
                   <button
                     type="button"
                     onClick={() => setDateToDelete(index)}
                     className="p-2 rounded-xl bg-white/10 border border-white/20 text-white/70 hover:bg-white/20 hover:border-white/30 transition-all duration-300 flex-shrink-0"
-                    title="Supprimer cette date"
+                    title={t('removeDate')}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -100,24 +110,24 @@ export default function AccidentDatesManager({
         )}
         
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-          <input
-            type="date"
+          <LocalizedDatePicker
+            key={`new-date-${language}`}
             value={newDate}
-            onChange={(e) => setNewDate(e.target.value)}
-            placeholder="Sélectionner une date"
-            className="flex-1 px-4 py-2 rounded-xl bg-black/30 border border-white/20 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/40 transition-all duration-300"
+            onChange={(value) => setNewDate(value)}
+            placeholder={language === 'en' ? 'mm/dd/yyyy' : 'jj/mm/aaaa'}
+            size="sm"
           />
           <button
             type="button"
             onClick={handleAddDate}
             disabled={!newDate.trim()}
             className="px-5 py-2 rounded-xl bg-white/10 border border-white/20 text-white/90 hover:bg-white/20 hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 font-medium flex items-center gap-2 text-sm"
-            title="Ajouter cette date"
+            title={t('addDate')}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Ajouter
+            {t('add')}
           </button>
         </div>
       </div>
@@ -132,13 +142,17 @@ export default function AccidentDatesManager({
           <div className="relative w-full max-w-md bg-gradient-to-br from-black/95 via-black/90 to-black/95 border border-white/20 rounded-3xl p-6 space-y-4 shadow-2xl">
             <div className="space-y-2">
               <h3 className="text-xl font-semibold text-white">
-                Confirmer la suppression
+                {t('confirmDeletion')}
               </h3>
               <p className="text-white/70 text-sm">
-                Êtes-vous sûr de vouloir supprimer la date du{' '}
-                <span className="font-medium text-white">
-                  {formatLongDate(dates[dateToDelete])}
-                </span> ?
+                {t('confirmDeleteDate', { 
+                  date: new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  }).format(new Date(dates[dateToDelete]))
+                })}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
@@ -147,14 +161,14 @@ export default function AccidentDatesManager({
                 onClick={() => setDateToDelete(null)}
                 className="flex-1 px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-300 font-medium"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDelete}
                 className="flex-1 px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-white hover:bg-white/30 transition-all duration-300 font-medium"
               >
-                Supprimer
+                {t('delete')}
               </button>
             </div>
           </div>

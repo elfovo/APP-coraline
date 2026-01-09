@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { ResetPasswordForm } from '@/components/layouts';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
 export default function ResetPasswordPage() {
   const { resetPassword } = useAuth();
+  const { t } = useLanguage();
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState(false);
 
@@ -16,14 +19,14 @@ export default function ResetPasswordPage() {
       await resetPassword(data.email);
       setSuccess(true);
     } catch (err: unknown) {
-      let errorMessage = 'Une erreur est survenue';
+      let errorMessage = t('resetPasswordError');
       
       const firebaseError = err as { code?: string; message?: string } | null;
 
       if (firebaseError?.code === 'auth/user-not-found') {
-        errorMessage = 'Aucun compte trouvé avec cet email';
+        errorMessage = t('resetPasswordErrorUserNotFound');
       } else if (firebaseError?.code === 'auth/invalid-email') {
-        errorMessage = 'Email invalide';
+        errorMessage = t('resetPasswordErrorInvalidEmail');
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
       }
@@ -59,7 +62,7 @@ export default function ResetPasswordPage() {
               className="mb-6 p-4 bg-green-500/10 border border-green-500/20 rounded-2xl backdrop-blur-sm"
             >
               <p className="text-sm text-green-400 text-center">
-                Email de réinitialisation envoyé ! Vérifiez votre boîte mail.
+                {t('resetPasswordSuccess')}
               </p>
             </motion.div>
           )}

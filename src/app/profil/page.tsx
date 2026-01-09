@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -14,6 +15,7 @@ import { getPatientId, generateNextPatientId, initializeUserDocument } from '@/l
 import Toast from '@/components/profil/Toast';
 import DeleteAccountModal from '@/components/profil/DeleteAccountModal';
 import AccidentDatesManager from '@/components/profil/AccidentDatesManager';
+import LanguageSwitcher from '@/components/navigation/LanguageSwitcher';
 import {
   CalendarIcon,
   ChartIcon,
@@ -33,28 +35,21 @@ type NotificationPrefs = {
 
 const NOTIFICATION_STORAGE_KEY = 'commocare-notification-prefs';
 
+// Les préférences de notification seront traduites dynamiquement dans le composant
 const preferenceOptions: {
   id: keyof NotificationPrefs;
-  title: string;
-  description: string;
   icon: React.ReactNode;
 }[] = [
   {
     id: 'dailyReminder',
-    title: 'Rappel quotidien',
-    description: 'Notification douce à 20h pour compléter ton entrée du journal.',
     icon: <CalendarIcon className="w-6 h-6 text-white" />,
   },
   {
     id: 'weeklySummary',
-    title: 'Synthèse hebdomadaire',
-    description: 'Email récapitulatif chaque dimanche matin avec tes statistiques.',
     icon: <ChartIcon className="w-6 h-6 text-white" />,
   },
   {
     id: 'caregiverUpdates',
-    title: 'Alertes accompagnant',
-    description: 'Un email quand un proche ajoute une observation sur ton suivi.',
     icon: <UsersIcon className="w-6 h-6 text-white" />,
   },
 ];
@@ -62,6 +57,7 @@ const preferenceOptions: {
 export default function ProfilPage() {
   const { user, loading: authLoading } = useRequireAuth();
   const { logout, updateUserProfile, deleteAccount, reauthenticateUser } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [displayName, setDisplayName] = useState('');
   const [accidentDates, setAccidentDates] = useState<string[]>([]);
@@ -127,12 +123,12 @@ export default function ProfilPage() {
       const newPatientId = await generateNextPatientId();
       await initializeUserDocument(user.uid, newPatientId);
       setPatientId(newPatientId);
-      setToastMessage(`ID patient créé : ${newPatientId}`);
+      setToastMessage(t('patientIdCreated', { id: newPatientId }));
       setToastType('success');
     } catch (error: unknown) {
       console.error('Erreur lors de la génération de l\'ID patient:', error);
       const err = error as { message?: string } | null;
-      const errorMessage = err?.message || 'Erreur lors de la création de l\'ID patient. Veuillez réessayer.';
+      const errorMessage = err?.message || t('patientIdError');
       setToastMessage(errorMessage);
       setToastType('error');
     } finally {
@@ -180,7 +176,7 @@ export default function ProfilPage() {
   const handleProfileSave = async () => {
     if (!user) return;
     if (!displayName.trim()) {
-      setToastMessage('Le nom affiché est requis.');
+      setToastMessage(t('displayNameRequired'));
       setToastType('error');
       return;
     }
@@ -200,11 +196,11 @@ export default function ProfilPage() {
         accidentDates: accidentDates.filter(date => date.trim() !== ''),
       }, { merge: true });
       
-      setToastMessage('Profil mis à jour avec succès.');
+      setToastMessage(t('profileUpdated'));
       setToastType('success');
     } catch (error) {
       console.error(error);
-      setToastMessage("Impossible d'enregistrer pour le moment.");
+      setToastMessage(t('cannotSave'));
       setToastType('error');
     } finally {
       setSavingProfile(false);
@@ -304,20 +300,20 @@ export default function ProfilPage() {
             <div className="flex-1 space-y-3">
               <div>
                 <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-2">
-                  Mon profil
+                  {t('profileTitle')}
                 </p>
                 <h1 className="text-4xl md:text-5xl font-bold text-white">
-                  {displayName || 'Utilisateur'}
+                  {displayName || t('user')}
                 </h1>
                 <p className="text-white/70 mt-2 text-lg">{user.email}</p>
               </div>
               
               <div className="flex flex-wrap gap-3">
                 <div className="px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-                  <span className="text-sm text-white/80">Programme Beta</span>
+                  <span className="text-sm text-white/80">{t('betaProgram')}</span>
                 </div>
                 <div className="px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm">
-                  <span className="text-sm text-white/80">Accès complet</span>
+                  <span className="text-sm text-white/80">{t('fullAccess')}</span>
                 </div>
               </div>
             </div>
@@ -328,7 +324,7 @@ export default function ProfilPage() {
           {/* Section principale - Informations du compte */}
           <section className="space-y-6">
             {/* Informations personnelles */}
-            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 sm:p-8 backdrop-blur-sm">
+            <div className="relative overflow-hidden rounded-3xl border border-transparent bg-transparent p-6 sm:p-8">
               <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-emerald-400/10 blur-2xl" />
               </div>
@@ -336,17 +332,17 @@ export default function ProfilPage() {
               <div className="relative z-10 space-y-6">
                 <div className="space-y-1">
                   <p className="text-sm uppercase tracking-[0.3em] text-white/60">
-                    Identité & accès
+                    {t('identityAccess')}
                   </p>
                   <h2 className="text-2xl font-semibold text-white">
-                    Informations du compte
+                    {t('accountInfo')}
                   </h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="space-y-2">
                     <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <UserIcon className="w-5 h-5" /> Nom à afficher
+                      <UserIcon className="w-5 h-5" /> {t('displayName')}
                     </label>
                     <OutlineInput
                       value={displayName}
@@ -355,7 +351,7 @@ export default function ProfilPage() {
                         setProfileMessage(null);
                         setProfileError(null);
                       }}
-                      placeholder="Ex : Camille Tremblay"
+                      placeholder={t('displayNamePlaceholder')}
                       variant="white"
                       size="lg"
                     />
@@ -363,7 +359,7 @@ export default function ProfilPage() {
                   
                   <div className="space-y-2">
                     <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <MailIcon className="w-5 h-5" /> Email
+                      <MailIcon className="w-5 h-5" /> {t('email')}
                     </label>
                     <OutlineInput
                       value={user.email ?? ''}
@@ -373,13 +369,13 @@ export default function ProfilPage() {
                     />
                   </div>
                   
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <label className="text-white/80 text-sm font-medium flex items-center gap-2">
-                      <IdCardIcon className="w-5 h-5" /> ID patient
+                      <IdCardIcon className="w-5 h-5" /> {t('patientId')}
                     </label>
                     {loadingPatientId ? (
                       <div className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60">
-                        Chargement...
+                        {t('loading')}
                       </div>
                     ) : patientId !== null ? (
                       <OutlineInput
@@ -391,7 +387,7 @@ export default function ProfilPage() {
                     ) : (
                       <div className="flex items-center gap-3">
                         <OutlineInput
-                          value="Non défini"
+                          value={t('notDefined')}
                           disabled
                           variant="white"
                           size="lg"
@@ -402,10 +398,20 @@ export default function ProfilPage() {
                           onClick={handleGeneratePatientId}
                           disabled={generatingPatientId}
                         >
-                          {generatingPatientId ? 'Création...' : 'Créer'}
+                          {generatingPatientId ? t('creating') : t('create')}
                         </SimpleButton>
                       </div>
                     )}
+                  </div>
+                  
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-white/80 text-sm font-medium flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                      </svg>
+                      {t('language')}
+                    </label>
+                    <LanguageSwitcher />
                   </div>
                   
                   <AccidentDatesManager
@@ -444,7 +450,7 @@ export default function ProfilPage() {
                     className="flex items-center gap-2"
                   >
                     <SaveIcon className="w-5 h-5" />
-                    {savingProfile ? 'Enregistrement...' : 'Mettre à jour'}
+                    {savingProfile ? t('updating') : t('update')}
                   </SimpleButton>
                   <SimpleButton
                     size="lg"
@@ -453,7 +459,7 @@ export default function ProfilPage() {
                     className="flex items-center gap-2"
                   >
                     <LockIcon className="w-5 h-5" />
-                    Réinitialiser le mot de passe
+                    {t('resetPassword')}
                   </SimpleButton>
                 </div>
               </div>
@@ -468,18 +474,18 @@ export default function ProfilPage() {
               {/* Overlay grisé pour indiquer que c'est pas encore disponible */}
               <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-20 rounded-3xl flex items-center justify-center pointer-events-none">
                 <div className="text-center space-y-2 px-4">
-                  <p className="text-white/90 text-lg font-semibold">Bientôt disponible</p>
-                  <p className="text-white/60 text-sm">Cette fonctionnalité sera disponible dans une prochaine mise à jour</p>
+                  <p className="text-white/90 text-lg font-semibold">{t('comingSoon')}</p>
+                  <p className="text-white/60 text-sm">{t('comingSoonDesc')}</p>
                 </div>
               </div>
               
               <div className="relative z-10 space-y-6 opacity-40">
                 <div className="space-y-1">
                   <p className="text-sm uppercase tracking-[0.3em] text-white/60">
-                    Notifications
+                    {t('notifications')}
                   </p>
                   <h2 className="text-2xl font-semibold text-white">
-                    Rappels & partages
+                    {t('remindersSharing')}
                   </h2>
                 </div>
 
@@ -493,11 +499,11 @@ export default function ProfilPage() {
                         <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">{option.icon}</div>
                           <h3 className="text-white font-semibold">
-                            {option.title}
+                            {t(option.id === 'dailyReminder' ? 'dailyReminder' : option.id === 'weeklySummary' ? 'weeklySummary' : 'caregiverUpdates')}
                           </h3>
                         </div>
                         <p className="text-white/60 text-sm">
-                          {option.description}
+                          {t(option.id === 'dailyReminder' ? 'dailyReminderDesc' : option.id === 'weeklySummary' ? 'weeklySummaryDesc' : 'caregiverUpdatesDesc')}
                         </p>
                       </div>
                       <SwitchButton
@@ -526,19 +532,18 @@ export default function ProfilPage() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
               <p className="text-sm uppercase tracking-[0.3em] text-white/60">
-                Zone sensible
+                {t('sensitiveZone')}
               </p>
               <h2 className="text-2xl font-semibold text-white">
-                Suppression du compte
+                {t('deleteAccount')}
               </h2>
               <p className="text-white/70 max-w-2xl mt-1">
-                La suppression efface ton journal, les rapports exportés et les codes
-                accompagnants. Contacte le support pour confirmer l&apos;opération.
+                {t('deleteAccountDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
               <SimpleButton size="lg" onClick={handleLogout}>
-                Déconnexion
+                {t('logout')}
               </SimpleButton>
               <TransparentButton
                 size="lg"
@@ -546,7 +551,7 @@ export default function ProfilPage() {
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={deletingAccount}
               >
-                {deletingAccount ? 'Suppression en cours...' : 'Supprimer le compte'}
+                {deletingAccount ? t('deleting') : t('deleteAccountButton')}
               </TransparentButton>
             </div>
           </div>

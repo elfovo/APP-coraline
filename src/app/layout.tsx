@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthAurora } from "@/components/animations";
 import { ConditionalNav } from "@/components/navigation";
 
@@ -22,18 +23,20 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.className} min-h-screen bg-black text-white`}>
-        <AuthProvider>
-          <div className="relative min-h-screen">
-            <div className="fixed inset-0 -z-10">
-              <div className="absolute inset-0 bg-black" />
-              <AuthAurora />
+        <LanguageProvider>
+          <AuthProvider>
+            <div className="relative min-h-screen">
+              <div className="fixed inset-0 -z-10">
+                <div className="absolute inset-0 bg-black" />
+                <AuthAurora />
+              </div>
+              <div className="relative z-10 min-h-screen">
+                <ConditionalNav />
+                {children}
+              </div>
             </div>
-            <div className="relative z-10 min-h-screen">
-              <ConditionalNav />
-              {children}
-            </div>
-          </div>
-        </AuthProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

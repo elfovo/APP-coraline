@@ -1,4 +1,5 @@
 import { SimpleButton, OutlineButton } from '@/components/buttons';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HeroSectionProps {
   greeting: string;
@@ -13,6 +14,7 @@ export default function HeroSection({
   onJournalClick,
   onLibraryClick,
 }: HeroSectionProps) {
+  const { t } = useLanguage();
   return (
     <section className="relative overflow-hidden rounded-4xl border border-white/10 bg-gradient-to-br from-white/10 via-white/5 to-transparent p-6 sm:p-10">
       <div className="absolute inset-0 pointer-events-none">
@@ -21,27 +23,30 @@ export default function HeroSection({
       </div>
       <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-4 max-w-2xl">
-          <p className="text-white/70 uppercase tracking-[0.3em] text-xs">Tableau de bord</p>
+          <p className="text-white/70 uppercase tracking-[0.3em] text-xs">{t('dashboard')}</p>
           <h1 className="text-4xl md:text-5xl font-semibold text-white leading-tight">
-            {greeting}, continuons ton rétablissement avec clarté.
+            {t('continueRecovery', { greeting })}
           </h1>
           <p className="text-white/80 text-lg">{heroMessage}</p>
         </div>
         <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-64">
           <SimpleButton size="lg" className="flex-1" onClick={onJournalClick}>
-            Ouvrir le journal
+            {t('openJournal')}
           </SimpleButton>
           <OutlineButton
             size="lg"
             className="flex-1 border-white/40 text-white"
             onClick={onLibraryClick}
           >
-            Bibliothèque
+            {t('library')}
           </OutlineButton>
         </div>
       </div>
     </section>
   );
 }
+
+
+
 
 

@@ -5,9 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { SignupForm } from '@/components/layouts';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '@/contexts/LanguageContext';
+
 export default function RegisterPage() {
   const { signUp, signInWithGoogle, user } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const [error, setError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -40,18 +43,18 @@ export default function RegisterPage() {
         sessionStorage.removeItem('newAccount');
       }
       // Gérer les erreurs Firebase
-      let errorMessage = 'Une erreur est survenue lors de l\'inscription';
+      let errorMessage = t('signupError');
       
       const firebaseError = err as { code?: string; message?: string } | null;
 
       if (firebaseError?.code === 'auth/email-already-in-use') {
-        errorMessage = 'Cet email est déjà utilisé';
+        errorMessage = t('signupErrorEmailInUse');
       } else if (firebaseError?.code === 'auth/invalid-email') {
-        errorMessage = 'Email invalide';
+        errorMessage = t('signupErrorInvalidEmail');
       } else if (firebaseError?.code === 'auth/weak-password') {
-        errorMessage = 'Le mot de passe est trop faible (minimum 6 caractères)';
+        errorMessage = t('signupErrorWeakPassword');
       } else if (firebaseError?.code === 'auth/operation-not-allowed') {
-        errorMessage = 'Cette opération n\'est pas autorisée';
+        errorMessage = t('signupErrorOperationNotAllowed');
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
       }
@@ -78,10 +81,10 @@ export default function RegisterPage() {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('newAccount');
       }
-      let errorMessage = 'Une erreur est survenue lors de la connexion avec Google';
+      let errorMessage = t('loginErrorGoogle');
       const firebaseError = err as { code?: string; message?: string } | null;
       if (firebaseError?.code === 'auth/popup-closed-by-user') {
-        errorMessage = 'Connexion annulée';
+        errorMessage = t('loginCancelled');
       } else if (firebaseError?.message) {
         errorMessage = firebaseError.message;
       }

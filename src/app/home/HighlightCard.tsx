@@ -1,11 +1,13 @@
 import { SimpleButton } from '@/components/buttons';
 import type { HighlightCard as HighlightCardType } from './constants';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface HighlightCardProps {
   card: HighlightCardType;
 }
 
 export default function HighlightCard({ card }: HighlightCardProps) {
+  const { t } = useLanguage();
   return (
     <article
       className={`rounded-3xl p-6 flex flex-col gap-4 transition-colors border ${
@@ -15,7 +17,7 @@ export default function HighlightCard({ card }: HighlightCardProps) {
       }`}
     >
       <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-white/60">
-        <span>Action</span>
+        <span>{t('action')}</span>
         <span
           className={`px-3 py-1 rounded-full ${
             card.variant === 'completed'
@@ -48,10 +50,13 @@ export default function HighlightCard({ card }: HighlightCardProps) {
         disabled={card.disabled}
         variant={card.variant === 'completed' ? 'outline' : 'default'}
       >
-        {card.variant === 'completed' ? 'Journal rempli' : 'Accéder'}
+        {card.variant === 'completed' ? t('journalFilled') : t('access')}
       </SimpleButton>
     </article>
   );
 }
+
+
+
 
 
