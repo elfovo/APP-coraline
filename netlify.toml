@@ -1,7 +1,6 @@
 [build]
   command = "npm run build"
-  # Le plugin @netlify/plugin-nextjs gère automatiquement le répertoire de publication
-  # Ne pas définir 'publish' ici pour laisser le plugin le gérer
+  publish = ".next/standalone"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
