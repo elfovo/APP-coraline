@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   // On active l'optimisation d'images par défaut (next/image).
   // Si tu fais un export statique, il faudra réactiver `unoptimized: true`.
+  // Configuration pour Netlify
+  experimental: {
+    // Permet au plugin Netlify de mieux gérer les fichiers manquants
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 export default nextConfig;
