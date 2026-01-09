@@ -48,3 +48,5 @@ Thumbs.db
 # Firebase Admin Service Account
 **/firebase-service-account.json
 **/*-service-account.json
+# Local Netlify folder
+.netlify
