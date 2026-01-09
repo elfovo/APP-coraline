@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/prepare-client-manifest.js",
-    "build": "next build",
+    "build": "bash scripts/build.sh",
+    "build:next": "next build",
     "postbuild": "node scripts/fix-client-manifest.js",
     "start": "next start",
     "lint": "next lint"
