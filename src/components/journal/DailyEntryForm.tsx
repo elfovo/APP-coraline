@@ -13,6 +13,7 @@ import {
   type JournalPreferences,
 } from '@/lib/firestoreEntries';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/translations';
 
 export type SectionKey = 'symptomes' | 'medicaments' | 'activites' | 'activitesDouces' | 'perturbateurs';
 type SliderGroup = 'symptomes' | 'medicaments';
@@ -247,22 +248,22 @@ export default function DailyEntryForm({
   // Options traduites
   const translatedSymptomOptions = useMemo(() => SYMPTOM_OPTIONS.map(option => ({
     ...option,
-    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as TranslationKey) || option.label
   })), [t]);
   
   const translatedMedicationOptions = useMemo(() => MEDICATION_OPTIONS.map(option => ({
     ...option,
-    label: t(`medication${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+    label: t(`medication${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as TranslationKey) || option.label
   })), [t]);
   
   const translatedActivityOptions = useMemo(() => ACTIVITY_OPTIONS.map(option => ({
     ...option,
-    label: t(`activity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+    label: t(`activity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as TranslationKey) || option.label
   })), [t]);
   
   const translatedGentleActivityOptions = useMemo(() => GENTLE_ACTIVITY_OPTIONS.map(option => ({
     ...option,
-    label: t(`gentleActivity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+    label: t(`gentleActivity${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as TranslationKey) || option.label
   })), [t]);
   
   const translatedPerturbateurOptions = useMemo(() => {
@@ -286,13 +287,13 @@ export default function DailyEntryForm({
       'Froid intense': 'disruptorFroidIntense',
       'Position prolongée': 'disruptorPositionProlongee',
     };
-    return PERTURBATEUR_OPTIONS.map(item => t(mapping[item] as any));
+    return PERTURBATEUR_OPTIONS.map(item => t(mapping[item] as TranslationKey));
   }, [t]);
   
   const translatedMedicationInfo = useMemo(() => {
     const info: Record<string, string> = {};
     Object.keys(MEDICATION_INFO).forEach(key => {
-      info[key] = t(`medicationInfo${key.charAt(0).toUpperCase() + key.slice(1)}` as any);
+      info[key] = t(`medicationInfo${key.charAt(0).toUpperCase() + key.slice(1)}` as TranslationKey);
     });
     return info;
   }, [t]);

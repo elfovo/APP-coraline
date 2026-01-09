@@ -11,6 +11,7 @@ import { getDbInstance } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import type { TranslationKey } from '@/lib/translations';
 
 const GENTLE_ACTIVITY_IDS = new Set([
   'meditation',
@@ -85,7 +86,7 @@ export default function StatisticsDashboard({
   // Options traduites pour les symptômes
   const translatedSymptomOptions = useMemo(() => SYMPTOM_OPTIONS.map(option => ({
     ...option,
-    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as any) || option.label
+    label: t(`symptom${option.id.charAt(0).toUpperCase() + option.id.slice(1)}` as TranslationKey) || option.label
   })), [t]);
   
   // Mapping pour traduire les perturbateurs
@@ -111,13 +112,13 @@ export default function StatisticsDashboard({
       'Position prolongée': 'disruptorPositionProlongee',
     };
     const key = mapping[item];
-    return key ? t(key as any) : item;
+    return key ? t(key as TranslationKey) : item;
   }, [t]);
   
   // Fonction pour traduire les médicaments
   const getTranslatedMedication = useCallback((med: MedicationEntry): string => {
     if (med.id) {
-      const translated = t(`medication${med.id.charAt(0).toUpperCase() + med.id.slice(1)}` as any);
+      const translated = t(`medication${med.id.charAt(0).toUpperCase() + med.id.slice(1)}` as TranslationKey);
       if (translated && translated !== `medication${med.id.charAt(0).toUpperCase() + med.id.slice(1)}`) {
         return translated;
       }
@@ -130,12 +131,12 @@ export default function StatisticsDashboard({
     if (activity.id && !activity.custom) {
       const normalizedId = activity.id.replace(/^gentle_/, '');
       if (isGentleActivityId(normalizedId)) {
-        const translated = t(`gentleActivity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as any);
+        const translated = t(`gentleActivity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as TranslationKey);
         if (translated && translated !== `gentleActivity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}`) {
           return translated;
         }
       } else {
-        const translated = t(`activity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as any);
+        const translated = t(`activity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}` as TranslationKey);
         if (translated && translated !== `activity${normalizedId.charAt(0).toUpperCase() + normalizedId.slice(1)}`) {
           return translated;
         }
@@ -637,7 +638,7 @@ export default function StatisticsDashboard({
     });
 
     return { total, segments };
-  }, [daySummary]);
+  }, [daySummary, t]);
 
   const activeSummarySegment = useMemo(() => {
     if (!summaryChart.segments.length) {
@@ -707,9 +708,9 @@ export default function StatisticsDashboard({
 
   const getChartDescription = (period: number, sinceAccident: number | null, baseLabelKey: string, sinceAccidentKey: string): string => {
     if (sinceAccident && period === sinceAccident) {
-      return t(sinceAccidentKey as any);
+      return t(sinceAccidentKey as TranslationKey);
     }
-    return t(baseLabelKey as any, { days: period });
+    return t(baseLabelKey as TranslationKey, { days: period });
   };
 
   const chartRadius = 90;

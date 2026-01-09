@@ -22,7 +22,6 @@ export default function AccidentDatesManager({
   onToast,
 }: AccidentDatesManagerProps) {
   const { t, language } = useLanguage();
-  const dateInputLang = language === 'en' ? 'en-US' : 'fr-FR';
   const [newDate, setNewDate] = useState('');
   const [dateToDelete, setDateToDelete] = useState<number | null>(null);
 

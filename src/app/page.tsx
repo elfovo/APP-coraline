@@ -12,7 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import LandingPage from './(auth)/page';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMemo } from 'react';
-import type { HighlightCard } from './home/constants';
+import type { HighlightCard as HighlightCardType } from './home/constants';
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -23,7 +23,7 @@ export default function HomePage() {
 
   // Tous les hooks doivent être appelés avant les retours conditionnels
   const isTodayComplete = todayEntry?.status === 'complete';
-  const highlightCards = useMemo((): HighlightCard[] => [
+  const highlightCards = useMemo((): HighlightCardType[] => [
     {
       title: t('completeJournal'),
       description: isTodayComplete

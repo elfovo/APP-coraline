@@ -4,8 +4,8 @@ import { forwardRef, useMemo } from 'react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useLanguage } from '@/contexts/LanguageContext';
-import fr from 'date-fns/locale/fr';
-import enUS from 'date-fns/locale/en-US';
+import { fr } from 'date-fns/locale/fr';
+import { enUS } from 'date-fns/locale/en-US';
 import styles from './LocalizedDatePicker.module.css';
 
 registerLocale('fr', fr);
