@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "postbuild": "node scripts/fix-client-manifest.js",
     "start": "next start",
     "lint": "next lint"
   },
