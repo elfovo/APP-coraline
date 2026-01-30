@@ -8,6 +8,10 @@
   backdrop-filter: blur(12px);
 }
 
+.popper {
+  z-index: 1000;
+}
+
 .calendar :global(.react-datepicker__header) {
   background: rgba(255, 255, 255, 0.05);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);

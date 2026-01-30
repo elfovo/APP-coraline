@@ -17,6 +17,8 @@ type LocalizedDatePickerProps = {
   placeholder?: string;
   className?: string;
   size?: 'sm' | 'md';
+  maxDate?: Date;
+  popperPlacement?: 'top-start' | 'top' | 'top-end' | 'bottom-start' | 'bottom' | 'bottom-end';
 };
 
 const StyledInput = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { placeholder?: string }>(
@@ -43,6 +45,8 @@ export default function LocalizedDatePicker({
   placeholder,
   className = '',
   size = 'md',
+  maxDate,
+  popperPlacement = 'bottom-start',
 }: LocalizedDatePickerProps) {
   const { language } = useLanguage();
 
@@ -77,10 +81,11 @@ export default function LocalizedDatePicker({
       <DatePicker
         selected={selectedDate}
         onChange={handleChange}
+        maxDate={maxDate}
         dateFormat={language === 'en' ? 'MMMM d, yyyy' : 'd MMMM yyyy'}
         locale={language === 'en' ? 'en' : 'fr'}
         calendarStartDay={language === 'en' ? 0 : 1}
-        popperPlacement="bottom-start"
+        popperPlacement={popperPlacement}
         showPopperArrow={false}
         wrapperClassName="w-full"
         calendarClassName={styles.calendar}

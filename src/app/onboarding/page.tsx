@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { BackButton, NextButton } from '@/components/buttons';
 import SelectableCard from '@/components/onboarding/SelectableCard';
-import DateInput from '@/components/onboarding/DateInput';
+import LocalizedDatePicker from '@/components/inputs/LocalizedDatePicker';
 import { useAuth } from '@/contexts/AuthContext';
 import { getDbInstance } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -67,33 +67,6 @@ const MEDICATION_OPTIONS = [
   { id: 'coenzymeQ10', label: 'Coenzyme Q10' },
 ];
 
-const ACTIVITY_OPTIONS = [
-  { id: 'marche', label: 'Marche' },
-  { id: 'yoga', label: 'Yoga' },
-  { id: 'lecture', label: 'Lecture' },
-  { id: 'ecran', label: 'Ecrans < 30 min' },
-  { id: 'natation', label: 'Natation' },
-  { id: 'velo', label: 'Vélo' },
-  { id: 'etirements', label: 'Étirements' },
-  { id: 'jardinage', label: 'Jardinage' },
-  { id: 'cuisine', label: 'Cuisine' },
-  { id: 'bricolage', label: 'Bricolage' },
-];
-
-const GENTLE_ACTIVITY_OPTIONS = [
-  { id: 'meditation', label: 'Méditation' },
-  { id: 'relaxation', label: 'Relaxation musculaire' },
-  { id: 'respiration', label: 'Respiration guidée' },
-  { id: 'musique', label: 'Musique apaisante' },
-  { id: 'bain', label: 'Bain chaud' },
-  { id: 'massage', label: 'Auto-massage' },
-  { id: 'aromatherapie', label: 'Aromathérapie' },
-  { id: 'acupuncture', label: 'Acupuncture' },
-  { id: 'osteopathie', label: 'Ostéopathie' },
-  { id: 'physiotherapie', label: 'Physiothérapie' },
-  { id: 'sophrologie', label: 'Sophrologie' },
-];
-
 // Perturbateurs : on NE les configure PAS via l'onboarding
 // On garde les mêmes defaults que `DailyEntryForm`.
 const PERTURBATEUR_OPTIONS = [
@@ -132,7 +105,7 @@ export default function OnboardingPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5;
+  const totalSteps = 3;
   const [isSaving, setIsSaving] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -140,8 +113,6 @@ export default function OnboardingPage() {
   const [accidentDate, setAccidentDate] = useState<string>('');
   const [selectedSymptoms, setSelectedSymptoms] = useState<Set<string>>(new Set());
   const [selectedMedications, setSelectedMedications] = useState<Set<string>>(new Set());
-  const [selectedActivities, setSelectedActivities] = useState<Set<string>>(new Set());
-  const [selectedGentleActivities, setSelectedGentleActivities] = useState<Set<string>>(new Set());
   const [medicationInfoId, setMedicationInfoId] = useState<string | null>(null);
 
   // Gérer le montage côté client uniquement
@@ -217,17 +188,12 @@ export default function OnboardingPage() {
         }, { merge: true });
       }
 
-      // 2. Sauvegarder les préférences du journal
-      // Les éléments sélectionnés seront visibles, les autres seront cachés
+      // 2. Sauvegarder les préférences du journal (symptômes et médicaments uniquement ; activités = tout visible par défaut)
       const allSymptoms = SYMPTOM_OPTIONS.map(s => s.id);
       const allMedications = MEDICATION_OPTIONS.map(m => m.id);
-      const allActivities = ACTIVITY_OPTIONS.map(a => a.id);
-      const allGentleActivities = GENTLE_ACTIVITY_OPTIONS.map(a => a.id);
 
       const hiddenSymptoms = allSymptoms.filter(id => !selectedSymptoms.has(id));
       const hiddenMedications = allMedications.filter(id => !selectedMedications.has(id));
-      const hiddenActivities = allActivities.filter(id => !selectedActivities.has(id));
-      const hiddenGentleActivities = allGentleActivities.filter(id => !selectedGentleActivities.has(id));
 
       const preferences: JournalPreferences = {
         hiddenSliders: {
@@ -235,8 +201,8 @@ export default function OnboardingPage() {
           medicaments: hiddenMedications,
         },
         hiddenActivities: {
-          activites: hiddenActivities,
-          activitesDouces: hiddenGentleActivities,
+          activites: [],
+          activitesDouces: [],
         },
         // Ne pas toucher aux perturbateurs : on conserve strictement le comportement par défaut du Journal
         // (c'est-à-dire : cacher ceux qui ne sont pas dans DEFAULT_VISIBLE_PERTURBATEURS)
@@ -263,7 +229,7 @@ export default function OnboardingPage() {
     }
   };
 
-  const toggleSelection = (id: string, type: 'symptom' | 'medication' | 'activity' | 'gentleActivity') => {
+  const toggleSelection = (id: string, type: 'symptom' | 'medication') => {
     switch (type) {
       case 'symptom':
         setSelectedSymptoms(prev => {
@@ -287,28 +253,6 @@ export default function OnboardingPage() {
           return next;
         });
         break;
-      case 'activity':
-        setSelectedActivities(prev => {
-          const next = new Set(prev);
-          if (next.has(id)) {
-            next.delete(id);
-          } else {
-            next.add(id);
-          }
-          return next;
-        });
-        break;
-      case 'gentleActivity':
-        setSelectedGentleActivities(prev => {
-          const next = new Set(prev);
-          if (next.has(id)) {
-            next.delete(id);
-          } else {
-            next.add(id);
-          }
-          return next;
-        });
-        break;
     }
   };
 
@@ -319,11 +263,7 @@ export default function OnboardingPage() {
       case 2:
         return selectedSymptoms.size > 0;
       case 3:
-        return selectedMedications.size > 0;
-      case 4:
-        return selectedActivities.size > 0;
-      case 5:
-        return selectedGentleActivities.size > 0;
+        return true; // médicaments optionnels
       default:
         return false;
     }
@@ -385,12 +325,20 @@ export default function OnboardingPage() {
               transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
               className="w-full max-w-2xl"
             >
-              <DateInput
-                value={accidentDate}
-                onChange={setAccidentDate}
-                max={new Date().toISOString().split('T')[0]}
-                delay={0.4}
-              />
+              <div className="w-full flex flex-col gap-4 rounded-3xl border border-white/20 bg-white/5 p-6 backdrop-blur-xl">
+                <div className="flex items-center gap-3 text-white/90">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h3 className="text-xl font-bold">Date de l&apos;accident</h3>
+                </div>
+                <LocalizedDatePicker
+                  value={accidentDate}
+                  onChange={setAccidentDate}
+                  maxDate={new Date()}
+                  popperPlacement="top-start"
+                />
+              </div>
             </motion.div>
           </motion.div>
         );
@@ -502,122 +450,6 @@ export default function OnboardingPage() {
                         icon={
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-                          </svg>
-                        }
-                      />
-                    ))}
-                  </div>
-                ));
-              })()}
-            </motion.div>
-          </motion.div>
-        );
-
-      case 4:
-        return (
-          <motion.div
-            key="step-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col items-center justify-center gap-8 lg:gap-12 w-full"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-              className="w-full max-w-3xl text-center space-y-6"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Quelles activités pratiquez-vous ?
-              </h2>
-              <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez toutes les activités que vous pratiquez (vous pourrez en ajouter d&apos;autres plus tard)
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
-            >
-              {(() => {
-                const { rows, globalIndexMap } = organizeInRows(ACTIVITY_OPTIONS);
-                return rows.map((row, rowIndex) => (
-                  <div
-                    key={rowIndex}
-                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
-                  >
-                    {row.map((activity) => (
-                      <SelectableCard
-                        key={activity.id}
-                        title={activity.label}
-                        onClick={() => toggleSelection(activity.id, 'activity')}
-                        isSelected={selectedActivities.has(activity.id)}
-                        delay={0.1 * (globalIndexMap.get(activity) || 0)}
-                        icon={
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        }
-                      />
-                    ))}
-                  </div>
-                ));
-              })()}
-            </motion.div>
-          </motion.div>
-        );
-
-      case 5:
-        return (
-          <motion.div
-            key="step-5"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="flex flex-col items-center justify-center gap-8 lg:gap-12 w-full"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: -30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2, ease: 'easeOut' }}
-              className="w-full max-w-3xl text-center space-y-6"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Activités douces et thérapies
-              </h2>
-              <p className="text-lg text-white/80 leading-relaxed">
-                Sélectionnez toutes les activités douces et thérapies que vous pratiquez (vous pourrez en ajouter d&apos;autres plus tard)
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-              className="w-full max-w-4xl gap-3 flex flex-col px-2 sm:px-0"
-            >
-              {(() => {
-                const { rows, globalIndexMap } = organizeInRows(GENTLE_ACTIVITY_OPTIONS);
-                return rows.map((row, rowIndex) => (
-                  <div
-                    key={rowIndex}
-                    className="flex gap-3 justify-center flex-col sm:flex-row sm:flex-wrap items-stretch"
-                  >
-                    {row.map((activity) => (
-                      <SelectableCard
-                        key={activity.id}
-                        title={activity.label}
-                        onClick={() => toggleSelection(activity.id, 'gentleActivity')}
-                        isSelected={selectedGentleActivities.has(activity.id)}
-                        delay={0.1 * (globalIndexMap.get(activity) || 0)}
-                        icon={
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                           </svg>
                         }
                       />
