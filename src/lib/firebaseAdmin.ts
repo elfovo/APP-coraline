@@ -27,14 +27,14 @@ export function getAdminApp(): App {
     throw new Error('NEXT_PUBLIC_FIREBASE_PROJECT_ID n\'est pas défini dans les variables d\'environnement');
   }
 
-  // Option 0 (recommandée en prod / Netlify): credentials via variable d'environnement
-  // - FIREBASE_SERVICE_ACCOUNT_JSON: JSON complet (string)
-  // - FIREBASE_SERVICE_ACCOUNT_BASE64: JSON complet encodé en base64
+  // Option 0 (recommandée en prod / Netlify): une seule variable pour rester sous la limite 4 KB Lambda
+  // Priorité: BASE64 (recommandé sur Netlify) puis JSON
   const serviceAccountJsonFromEnv =
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
     (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
       ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, 'base64').toString('utf8')
-      : null);
+      : null) ||
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+    null;
 
   if (serviceAccountJsonFromEnv) {
     try {

@@ -47,6 +47,24 @@ Pour le développement local, tu peux installer gcloud CLI et te connecter :
 gcloud auth application-default login
 ```
 
+## Netlify (déploiement) – limite 4 KB
+
+**Erreur possible :** « Your environment variables exceed the 4KB limit imposed by AWS Lambda ».
+
+Sur Netlify, les **variables d’environnement sont envoyées aux fonctions Lambda**. AWS impose une **limite de 4 KB** au total. Le JSON du compte de service est volumineux (~2–3 KB).
+
+**À faire sur Netlify :**
+
+1. N’utiliser **qu’une seule** variable pour les credentials Firebase :
+   - **Recommandé :** `FIREBASE_SERVICE_ACCOUNT_BASE64` (JSON encodé en base64).
+2. **Supprimer** les variables suivantes si elles existent :
+   - `FIREBASE_SERVICE_ACCOUNT_JSON`
+   - `FIREBASE_SERVICE_ACCOUNT_PATH`
+
+Ainsi, le total des variables reste sous 4 KB et le déploiement peut réussir.
+
+**Si l’erreur « Your environment variables exceed the 4KB limit » apparaît :** ne garder que `FIREBASE_SERVICE_ACCOUNT_BASE64` sur Netlify (supprimer `FIREBASE_SERVICE_ACCOUNT_JSON` et `FIREBASE_SERVICE_ACCOUNT_PATH`). Valeur base64 : `cat chemin/vers/firebase-service-account.json | base64 | tr -d '\n' | pbcopy` puis coller dans Netlify.
+
 ## Vérification
 
 Une fois configuré, la route API `/api/patient/lookup` devrait fonctionner sans erreur de permissions.
