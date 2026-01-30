@@ -6,6 +6,7 @@ import { useTodayEntry } from '@/hooks/useTodayEntry';
 import { useTimeOfDay } from '@/hooks/useTimeOfDay';
 import HeroSection from './home/HeroSection';
 import HighlightCard from './home/HighlightCard';
+import WellbeingScoreCard from './home/WellbeingScoreCard';
 import GuidanceSection from './home/GuidanceSection';
 import ShortcutsSection from './home/ShortcutsSection';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -68,6 +69,8 @@ export default function HomePage() {
           onJournalClick={() => router.push('/journal')}
           onLibraryClick={() => router.push('/contenu')}
         />
+
+        <WellbeingScoreCard userId={user.uid} />
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {highlightCards.map((card) => (
