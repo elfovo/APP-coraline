@@ -9,6 +9,7 @@ import {
   type WellbeingResult,
   getWellbeingStatusTranslationKey,
 } from '@/lib/wellbeingScore';
+import type { TranslationKey } from '@/lib/translations';
 
 function WellbeingContent({
   userId,
@@ -43,7 +44,7 @@ function WellbeingContent({
       ? t('wellbeing100Unconfirmed')
       : result.label;
 
-  const statusLabel = t(getWellbeingStatusTranslationKey(result.status));
+  const statusLabel = t(getWellbeingStatusTranslationKey(result.status) as TranslationKey);
   const historyRuns = getStatusHistoryRuns(result.statusHistory);
   const recentRuns = historyRuns.slice(-6);
 
@@ -82,7 +83,7 @@ function WellbeingContent({
                   {formatDateRange(run.startDateISO, run.endDateISO)}
                 </span>
                 <span className="font-medium text-white/90">
-                  {t(getWellbeingStatusTranslationKey(run.status))}
+                  {t(getWellbeingStatusTranslationKey(run.status) as TranslationKey)}
                 </span>
               </li>
             ))}
