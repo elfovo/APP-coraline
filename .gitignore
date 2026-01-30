@@ -45,8 +45,9 @@ next-env.d.ts
 # OS
 Thumbs.db
 
-# Firebase Admin Service Account
+# Firebase Admin Service Account (ne jamais committer)
 **/firebase-service-account.json
 **/*-service-account.json
+src/lib/firebase-service-account.json
 # Local Netlify folder
 .netlify

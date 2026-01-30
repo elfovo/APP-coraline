@@ -28,6 +28,7 @@ export default function LandingPage() {
   const [showAurora, setShowAurora] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [selectedOptionType, setSelectedOptionType] = useState<'visitor' | 'patient' | null>(null);
+  const [accessMode, setAccessMode] = useState<'doctor' | 'entourage' | null>(null);
   const [isLoadingPatient, setIsLoadingPatient] = useState(false);
   const [showLoadingScreen, setShowLoadingScreen] = useState(false);
   const [patientError, setPatientError] = useState<string | null>(null);
@@ -75,28 +76,29 @@ export default function LandingPage() {
     setShowOptions(true);
   };
 
-  const handleOptionClick = (type: 'visitor' | 'patient' | 'doctor') => {
+  const handleOptionClick = (type: 'visitor' | 'patient' | 'doctor' | 'entourage') => {
     if (type === 'visitor' || type === 'patient') {
-      // Sauvegarder le type d'option sélectionné
       setSelectedOptionType(type);
       setShowVisitorPrompt(false);
       setIsCreatingVisitorDemo(false);
-      // Marquer la transition AVANT de masquer les options pour éviter l'affichage du contenu initial
       setIsTransitioning(true);
-      // Masquer immédiatement les options
       setShowOptions(false);
-      // Fade out du background
       if (typeof document !== 'undefined') {
         document.body.setAttribute('data-aurora-visible', 'false');
       }
       setShowAurora(false);
-      // Attendre que les options disparaissent complètement avant de démarrer la séquence
       setTimeout(() => {
         setInfoSequence(1);
       }, 800);
     } else if (type === 'doctor') {
       setShowVisitorPrompt(false);
       setIsCreatingVisitorDemo(false);
+      setAccessMode('doctor');
+      setShowPatientIdInput(true);
+    } else if (type === 'entourage') {
+      setShowVisitorPrompt(false);
+      setIsCreatingVisitorDemo(false);
+      setAccessMode('entourage');
       setShowPatientIdInput(true);
     }
   };
@@ -215,6 +217,7 @@ export default function LandingPage() {
           userId: result.userId,
           displayName: displayNameToStore,
           email: result.email || null,
+          patientId: idToCheck,
           entries: entriesData?.entries || [],
           accidentDates: userData?.accidentDates || [],
           timestamp: Date.now()
@@ -227,9 +230,12 @@ export default function LandingPage() {
       const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
       await new Promise((resolve) => setTimeout(resolve, remainingTime));
       
-      // 5. Stocker l'URL de redirection et indiquer que le chargement est terminé
-      // TypingLoadingOverlay gérera l'affichage de "Fini." puis la redirection
-      setRedirectUrl(`/acces-sante?patientId=${idToCheck}`);
+      // 5. Redirection selon le mode (professionnel → acces-sante, entourage → entourage)
+      setRedirectUrl(
+        accessMode === 'entourage'
+          ? `/entourage?patientId=${idToCheck}`
+          : `/acces-sante?patientId=${idToCheck}`,
+      );
       setIsLoadingPatient(false); // Le chargement est terminé, mais on garde showLoadingScreen pour afficher "Fini."
       setIsOverlayProcessing(false);
     } catch (error: unknown) {
@@ -248,6 +254,7 @@ export default function LandingPage() {
 
     if (showPatientIdInput) {
       setShowPatientIdInput(false);
+      setAccessMode(null);
       setPatientError(null);
       setPatientId('');
       setIsLoadingPatient(false);
@@ -741,6 +748,18 @@ export default function LandingPage() {
                     </svg>
                   }
                 />
+
+                <OptionCard
+                  title={t('entourage')}
+                  description={t('entourageDescription')}
+                  onClick={() => handleOptionClick('entourage')}
+                  delay={1}
+                  icon={
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  }
+                />
               </motion.div>
 
             </motion.div>
@@ -764,10 +783,10 @@ export default function LandingPage() {
                 className="w-full max-w-2xl text-center space-y-6"
               >
                 <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                  {t('patientAccessTitle')}
+                  {accessMode === 'entourage' ? t('entourageAccessTitle') : t('patientAccessTitle')}
                 </h2>
                 <p className="text-lg text-white/80 leading-relaxed">
-                  {t('patientAccessDescription')}
+                  {accessMode === 'entourage' ? t('entourageAccessDescription') : t('patientAccessDescription')}
                 </p>
               </motion.div>
 

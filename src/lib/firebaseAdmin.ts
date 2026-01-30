@@ -94,6 +94,7 @@ export function getAdminApp(): App {
         console.error('[Firebase Admin] ❌ Fichier de service account introuvable');
         console.error('[Firebase Admin] Chemins testés:', possiblePaths);
         console.error('[Firebase Admin] Répertoire courant:', process.cwd());
+        console.error('[Firebase Admin] 💡 Crée le fichier à cet emplacement ou utilise FIREBASE_SERVICE_ACCOUNT_JSON dans .env.local (JSON sur une ligne).');
       }
     } catch (error: unknown) {
       const err = error as { message?: string; stack?: string } | null;

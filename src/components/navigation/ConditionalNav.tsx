@@ -13,54 +13,19 @@ export default function ConditionalNav() {
   const [isStatisticsWithPatientId, setIsStatisticsWithPatientId] = useState(false);
   const [shouldHide, setShouldHide] = useState(false);
 
-  // Vérifier immédiatement avec window.location pour une détection plus fiable
+  // Synchroniser shouldHide avec l'URL (pour statistique + patientId)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const windowPath = window.location.pathname;
-      
-      // Masquer sur accès-sante
-      if (windowPath === '/acces-sante' || windowPath.startsWith('/acces-sante')) {
-        setShouldHide(true);
-        return;
-      }
-
-      // Masquer sur onboarding
-      if (windowPath === '/onboarding' || windowPath.startsWith('/onboarding')) {
-        setShouldHide(true);
-        return;
-      }
-
-      // Masquer sur statistique avec patientId
-      if (windowPath === '/statistique') {
-        const searchParams = new URLSearchParams(window.location.search);
-        if (searchParams.has('patientId')) {
-          setShouldHide(true);
-          setIsStatisticsWithPatientId(true);
-          return;
-        }
-      }
-
-      setShouldHide(false);
-      setIsStatisticsWithPatientId(false);
-    }
-  }, [pathname]);
-
-  // Vérification immédiate au rendu (pour éviter le flash)
-  if (typeof window !== 'undefined') {
-    const windowPath = window.location.pathname;
-    if (windowPath === '/acces-sante' || windowPath.startsWith('/acces-sante')) {
-      return null;
-    }
-    if (windowPath === '/onboarding' || windowPath.startsWith('/onboarding')) {
-      return null;
-    }
-    if (windowPath === '/statistique') {
+    if (pathname === '/statistique' && typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       if (searchParams.has('patientId')) {
-        return null;
+        setIsStatisticsWithPatientId(true);
+        setShouldHide(true);
+        return;
       }
     }
-  }
+    setIsStatisticsWithPatientId(false);
+    setShouldHide(false);
+  }, [pathname]);
 
   if (!pathname) {
     return null;
@@ -74,8 +39,18 @@ export default function ConditionalNav() {
   // - Page d'auth sans utilisateur
   // - Page statistique avec patientId
   // - Page accès-sante (dédiée aux professionnels de santé)
+  // - Page entourage (commentaires de l'entourage)
   // - Page onboarding
-  const hideNavigation = (isAuthPage && !user) || isStatisticsWithPatientId || shouldHide || pathname === '/acces-sante' || pathname === '/onboarding';
+  const hideNavigation =
+    (isAuthPage && !user) ||
+    isStatisticsWithPatientId ||
+    shouldHide ||
+    pathname === '/acces-sante' ||
+    pathname.startsWith('/acces-sante') ||
+    pathname === '/entourage' ||
+    pathname.startsWith('/entourage') ||
+    pathname === '/onboarding' ||
+    pathname.startsWith('/onboarding');
 
   if (hideNavigation) {
     return null;

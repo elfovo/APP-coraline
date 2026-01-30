@@ -56,19 +56,26 @@ export async function GET(request: NextRequest) {
       patientId: data.patientId ?? numericId,
     });
   } catch (error: unknown) {
-    console.error('[API] Erreur lors de la recherche du patient:', error);
     const err = error as { message?: string; stack?: string; toString?: () => string } | null;
-    const errorMessage = err?.message || err?.toString?.() || 'Erreur inconnue';
-    const errorStack = err?.stack || '';
-    console.error('[API] Détails de l\'erreur:', { message: errorMessage, stack: errorStack });
-    
+    const rawMessage = err?.message || err?.toString?.() || 'Erreur inconnue';
+    const isCredentialError =
+      /credentials|service account|getapplicationdefault/i.test(rawMessage) ||
+      /could not load the default credentials/i.test(rawMessage);
+
+    console.error('[API] Erreur lors de la recherche du patient:', rawMessage);
+
+    // Message utilisateur : générique en prod, ou explicite si erreur de config (credentials)
+    const userMessage = isCredentialError
+      ? 'Configuration serveur incomplète (credentials Firebase). Vérifie FIREBASE_SERVICE_ACCOUNT_* ou GOOGLE_APPLICATION_CREDENTIALS.'
+      : 'Une erreur est survenue lors de la recherche du patient';
+
     return NextResponse.json(
-      { 
-        error: 'Une erreur est survenue lors de la recherche du patient',
+      {
+        error: userMessage,
         code: 'PATIENT_LOOKUP_FAILED',
-        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+        ...(process.env.NODE_ENV === 'development' && { details: rawMessage }),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

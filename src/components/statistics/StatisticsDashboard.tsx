@@ -6,7 +6,7 @@ import TrendChart, {
   type TrendChartDataPoint,
 } from '@/components/dashboard/TrendChart';
 import type { DailyEntry, MedicationEntry, ActivityEntry } from '@/types/journal';
-import { listenRecentEntries } from '@/lib/firestoreEntries';
+import { listenRecentEntries, fetchEntourageComments } from '@/lib/firestoreEntries';
 import { getDbInstance } from '@/lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -152,6 +152,7 @@ export default function StatisticsDashboard({
   const [hoveredSegment, setHoveredSegment] = useState<DetailCategory | null>(null);
   const [daysSinceAccident, setDaysSinceAccident] = useState<number | null>(null);
   const [accidentDates, setAccidentDates] = useState<string[]>([]);
+  const [entourageCommentsMap, setEntourageCommentsMap] = useState<Record<string, string>>({});
   const [chartPeriods, setChartPeriods] = useState({
     symptom: 7,
     activity: 7,
@@ -324,6 +325,40 @@ export default function StatisticsDashboard({
       setSelectedDate(entries[0].dateISO);
     }
   }, [entries, selectedDate]);
+
+  // Charger les commentaires de l'entourage (API, ou Firestore direct pour le patient si API échoue)
+  useEffect(() => {
+    if (!userId) return;
+
+    const buildMap = (comments: { dateISO: string; comment: string }[]) => {
+      const map: Record<string, string> = {};
+      (comments ?? []).forEach((c) => {
+        const dateISO = typeof c?.dateISO === 'string' ? c.dateISO : '';
+        const comment = typeof c?.comment === 'string' ? c.comment.trim() : '';
+        if (dateISO && comment) map[dateISO] = comment;
+      });
+      return map;
+    };
+
+    fetch(`/api/patient/entourage-comments?userId=${encodeURIComponent(userId)}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        return res.json();
+      })
+      .then((data: { comments?: { dateISO: string; comment: string }[] }) => {
+        setEntourageCommentsMap(buildMap(data?.comments ?? []));
+      })
+      .catch((err) => {
+        // Fallback : lecture Firestore direct pour le patient (nécessite règle read sur users/{uid}/entourageComments)
+        if (!isExternalUser) {
+          fetchEntourageComments(userId)
+            .then((list) => setEntourageCommentsMap(buildMap(list)))
+            .catch(() => setEntourageCommentsMap({}));
+        } else {
+          setEntourageCommentsMap({});
+        }
+      });
+  }, [userId, isExternalUser]);
 
   const calendarEntriesMap = useMemo(() => {
     if (!entries.length) {
@@ -785,6 +820,7 @@ export default function StatisticsDashboard({
               entriesMap={calendarEntriesMap}
               isLoading={entriesLoading}
               accidentDates={accidentDates}
+              commentDates={Object.keys(entourageCommentsMap)}
             />
           </section>
 
@@ -1015,6 +1051,24 @@ export default function StatisticsDashboard({
                   </p>
                 </div>
               )}
+            </section>
+          )}
+
+          {selectedDate && entourageCommentsMap[selectedDate] && (
+            <section className="bg-transparent rounded-3xl p-6">
+              <div className="mb-4">
+                <p className="text-sm uppercase tracking-[0.3em] text-white/60 mb-1">
+                  {t('entourageCommentSectionTitle')}
+                </p>
+                <p className="text-white/80 text-sm">
+                  {t('entourageCommentSectionSubtitle')}
+                </p>
+              </div>
+              <div className="bg-black/30 border border-white/10 rounded-2xl p-5 border-l-4 border-l-amber-400/50">
+                <p className="text-white/90 whitespace-pre-wrap leading-relaxed">
+                  {entourageCommentsMap[selectedDate]}
+                </p>
+              </div>
             </section>
           )}
 

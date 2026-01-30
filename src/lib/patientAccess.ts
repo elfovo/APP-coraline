@@ -23,15 +23,15 @@ export async function findUserByPatientId(patientId: string | number): Promise<P
       if (response.status === 404) {
         return null; // Patient non trouvé
       }
-      // Pour les autres erreurs, on log et on retourne null
       const errorData = await response.json().catch(() => ({}));
-      console.error('[PatientAccess] Erreur API:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorData
-      });
-      const errorMessage = errorData.details || errorData.error || `Erreur HTTP ${response.status}`;
-      throw new Error(errorMessage);
+      const errorObj = typeof errorData === 'object' && errorData !== null ? errorData : {};
+      // Message utilisateur en priorité, puis détail technique (dev), puis générique
+      const userMessage =
+        (errorObj as { error?: string }).error ||
+        (errorObj as { details?: string }).details ||
+        `Erreur HTTP ${response.status}`;
+      console.error('[PatientAccess] Erreur API:', response.status, response.statusText, Object.keys(errorObj).length ? errorObj : '(réponse vide ou non-JSON)');
+      throw new Error(userMessage);
     }
 
     const data: PatientLookupResult = await response.json();

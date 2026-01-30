@@ -21,6 +21,7 @@ import type { DailyEntry, WeeklyTotals } from '@/types/journal';
 const ENTRIES_SUBCOLLECTION = 'entries';
 const CAREGIVER_CODES_COLLECTION = 'caregiverCodes';
 const CAREGIVER_OBSERVATIONS_SUBCOLLECTION = 'caregiverObservations';
+const ENTOURAGE_COMMENTS_SUBCOLLECTION = 'entourageComments';
 
 const formatTimestamp = (date: Date) => Timestamp.fromDate(date);
 
@@ -37,6 +38,9 @@ const caregiverCodeLookupDoc = (code: string) =>
 
 const caregiverObservationsCollection = (userId: string) =>
   collection(getDb(), 'users', userId, CAREGIVER_OBSERVATIONS_SUBCOLLECTION);
+
+const entourageCommentsCollection = (userId: string) =>
+  collection(getDb(), 'users', userId, ENTOURAGE_COMMENTS_SUBCOLLECTION);
 
 const journalPreferencesDocument = (userId: string) =>
   doc(getDb(), 'users', userId, 'preferences', 'journal');
@@ -193,6 +197,25 @@ export async function saveCaregiverObservation(
     ...payload,
     code,
     createdAt: serverTimestamp(),
+  });
+}
+
+export interface EntourageCommentItem {
+  dateISO: string;
+  comment: string;
+}
+
+/** Récupère tous les commentaires de l'entourage pour un utilisateur (patient). */
+export async function fetchEntourageComments(
+  userId: string,
+): Promise<EntourageCommentItem[]> {
+  const snapshot = await getDocs(entourageCommentsCollection(userId));
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return {
+      dateISO: docSnap.id,
+      comment: typeof data?.comment === 'string' ? data.comment : '',
+    };
   });
 }
 
