@@ -1,7 +1,7 @@
 {
   "name": "mondev-agency",
   "version": "1.0.0",
-  "description": "Site web moderne pour MonDev Agency avec menu BubbleMenu interactif",
+  "description": "Recova - Suivi du rétablissement post-commotion",
   "private": true,
   "engines": {
     "node": ">=20"

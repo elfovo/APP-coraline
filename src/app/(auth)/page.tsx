@@ -576,7 +576,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: 0.1, ease: 'easeOut' }}
                 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4"
               >
-                {t('commoCare')}
+                {t('recova')}
               </motion.h1>
 
               <motion.p

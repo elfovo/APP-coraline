@@ -26,7 +26,7 @@ export async function generateWeeklyReportPdf({
   const doc = new jsPDF();
 
   doc.setFontSize(18);
-  doc.text('CommoCare - Rapport Hebdomadaire', 14, 20);
+  doc.text('Recova - Rapport Hebdomadaire', 14, 20);
 
   doc.setFontSize(12);
   doc.text(`Semaine : ${weekLabel}`, 14, 30);
@@ -69,11 +69,11 @@ export async function generateWeeklyReportPdf({
   });
 
   doc.text(
-    'Document généré automatiquement depuis le journal CommoCare.',
+    'Document généré automatiquement depuis le journal Recova.',
     14,
     285,
   );
-  doc.save(`CommoCare-${weekLabel.replace(/\s+/g, '-')}.pdf`);
+  doc.save(`Recova-${weekLabel.replace(/\s+/g, '-')}.pdf`);
 }
 
 

@@ -482,7 +482,7 @@ export const translations = {
     creatingDemo: 'Création en cours...',
     createDemo: 'Créer la démo',
     demoPrompt: 'Lancez la création d\'un compte démo pour explorer l\'interface complète avec 120 jours de données générées automatiquement.',
-    commoCare: 'CommoCare',
+    recova: 'Recova',
     dailyRecoveryTracking: 'Suivi quotidien du rétablissement post-commotion',
     dailyJournal: 'Journal quotidien',
     dailyJournalDescription: 'Suivez vos symptômes et votre progression jour après jour',
@@ -500,7 +500,7 @@ export const translations = {
     infoSequence3Part2: 'encore 3 mois après l\'accident',
     infoSequence3Source: 'Source : Santé publique France 2016',
     infoSequence4Part1: 'La commotion cérébrale est sérieuse, mais un suivi adapté fait toute la différence.',
-    infoSequence4Part2: 'CommoCare vous accompagne dans votre rétablissement au quotidien.',
+    infoSequence4Part2: 'Recova vous accompagne dans votre rétablissement au quotidien.',
     
     // Social login buttons
     continueWithGoogle: 'Continuer avec Google',
@@ -989,7 +989,7 @@ export const translations = {
     creatingDemo: 'Creating...',
     createDemo: 'Create demo',
     demoPrompt: 'Launch the creation of a demo account to explore the complete interface with 120 days of automatically generated data.',
-    commoCare: 'CommoCare',
+    recova: 'Recova',
     dailyRecoveryTracking: 'Daily post-concussion recovery tracking',
     dailyJournal: 'Daily journal',
     dailyJournalDescription: 'Track your symptoms and progress day by day',
@@ -1007,7 +1007,7 @@ export const translations = {
     infoSequence3Part2: '3 months after the accident',
     infoSequence3Source: 'Source: Public Health France 2016',
     infoSequence4Part1: 'Concussion is serious, but appropriate follow-up makes all the difference.',
-    infoSequence4Part2: 'CommoCare accompanies you in your daily recovery.',
+    infoSequence4Part2: 'Recova accompanies you in your daily recovery.',
     
     // Social login buttons
     continueWithGoogle: 'Continue with Google',

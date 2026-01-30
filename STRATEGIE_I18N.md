@@ -1,4 +1,4 @@
-# Stratégie d'Internationalisation (i18n) - CommoCare
+# Stratégie d'Internationalisation (i18n) - Recova
 
 ## 🎯 Objectif
 Traduire entièrement l'application en français et anglais avec un système robuste et maintenable.

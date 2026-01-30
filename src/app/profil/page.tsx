@@ -33,7 +33,7 @@ type NotificationPrefs = {
   caregiverUpdates: boolean;
 };
 
-const NOTIFICATION_STORAGE_KEY = 'commocare-notification-prefs';
+const NOTIFICATION_STORAGE_KEY = 'recova-notification-prefs';
 
 // Les préférences de notification seront traduites dynamiquement dans le composant
 const preferenceOptions: {

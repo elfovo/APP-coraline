@@ -11,8 +11,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CommoCare",
-  description: "Suivi quotidien du rétablissement post-commotion",
+  title: "Recova",
+  description: "Suivi quotidien du rétablissement post-commotion - Recova",
 };
 
 export default function RootLayout({
