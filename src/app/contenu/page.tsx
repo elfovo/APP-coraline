@@ -32,7 +32,7 @@ export default function ContenuPage() {
 
         <ResourceSection
           title="Pour l'accompagnant"
-          description="Donne un accès guidé à ton entourage pour objectiver les journées difficiles et expliquer la progression."
+          description="Donne un accès guidé à ton entourage pour objectiver les journées difficiles et expliquer la progression..."
           resources={CAREGIVER_RESOURCES}
           category="Accompagnant"
         />
