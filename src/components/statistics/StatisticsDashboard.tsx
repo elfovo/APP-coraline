@@ -156,7 +156,6 @@ export default function StatisticsDashboard({
     symptom: 7,
     activity: 7,
     medication: 7,
-    perturbateur: 7,
     gentleActivity: 7,
   });
 
@@ -428,12 +427,19 @@ export default function StatisticsDashboard({
     return data;
   }, [entries, getDateLabel]);
 
-  const symptomChartData = useMemo<TrendChartDataPoint[]>(
-    () => generateChartData(chartPeriods.symptom, (entry) =>
+  const symptomChartData = useMemo<TrendChartDataPoint[]>(() => {
+    const base = generateChartData(chartPeriods.symptom, (entry) =>
       entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0,
-    ),
-    [chartPeriods.symptom, generateChartData],
-  );
+    );
+    return base.map((p) => {
+      const entry = entries.find((e) => e.dateISO === p.dateISO);
+      const count = entry?.perturbateurs?.length ?? 0;
+      return {
+        ...p,
+        tooltipExtra: t('disruptorsCountTooltip', { count }),
+      };
+    });
+  }, [chartPeriods.symptom, generateChartData, entries, t]);
 
   const activityChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.activity, (entry) =>
@@ -442,17 +448,19 @@ export default function StatisticsDashboard({
     [chartPeriods.activity, generateChartData],
   );
 
-  const medicationChartData = useMemo<TrendChartDataPoint[]>(
-    () => generateChartData(chartPeriods.medication, (entry) =>
+  const medicationChartData = useMemo<TrendChartDataPoint[]>(() => {
+    const base = generateChartData(chartPeriods.medication, (entry) =>
       entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0,
-    ),
-    [chartPeriods.medication, generateChartData],
-  );
-
-  const perturbateurChartData = useMemo<TrendChartDataPoint[]>(
-    () => generateChartData(chartPeriods.perturbateur, (entry) => entry?.perturbateurs?.length ?? 0),
-    [chartPeriods.perturbateur, generateChartData],
-  );
+    );
+    return base.map((p) => {
+      const entry = entries.find((e) => e.dateISO === p.dateISO);
+      const count = entry?.perturbateurs?.length ?? 0;
+      return {
+        ...p,
+        tooltipExtra: t('disruptorsCountTooltip', { count }),
+      };
+    });
+  }, [chartPeriods.medication, generateChartData, entries, t]);
 
   const gentleActivityChartData = useMemo<TrendChartDataPoint[]>(
     () => generateChartData(chartPeriods.gentleActivity, (entry) =>
@@ -1023,20 +1031,6 @@ export default function StatisticsDashboard({
                 onPeriodChange={(period) => setChartPeriod('medication', period)}
                 lineColor="#38BDF8"
                 valueFormatter={(value) => value > 1 ? t('medicationValueFormatterPlural', { value }) : t('medicationValueFormatter', { value })}
-                daysSinceAccident={daysSinceAccident}
-                customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
-              />
-            </div>
-
-            <div className="w-full min-w-0 flex">
-              <TrendChart
-                title={t('disruptorsEvolution')}
-                description={getChartDescription(chartPeriods.perturbateur, daysSinceAccident, 'disruptorsChartDescription', 'disruptorsChartDescriptionSinceAccident')}
-                data={perturbateurChartData}
-                period={chartPeriods.perturbateur}
-                onPeriodChange={(period) => setChartPeriod('perturbateur', period)}
-                lineColor="#F43F5E"
-                valueFormatter={(value) => value > 1 ? t('disruptorValueFormatterPlural', { value }) : t('disruptorValueFormatter', { value })}
                 daysSinceAccident={daysSinceAccident}
                 customPeriodLabel={daysSinceAccident ? t('sinceAccident') : undefined}
               />

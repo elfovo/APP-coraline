@@ -6,6 +6,8 @@ export interface TrendChartDataPoint {
   dateISO: string;
   label: string;
   value: number;
+  /** Texte optionnel affiché dans le tooltip au survol (ex. nombre d’éléments perturbateurs) */
+  tooltipExtra?: string;
 }
 
 interface TrendChartProps {
@@ -26,6 +28,7 @@ type HoveredPoint = {
   y: number;
   value: number;
   label: string;
+  tooltipExtra?: string;
 } | null;
 
 type MousePosition = {
@@ -104,6 +107,7 @@ export default function TrendChart({
         y,
         value: d.value,
         label: d.label,
+        tooltipExtra: d.tooltipExtra,
         showLabel: index % labelInterval === 0 || index === dataLength - 1,
       };
     });
@@ -270,6 +274,7 @@ export default function TrendChart({
                   y: point.y,
                   value: point.value,
                   label: point.label,
+                  tooltipExtra: point.tooltipExtra,
                 };
               }
             });
@@ -434,6 +439,9 @@ export default function TrendChart({
           >
             <p className="text-white font-semibold text-sm">{hoveredPoint.label}</p>
             <p className="text-white/70 text-xs">{valueFormatter(hoveredPoint.value)}</p>
+            {hoveredPoint.tooltipExtra && (
+              <p className="text-white/60 text-xs mt-1">{hoveredPoint.tooltipExtra}</p>
+            )}
           </div>
         )}
       </div>
