@@ -8,6 +8,8 @@ export interface TrendChartDataPoint {
   value: number;
   /** Texte optionnel affiché dans le tooltip au survol (ex. nombre d’éléments perturbateurs) */
   tooltipExtra?: string;
+  /** Jour non rempli : on ne dessine pas le point et on coupe la courbe (pas de trait vers 0) */
+  isMissing?: boolean;
 }
 
 interface TrendChartProps {
@@ -71,7 +73,8 @@ export default function TrendChart({
       return null;
     }
 
-    const dataValues = data.map((d) => d.value);
+    const validData = data.filter((d) => !d.isMissing);
+    const dataValues = validData.length ? validData.map((d) => d.value) : [0];
     const dataMax = Math.max(...dataValues, 0);
     const dataMin = dataValues.length ? Math.min(...dataValues) : 0;
     
@@ -108,6 +111,7 @@ export default function TrendChart({
         value: d.value,
         label: d.label,
         tooltipExtra: d.tooltipExtra,
+        isMissing: d.isMissing,
         showLabel: index % labelInterval === 0 || index === dataLength - 1,
       };
     });
@@ -140,6 +144,8 @@ export default function TrendChart({
     };
   }, [data, period]);
 
+  type PointWithMissing = { x: number; y: number; isMissing?: boolean };
+
   const createSmoothPath = (points: { x: number; y: number }[]) => {
     if (points.length < 2) return '';
     if (points.length === 2) {
@@ -166,6 +172,42 @@ export default function TrendChart({
     return path;
   };
 
+  /** Construit le path de la courbe avec des trous aux jours non remplis (isMissing). */
+  const createPathWithGaps = (points: PointWithMissing[]): { linePath: string; areaPath: string } => {
+    const segments: { x: number; y: number }[][] = [];
+    let current: { x: number; y: number }[] = [];
+
+    for (const p of points) {
+      if (p.isMissing) {
+        if (current.length > 0) {
+          segments.push(current);
+          current = [];
+        }
+      } else {
+        current.push({ x: p.x, y: p.y });
+      }
+    }
+    if (current.length > 0) segments.push(current);
+
+    const linePaths: string[] = [];
+    const areaPaths: string[] = [];
+    const chartBottom = 200;
+
+    for (const seg of segments) {
+      if (seg.length === 0) continue;
+      const segPath = createSmoothPath(seg);
+      linePaths.push(segPath);
+      if (seg.length >= 2) {
+        areaPaths.push(`${segPath} L ${seg[seg.length - 1].x} ${chartBottom} L ${seg[0].x} ${chartBottom} Z`);
+      }
+    }
+
+    return {
+      linePath: linePaths.join(' '),
+      areaPath: areaPaths.join(' '),
+    };
+  };
+
   if (!chartState) {
     return (
       <section className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
@@ -184,8 +226,13 @@ export default function TrendChart({
 
   const { points, visibleYLabels } = chartState;
 
-  const pathData = createSmoothPath(points);
-  const areaPath = `${pathData} L ${points[points.length - 1].x} 200 L ${points[0].x} 200 Z`;
+  const hasMissing = points.some((p) => p.isMissing);
+  const { linePath: pathData, areaPath } = hasMissing
+    ? createPathWithGaps(points)
+    : {
+        linePath: createSmoothPath(points),
+        areaPath: `${createSmoothPath(points)} L ${points[points.length - 1].x} 200 L ${points[0].x} 200 Z`,
+      };
 
   return (
     <section className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md w-full min-w-0 h-full flex flex-col">
@@ -266,6 +313,7 @@ export default function TrendChart({
                 : 25;
 
             points.forEach((point) => {
+              if (point.isMissing) return;
               const distance = Math.hypot(x - point.x, y - point.y);
               if (distance < minDistance && distance < threshold) {
                 minDistance = distance;
@@ -365,27 +413,29 @@ export default function TrendChart({
           />
 
           {period <= 30 &&
-            points.map((point, index) => (
-              <motion.g
-                key={`point-${index}`}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  delay: 0.5 + (index * 0.03),
-                  duration: 0.3,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-              >
-                <circle
-                  cx={point.x}
-                  cy={point.y}
-                  r={period <= 7 ? 5 : 3}
-                  fill={lineColor}
-                  stroke="#ffffff"
-                  strokeWidth="1.5"
-                />
-              </motion.g>
-            ))}
+            points.map((point, index) =>
+              point.isMissing ? null : (
+                <motion.g
+                  key={`point-${index}`}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    delay: 0.5 + (index * 0.03),
+                    duration: 0.3,
+                    ease: [0.4, 0, 0.2, 1],
+                  }}
+                >
+                  <circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={period <= 7 ? 5 : 3}
+                    fill={lineColor}
+                    stroke="#ffffff"
+                    strokeWidth="1.5"
+                  />
+                </motion.g>
+              )
+            )}
 
           {hoveredPoint && (
             <g>

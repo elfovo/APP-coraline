@@ -163,6 +163,9 @@ export default function StatisticsDashboard({
     setChartPeriods((prev) => ({ ...prev, [key]: value }));
   };
 
+  // Temporaire : masquer uniquement le donut (la légende reste visible). Remettre à true pour l'afficher.
+  const SHOW_CAMEMBERT_CHART = false;
+
   useEffect(() => {
     setEntries([]);
     setSelectedDate('');
@@ -406,10 +409,12 @@ export default function StatisticsDashboard({
   const generateChartData = useCallback((
     period: number,
     valueExtractor: (entry: DailyEntry | undefined) => number,
+    options?: { markMissing?: boolean },
   ): TrendChartDataPoint[] => {
     const today = new Date();
     const data: TrendChartDataPoint[] = [];
     const daysCount = period - 1;
+    const markMissing = options?.markMissing ?? false;
 
     for (let i = daysCount; i >= 0; i--) {
       const date = new Date(today);
@@ -417,56 +422,74 @@ export default function StatisticsDashboard({
       const dateISO = date.toISOString().split('T')[0];
       const entry = entries.find((e) => e.dateISO === dateISO);
 
-      data.push({
-        dateISO,
-        label: getDateLabel(date, period),
-        value: valueExtractor(entry),
-      });
+      if (markMissing && entry === undefined) {
+        data.push({
+          dateISO,
+          label: getDateLabel(date, period),
+          value: 0,
+          isMissing: true,
+        });
+      } else {
+        data.push({
+          dateISO,
+          label: getDateLabel(date, period),
+          value: valueExtractor(entry),
+        });
+      }
     }
 
     return data;
   }, [entries, getDateLabel]);
 
   const symptomChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const base = generateChartData(chartPeriods.symptom, (entry) =>
-      entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0,
+    const base = generateChartData(
+      chartPeriods.symptom,
+      (entry) => entry?.symptoms?.reduce((sum, s) => sum + (s.intensity ?? 0), 0) ?? 0,
+      { markMissing: true },
     );
     return base.map((p) => {
       const entry = entries.find((e) => e.dateISO === p.dateISO);
       const count = entry?.perturbateurs?.length ?? 0;
       return {
         ...p,
-        tooltipExtra: t('disruptorsCountTooltip', { count }),
+        tooltipExtra: p.isMissing ? undefined : t('disruptorsCountTooltip', { count }),
       };
     });
   }, [chartPeriods.symptom, generateChartData, entries, t]);
 
   const activityChartData = useMemo<TrendChartDataPoint[]>(
-    () => generateChartData(chartPeriods.activity, (entry) =>
-      entry?.activities?.reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
+    () => generateChartData(
+      chartPeriods.activity,
+      (entry) => entry?.activities?.reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
+      { markMissing: true },
     ),
     [chartPeriods.activity, generateChartData],
   );
 
   const medicationChartData = useMemo<TrendChartDataPoint[]>(() => {
-    const base = generateChartData(chartPeriods.medication, (entry) =>
-      entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0,
+    const base = generateChartData(
+      chartPeriods.medication,
+      (entry) => entry?.medications?.reduce((sum, m) => sum + (m.intensity ?? 0), 0) ?? 0,
+      { markMissing: true },
     );
     return base.map((p) => {
       const entry = entries.find((e) => e.dateISO === p.dateISO);
       const count = entry?.perturbateurs?.length ?? 0;
       return {
         ...p,
-        tooltipExtra: t('disruptorsCountTooltip', { count }),
+        tooltipExtra: p.isMissing ? undefined : t('disruptorsCountTooltip', { count }),
       };
     });
   }, [chartPeriods.medication, generateChartData, entries, t]);
 
   const gentleActivityChartData = useMemo<TrendChartDataPoint[]>(
-    () => generateChartData(chartPeriods.gentleActivity, (entry) =>
-      entry?.activities
-        ?.filter((a) => isGentleActivityId(a.id))
-        .reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
+    () => generateChartData(
+      chartPeriods.gentleActivity,
+      (entry) =>
+        entry?.activities
+          ?.filter((a) => isGentleActivityId(a.id))
+          .reduce((sum, a) => sum + (a.duration ?? 0), 0) ?? 0,
+      { markMissing: true },
     ),
     [chartPeriods.gentleActivity, generateChartData],
   );
@@ -822,6 +845,7 @@ export default function StatisticsDashboard({
                     );
                   })}
                 </div>
+                {SHOW_CAMEMBERT_CHART && (
                 <div className="order-1 lg:order-2 flex justify-center flex-1">
                   <div className="relative w-full max-w-[420px] group">
                     <svg
@@ -937,6 +961,7 @@ export default function StatisticsDashboard({
                     )}
                   </div>
                 </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-white/50">

@@ -124,18 +124,25 @@ export default function LandingPage() {
   const generateSeedData = async (userId: string) => {
     const today = new Date();
     let oldestDateISO = '';
-    
-    // Créer les entrées pour 120 jours
+
+    // Temporaire : 5 jours sans aucune donnée (pour vérifier les trous dans les graphiques)
+    const DAYS_WITHOUT_DATA = 5;
+
+    // Créer les entrées pour 120 jours (sauf les 5 derniers = sans entrée)
     for (let i = 0; i < 120; i++) {
       const target = new Date(today);
       target.setDate(today.getDate() - i);
+      if (i < DAYS_WITHOUT_DATA) {
+        // Ne pas créer d'entrée pour ces jours → trou dans les graphiques
+        continue;
+      }
       const entry = buildSeedEntry(target, i);
       await saveDailyEntry(userId, entry);
       if (i === 119) {
         oldestDateISO = entry.dateISO;
       }
     }
-    
+
     // Sauvegarder la date d'accident dans Firestore
     const db = getDbInstance();
     await setDoc(doc(db, 'users', userId), {
