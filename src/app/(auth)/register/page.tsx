@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { SignupForm } from '@/components/layouts';
@@ -124,6 +125,15 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-transparent">
+      <Link
+        href="/"
+        className="absolute top-4 left-4 z-20 flex items-center gap-2 text-white/80 hover:text-white text-sm font-medium transition-colors"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        {t('backToHome')}
+      </Link>
       <div className="relative z-10 w-full max-w-md px-4 py-8">
         <AnimatePresence mode="wait">
           {error && (

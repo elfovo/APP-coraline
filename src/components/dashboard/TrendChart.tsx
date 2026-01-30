@@ -50,11 +50,11 @@ export default function TrendChart({
   const { t } = useLanguage();
   const defaultEmptyStateText = emptyStateText || t('noDataForPeriod');
   
-  // Options de période par défaut
+  // Options : 7j, 30j, 90j, et "Depuis l'accident" (remplace 360j) si une date d'accident existe
   const defaultPeriods = [7, 30, 90];
-  const allPeriods = daysSinceAccident && daysSinceAccident > 90 
+  const allPeriods = daysSinceAccident != null
     ? [...defaultPeriods, daysSinceAccident]
-    : [...defaultPeriods, 360];
+    : defaultPeriods;
   
   // Trier les périodes et supprimer les doublons
   const PERIOD_OPTIONS = Array.from(new Set(allPeriods)).sort((a, b) => a - b);
