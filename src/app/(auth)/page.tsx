@@ -56,56 +56,7 @@ export default function LandingPage() {
     }
   }, [user, loading, router]);
 
-  // IMPORTANT: les hooks ne doivent pas être appelés après un early return.
-  // Ce useEffect doit rester avant les `return` conditionnels (loading/user).
-  useEffect(() => {
-    if (infoSequence === null) return;
-
-    const timers: NodeJS.Timeout[] = [];
-
-    // Étape 1 -> Étape 2 après 5 secondes
-    if (infoSequence === 1) {
-      timers.push(setTimeout(() => setInfoSequence(2), 5000));
-    }
-    // Étape 2 -> Étape 3 après 5 secondes
-    else if (infoSequence === 2) {
-      timers.push(setTimeout(() => setInfoSequence(3), 5000));
-    }
-    // Étape 3 -> Étape 4 après 5 secondes
-    else if (infoSequence === 3) {
-      timers.push(setTimeout(() => setInfoSequence(4), 5000));
-    }
-    // Étape 4 -> Fade in du background puis traitement selon le type
-    else if (infoSequence === 4) {
-      setShowVisitorPrompt(false);
-      // Fade in du background après 3 secondes
-      timers.push(
-        setTimeout(() => {
-          if (typeof document !== 'undefined') {
-            document.body.setAttribute('data-aurora-visible', 'true');
-          }
-          setShowAurora(true);
-        }, 3000)
-      );
-
-      // Traitement selon le type d'option
-      timers.push(
-        setTimeout(async () => {
-          if (selectedOptionType === 'patient') {
-            // Pour patient, redirection normale vers register
-            router.push('/register');
-          } else if (selectedOptionType === 'visitor') {
-            // Pour visiteur, afficher l'invite de création de compte démo après la séquence
-            setShowVisitorPrompt(true);
-          }
-        }, 5000)
-      );
-    }
-
-    return () => {
-      timers.forEach((timer) => clearTimeout(timer));
-    };
-  }, [infoSequence, router, selectedOptionType]);
+  // Plus de timers : la séquence avance uniquement via les flèches Back / Next.
 
   if (loading) {
     return (
@@ -296,18 +247,40 @@ export default function LandingPage() {
       setShowLoadingScreen(false);
       setIsOverlayProcessing(false);
       setRedirectUrl(null);
+    } else if (infoSequence !== null && infoSequence > 1) {
+      setInfoSequence(infoSequence - 1);
     } else if (showOptions) {
       setShowOptions(false);
-    } else if (infoSequence !== null) {
+    } else if (infoSequence === 1) {
       setInfoSequence(null);
       setIsTransitioning(false);
-      // Réafficher le background
       if (typeof document !== 'undefined') {
         document.body.setAttribute('data-aurora-visible', 'true');
       }
       setShowAurora(true);
       setShowOptions(true);
     }
+  };
+
+  const handleNextInSequence = () => {
+    if (infoSequence === null) return;
+    if (infoSequence < 4) {
+      setInfoSequence(infoSequence + 1);
+      return;
+    }
+    // Étape 4 : fin de la séquence (fade in du background puis redirection ou invite visiteur)
+    setShowVisitorPrompt(false);
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-aurora-visible', 'true');
+    }
+    setShowAurora(true);
+    setTimeout(() => {
+      if (selectedOptionType === 'patient') {
+        router.push('/register');
+      } else if (selectedOptionType === 'visitor') {
+        setShowVisitorPrompt(true);
+      }
+    }, 400);
   };
 
   return (
@@ -846,8 +819,8 @@ export default function LandingPage() {
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
                 <NextButton 
-                  onClick={showPatientIdInput ? handlePatientIdSubmit : undefined}
-                  disabled={showPatientIdInput ? (!patientId.trim() || isLoadingPatient) : (infoSequence !== null ? true : true)}
+                  onClick={showPatientIdInput ? handlePatientIdSubmit : (infoSequence !== null ? handleNextInSequence : undefined)}
+                  disabled={showPatientIdInput ? (!patientId.trim() || isLoadingPatient) : infoSequence === null}
                 />
               </motion.div>
             </div>
